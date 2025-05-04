@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Table, 
@@ -12,19 +13,22 @@ import { ShoppingCart as CartIcon, Trash2, FileText, RotateCcw } from "lucide-re
 import { useAppContext } from '@/context/AppContext';
 import InvoiceDialog from './InvoiceDialog';
 import ReturnDialog from './ReturnDialog';
+import { Invoice } from '@/types';
 
 const ShoppingCart = () => {
   const { cart, removeFromCart, clearCart, createInvoice } = useAppContext();
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState<any>(null);
+  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
 
   const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
   
   const handleCreateInvoice = () => {
     const invoice = createInvoice();
-    setCurrentInvoice(invoice);
-    setShowInvoiceDialog(true);
+    if (invoice) {
+      setCurrentInvoice(invoice);
+      setShowInvoiceDialog(true);
+    }
   };
 
   return (
