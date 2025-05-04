@@ -13,3 +13,7 @@ export function formatDate(date: Date): string {
     day: 'numeric',
   }).format(date);
 }
+
+export function formatCurrency(amount: number): string {
+  return `ج.م ${amount.toFixed(2)}`;
+}

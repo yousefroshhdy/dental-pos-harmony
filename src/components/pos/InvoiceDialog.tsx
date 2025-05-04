@@ -74,9 +74,9 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
                     <td className="py-3 px-3">{item.code}</td>
                     <td className="py-3 px-3">{item.type}</td>
                     <td className="py-3 px-3">{item.color}</td>
-                    <td className="py-3 px-3 text-right">${item.price.toFixed(2)}</td>
+                    <td className="py-3 px-3 text-right">ج.م {item.price.toFixed(2)}</td>
                     <td className="py-3 px-3 text-right">{item.cartQuantity}</td>
-                    <td className="py-3 px-3 text-right">${item.subtotal.toFixed(2)}</td>
+                    <td className="py-3 px-3 text-right">ج.م {item.subtotal.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -87,15 +87,15 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
             <div className="bg-muted p-4 rounded w-64">
               <div className="flex justify-between mb-2">
                 <span className="font-medium">Subtotal:</span>
-                <span>${invoice.total.toFixed(2)}</span>
+                <span>ج.م {invoice.total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="font-medium">Tax (0%):</span>
-                <span>$0.00</span>
+                <span>ج.م 0.00</span>
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>${invoice.total.toFixed(2)}</span>
+                <span>ج.م {invoice.total.toFixed(2)}</span>
               </div>
             </div>
           </div>

@@ -78,9 +78,9 @@ const ShoppingCart = () => {
                           <div className="text-xs text-muted-foreground">{item.code} - {item.color}</div>
                         </div>
                       </TableCell>
-                      <TableCell>${item.price.toFixed(2)}</TableCell>
+                      <TableCell>ج.م {item.price.toFixed(2)}</TableCell>
                       <TableCell>{item.cartQuantity}</TableCell>
-                      <TableCell>${item.subtotal.toFixed(2)}</TableCell>
+                      <TableCell>ج.م {item.subtotal.toFixed(2)}</TableCell>
                       <TableCell>
                         <Button 
                           variant="ghost" 
@@ -101,7 +101,7 @@ const ShoppingCart = () => {
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center p-3 bg-muted rounded">
             <span className="font-medium">Total Amount:</span>
-            <span className="text-xl font-bold">${total.toFixed(2)}</span>
+            <span className="text-xl font-bold">ج.م {total.toFixed(2)}</span>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

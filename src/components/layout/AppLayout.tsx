@@ -16,7 +16,7 @@ const AppLayout = () => {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Stethoscope size={24} className="text-white" />
-            <h1 className="text-xl font-bold">Dental POS Harmony</h1>
+            <h1 className="text-xl font-bold">Dental POS Egypt</h1>
           </div>
           <button 
             className="md:hidden" 
@@ -74,7 +74,7 @@ const AppLayout = () => {
 
       <footer className="bg-dental-secondary text-white p-3 text-center text-sm">
         <div className="container mx-auto">
-          &copy; {new Date().getFullYear()} Dental POS Harmony - All rights reserved
+          &copy; {new Date().getFullYear()} Dental POS Egypt - All rights reserved
         </div>
       </footer>
     </div>

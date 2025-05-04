@@ -57,7 +57,7 @@ const InventoryValueReport = ({ inventory }: InventoryValueReportProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">ج.م {totalValue.toFixed(2)}</div>
           </CardContent>
         </Card>
         
@@ -68,7 +68,7 @@ const InventoryValueReport = ({ inventory }: InventoryValueReportProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${averageItemValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">ج.م {averageItemValue.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
@@ -92,7 +92,7 @@ const InventoryValueReport = ({ inventory }: InventoryValueReportProps) => {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `$${value}`} />
+              <Tooltip formatter={(value) => `ج.م ${value}`} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
@@ -121,7 +121,7 @@ const InventoryValueReport = ({ inventory }: InventoryValueReportProps) => {
                 <tr key={index} className="border-b">
                   <td className="py-2 px-4">{item.name}</td>
                   <td className="py-2 px-4">{itemCount}</td>
-                  <td className="py-2 px-4">${item.value.toFixed(2)}</td>
+                  <td className="py-2 px-4">ج.م {item.value.toFixed(2)}</td>
                   <td className="py-2 px-4">{percentage}%</td>
                 </tr>
               );
