@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Table, 
@@ -25,9 +24,7 @@ const ShoppingCart = () => {
   const handleCreateInvoice = () => {
     const invoice = createInvoice();
     setCurrentInvoice(invoice);
-    if (invoice) {
-      setShowInvoiceDialog(true);
-    }
+    setShowInvoiceDialog(true);
   };
 
   return (
