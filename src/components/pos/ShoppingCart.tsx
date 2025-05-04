@@ -24,8 +24,8 @@ const ShoppingCart = () => {
   
   const handleCreateInvoice = () => {
     const invoice = createInvoice();
+    setCurrentInvoice(invoice);
     if (invoice) {
-      setCurrentInvoice(invoice);
       setShowInvoiceDialog(true);
     }
   };

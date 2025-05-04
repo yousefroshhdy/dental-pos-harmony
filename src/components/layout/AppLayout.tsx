@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Tooth, ClipboardList, LineChart, Menu } from "lucide-react";
+import { Stethoscope, ClipboardList, LineChart, Menu } from "lucide-react";
 import PosTab from '@/components/pos/PosTab';
 import InventoryTab from '@/components/inventory/InventoryTab';
 import ReportsTab from '@/components/reports/ReportsTab';
@@ -15,7 +15,7 @@ const AppLayout = () => {
       <header className="bg-dental-primary text-white p-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Tooth size={24} className="text-white" />
+            <Stethoscope size={24} className="text-white" />
             <h1 className="text-xl font-bold">Dental POS Harmony</h1>
           </div>
           <button 
@@ -36,7 +36,7 @@ const AppLayout = () => {
                 className="data-[state=active]:bg-dental-primary data-[state=active]:text-white"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Tooth className="mr-2 h-4 w-4" />
+                <Stethoscope className="mr-2 h-4 w-4" />
                 <span>Point of Sale</span>
               </TabsTrigger>
               <TabsTrigger 
