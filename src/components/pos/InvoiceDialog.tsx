@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -9,9 +9,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Invoice } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { Printer, FileDown, X } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { usePDF } from 'react-to-pdf';
 
 interface InvoiceDialogProps {
   invoice: Invoice;
@@ -19,12 +20,17 @@ interface InvoiceDialogProps {
 }
 
 const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
+  const invoiceRef = useRef<HTMLDivElement>(null);
+  const { toPDF, targetRef } = usePDF({
+    filename: `invoice-${invoice.invoiceNumber}.pdf`,
+  });
+
   const handlePrint = () => {
     toast({
       title: "Print initiated",
       description: "Sending invoice to printer..."
     });
-    // In a real app, we would implement actual printing functionality here
+    window.print();
   };
 
   const handleExport = () => {
@@ -32,7 +38,7 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
       title: "Export initiated",
       description: "Exporting invoice to PDF..."
     });
-    // In a real app, we would implement PDF export functionality here
+    toPDF();
   };
 
   return (
@@ -42,7 +48,7 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
           <DialogTitle className="text-xl">Invoice #{invoice.invoiceNumber}</DialogTitle>
         </DialogHeader>
         
-        <div className="bg-white p-6 rounded">
+        <div ref={targetRef} className="bg-white p-6 rounded">
           <div className="flex justify-between items-start mb-8">
             <div>
               <h2 className="text-2xl font-bold text-dental-primary mb-1">DENTAL EQUIPMENT INVOICE</h2>
@@ -74,9 +80,9 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
                     <td className="py-3 px-3">{item.code}</td>
                     <td className="py-3 px-3">{item.type}</td>
                     <td className="py-3 px-3">{item.color}</td>
-                    <td className="py-3 px-3 text-right">ج.م {item.price.toFixed(2)}</td>
+                    <td className="py-3 px-3 text-right">{formatCurrency(item.price)}</td>
                     <td className="py-3 px-3 text-right">{item.cartQuantity}</td>
-                    <td className="py-3 px-3 text-right">ج.م {item.subtotal.toFixed(2)}</td>
+                    <td className="py-3 px-3 text-right">{formatCurrency(item.subtotal)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -87,15 +93,15 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
             <div className="bg-muted p-4 rounded w-64">
               <div className="flex justify-between mb-2">
                 <span className="font-medium">Subtotal:</span>
-                <span>ج.م {invoice.total.toFixed(2)}</span>
+                <span>{formatCurrency(invoice.total)}</span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="font-medium">Tax (0%):</span>
-                <span>ج.م 0.00</span>
+                <span>{formatCurrency(0)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>ج.م {invoice.total.toFixed(2)}</span>
+                <span>{formatCurrency(invoice.total)}</span>
               </div>
             </div>
           </div>

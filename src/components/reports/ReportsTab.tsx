@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Select,
   SelectContent,
@@ -16,6 +16,7 @@ import { formatDate } from '@/lib/utils';
 import InventoryValueReport from './InventoryValueReport';
 import LowStockReport from './LowStockReport';
 import { toast } from '@/components/ui/use-toast';
+import { usePDF } from 'react-to-pdf';
 
 const ReportsTab = () => {
   const { inventory } = useAppContext();
@@ -23,13 +24,16 @@ const ReportsTab = () => {
   const [reportType, setReportType] = useState<string>("inventory-value");
   const [fromDate, setFromDate] = useState<Date>(new Date());
   const [toDate, setToDate] = useState<Date>(new Date());
+  const { toPDF, targetRef } = usePDF({
+    filename: `${reportType}-report-${formatDate(new Date()).replace(/,/g, '')}.pdf`,
+  });
   
   const handleExportReport = () => {
     toast({
       title: "Export initiated",
-      description: "Exporting report to Excel..."
+      description: "Exporting report to PDF..."
     });
-    // In a real app, we would implement export functionality here
+    toPDF();
   };
 
   return (
@@ -101,7 +105,7 @@ const ReportsTab = () => {
         </div>
       </div>
       
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div ref={targetRef} className="bg-white p-6 rounded-lg shadow">
         <div className="flex items-center justify-center mb-6">
           <BarChart className="h-6 w-6 mr-2 text-dental-primary" />
           <h3 className="text-lg font-medium">
