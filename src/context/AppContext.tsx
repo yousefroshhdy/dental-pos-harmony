@@ -1,13 +1,15 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { Product, CartItem, Invoice, InventoryFilter } from '@/types';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { Product, CartItem, Invoice, InventoryFilter, Client } from '@/types';
 import { toast } from '@/components/ui/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AppContextType {
   inventory: Product[];
   cart: CartItem[];
   invoices: Invoice[];
   filter: InventoryFilter;
+  clients: Client[];
   setInventory: (inventory: Product[]) => void;
   addToInventory: (product: Product) => void;
   updateInventoryItem: (product: Product) => void;
@@ -20,13 +22,37 @@ interface AppContextType {
   setFilter: (filter: Partial<InventoryFilter>) => void;
   resetFilter: () => void;
   processReturn: (code: string, quantity: number) => void;
+  addClient: (client: Client) => void;
+  updateClient: (client: Client) => void;
+  removeClient: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const loadState = (key: string, defaultValue: any) => {
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved === null) {
+      return defaultValue;
+    }
+    return JSON.parse(saved);
+  } catch (err) {
+    console.error("Failed to load state from localStorage:", err);
+    return defaultValue;
+  }
+};
+
+const saveState = (key: string, value: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.error("Failed to save state to localStorage:", err);
+  }
+};
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  // Enhanced inventory with more realistic dental products
-  const [inventory, setInventory] = useState<Product[]>([
+  // Default inventory with dental products
+  const defaultInventory = [
     { id: '1', code: 'DC001', type: 'Dental Chair', color: 'White', price: 12500, quantity: 5 },
     { id: '2', code: 'DL001', type: 'LED Dental Light', color: 'Silver', price: 3200, quantity: 8 },
     { id: '3', code: 'DU001', type: 'Complete Dental Unit', color: 'White', price: 25000, quantity: 3 },
@@ -47,12 +73,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     { id: '18', code: 'RU001', type: 'Root Canal Treatment Unit', color: 'White', price: 4500, quantity: 3 },
     { id: '19', code: 'CS001', type: 'Cabinet Set', color: 'White/Wood', price: 8500, quantity: 2 },
     { id: '20', code: 'OS001', type: 'Oral Suction Machine', color: 'White', price: 1950, quantity: 7 },
-  ]);
+  ];
   
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Sample clients
+  const defaultClients = [
+    { id: 'c1', name: 'Dr. Ahmed Hassan', phone: '01234567890', email: 'ahmed.hassan@example.com', address: 'Cairo, Egypt' },
+    { id: 'c2', name: 'Dr. Fatma Khalid', phone: '01112345678', email: 'fatma.k@example.com', address: 'Alexandria, Egypt' },
+    { id: 'c3', name: 'Dr. Mohamed Ali', phone: '01023456789', email: 'mohamed.ali@example.com', address: 'Giza, Egypt' },
+  ];
   
-  // Sample invoices for history
-  const [invoices, setInvoices] = useState<Invoice[]>([
+  // Sample invoices
+  const defaultInvoices = [
     {
       invoiceNumber: 'INV-000997',
       date: '2024-05-01T10:30:00.000Z',
@@ -134,17 +165,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ],
       total: 11500
     }
-  ]);
+  ];
   
-  const [nextInvoiceNumber, setNextInvoiceNumber] = useState<number>(1000);
+  // Load state from localStorage or use defaults
+  const [inventory, setInventoryState] = useState<Product[]>(loadState('inventory', defaultInventory));
+  const [cart, setCart] = useState<CartItem[]>(loadState('cart', []));
+  const [invoices, setInvoices] = useState<Invoice[]>(loadState('invoices', defaultInvoices));
+  const [clients, setClients] = useState<Client[]>(loadState('clients', defaultClients));
+  const [nextInvoiceNumber, setNextInvoiceNumber] = useState<number>(loadState('nextInvoiceNumber', 1000));
   const [filter, setFilterState] = useState<InventoryFilter>({
     searchTerm: '',
     type: 'All',
     color: 'All',
   });
 
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    saveState('inventory', inventory);
+  }, [inventory]);
+
+  useEffect(() => {
+    saveState('invoices', invoices);
+  }, [invoices]);
+
+  useEffect(() => {
+    saveState('clients', clients);
+  }, [clients]);
+
+  useEffect(() => {
+    saveState('cart', cart);
+  }, [cart]);
+
+  useEffect(() => {
+    saveState('nextInvoiceNumber', nextInvoiceNumber);
+  }, [nextInvoiceNumber]);
+
+  const setInventory = (newInventory: Product[]) => {
+    setInventoryState(newInventory);
+  };
+
   const addToInventory = (product: Product) => {
-    setInventory([...inventory, product]);
+    setInventoryState([...inventory, product]);
     toast({
       title: "Product added",
       description: "New product has been added to inventory"
@@ -152,7 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const updateInventoryItem = (updatedProduct: Product) => {
-    setInventory(
+    setInventoryState(
       inventory.map(item => 
         item.id === updatedProduct.id ? updatedProduct : item
       )
@@ -164,7 +225,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const removeFromInventory = (id: string) => {
-    setInventory(inventory.filter(item => item.id !== id));
+    setInventoryState(inventory.filter(item => item.id !== id));
     toast({
       title: "Product removed",
       description: "Product has been removed from inventory"
@@ -303,7 +364,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return item;
     });
     
-    setInventory(updatedInventory);
+    setInventoryState(updatedInventory);
     setNextInvoiceNumber(nextInvoiceNumber + 1);
     clearCart();
     
@@ -345,11 +406,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
       quantity: updatedInventory[productIndex].quantity + quantity
     };
     
-    setInventory(updatedInventory);
+    setInventoryState(updatedInventory);
     
     toast({
       title: "Return processed",
       description: `${quantity} units of ${code} returned to inventory`
+    });
+  };
+
+  // Client management functions
+  const addClient = (client: Client) => {
+    setClients([...clients, client]);
+    toast({
+      title: "Client added",
+      description: "New client has been added"
+    });
+  };
+
+  const updateClient = (updatedClient: Client) => {
+    setClients(
+      clients.map(client => 
+        client.id === updatedClient.id ? updatedClient : client
+      )
+    );
+    toast({
+      title: "Client updated",
+      description: "Client information has been updated"
+    });
+  };
+
+  const removeClient = (id: string) => {
+    setClients(clients.filter(client => client.id !== id));
+    toast({
+      title: "Client removed",
+      description: "Client has been removed"
     });
   };
 
@@ -359,6 +449,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cart,
       invoices,
       filter,
+      clients,
       setInventory,
       addToInventory,
       updateInventoryItem,
@@ -370,7 +461,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createInvoice,
       setFilter,
       resetFilter,
-      processReturn
+      processReturn,
+      addClient,
+      updateClient,
+      removeClient
     }}>
       {children}
     </AppContext.Provider>

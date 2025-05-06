@@ -37,7 +37,7 @@ const QuantityDialog = ({ product, onClose }: QuantityDialogProps) => {
           <div className="mb-4">
             <h3 className="font-medium">{product.type} - {product.color}</h3>
             <p className="text-sm text-muted-foreground">Code: {product.code}</p>
-            <p className="text-sm text-muted-foreground">Price: ${product.price.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">Price: ج.م {product.price.toFixed(2)}</p>
             <p className="text-sm text-muted-foreground">Available: {product.quantity}</p>
           </div>
           

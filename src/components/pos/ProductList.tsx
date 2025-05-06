@@ -74,7 +74,7 @@ const ProductList = () => {
                       <TableCell>{product.code}</TableCell>
                       <TableCell>{product.type}</TableCell>
                       <TableCell>{product.color}</TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>ج.م {product.price.toFixed(2)}</TableCell>
                       <TableCell className={product.quantity <= 0 ? "text-dental-danger" : ""}>
                         {product.quantity}
                       </TableCell>

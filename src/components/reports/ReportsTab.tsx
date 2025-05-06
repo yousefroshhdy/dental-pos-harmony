@@ -1,160 +1,181 @@
 
-import React, { useState, useRef } from 'react';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { useAppContext } from '@/context/AppContext';
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { FileDown, BarChart, Check } from "lucide-react";
-import { formatDate } from '@/lib/utils';
+import React, { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import InventoryValueReport from './InventoryValueReport';
 import LowStockReport from './LowStockReport';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { FileDown, Search } from 'lucide-react';
+import { useAppContext } from '@/context/AppContext';
+import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { usePDF } from 'react-to-pdf';
 
 const ReportsTab = () => {
-  const { inventory } = useAppContext();
-  
-  const [reportType, setReportType] = useState<string>("inventory-value");
-  const [fromDate, setFromDate] = useState<Date>(new Date());
-  const [toDate, setToDate] = useState<Date>(new Date());
-  const [exporting, setExporting] = useState(false);
+  const { inventory, invoices } = useAppContext();
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [reportLoading, setReportLoading] = useState(false);
   const { toPDF, targetRef } = usePDF({
-    filename: `${reportType}-report-${formatDate(new Date()).replace(/,/g, '')}.pdf`,
+    filename: 'sales-report.pdf',
   });
   
-  const handleExportReport = async () => {
-    setExporting(true);
-    toast({
-      title: "Export initiated",
-      description: "Exporting report to PDF..."
-    });
+  // Calculate total inventory value
+  const totalInventoryValue = inventory.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // Filter invoices by date range
+  const getFilteredInvoices = () => {
+    if (!startDate && !endDate) return invoices;
     
+    return invoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.date);
+      const start = startDate ? new Date(startDate) : new Date(0);
+      const end = endDate ? new Date(endDate) : new Date();
+      
+      // Set end date to end of day
+      end.setHours(23, 59, 59, 999);
+      
+      return invoiceDate >= start && invoiceDate <= end;
+    });
+  };
+  
+  // Calculate total sales
+  const filteredInvoices = getFilteredInvoices();
+  const totalSales = filteredInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
+  
+  // Generate and download report
+  const handleGenerateReport = async () => {
     try {
+      setReportLoading(true);
       await toPDF();
       toast({
-        title: "Export completed",
-        description: "Report has been exported successfully",
-        icon: <Check className="h-4 w-4 text-green-500" />
+        title: "Report Generated",
+        description: "Sales report has been downloaded successfully."
       });
     } catch (error) {
       toast({
-        title: "Export failed",
-        description: "There was an error exporting the report",
+        title: "Error",
+        description: "Failed to generate report. Please try again.",
         variant: "destructive"
       });
-      console.error("PDF export error:", error);
+      console.error("PDF generation error:", error);
     } finally {
-      setExporting(false);
+      setReportLoading(false);
     }
-  };
-
-  const getReportTitle = () => {
-    return reportType === 'inventory-value' ? 'Inventory Value Report' : 'Low Stock Items Report';
   };
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-dental-dark">Reports</h2>
-        <Button 
-          onClick={handleExportReport} 
-          disabled={exporting}
-          className={exporting ? "opacity-70" : ""}
-        >
-          {exporting ? (
-            <>
-              <span className="animate-spin mr-2">⏳</span>
-              Exporting...
-            </>
-          ) : (
-            <>
-              <FileDown className="mr-2 h-4 w-4" />
-              Export Report
-            </>
-          )}
-        </Button>
+      <h2 className="text-2xl font-bold text-dental-dark dark:text-white font-bebas tracking-wider mb-6">REPORTS & ANALYTICS</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <Card className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
+          <CardHeader>
+            <CardTitle>Total Inventory Value</CardTitle>
+            <CardDescription className="dark:text-gray-400">Current value of all stock</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-sky-500 dark:text-sky-400">{formatCurrency(totalInventoryValue)}</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
+          <CardHeader>
+            <CardTitle>Low Stock Items</CardTitle>
+            <CardDescription className="dark:text-gray-400">Items that need reordering</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-amber-500">
+              {inventory.filter(item => item.quantity < 5).length} items
+            </p>
+          </CardContent>
+        </Card>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
-        <div className="md:col-span-4">
-          <label className="block text-sm font-medium mb-1">Report Type</label>
-          <Select value={reportType} onValueChange={setReportType}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select report type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inventory-value">Inventory Value</SelectItem>
-              <SelectItem value="low-stock">Low Stock Items</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="md:col-span-4">
-          <label className="block text-sm font-medium mb-1">From Date</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
-                {formatDate(fromDate)}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={fromDate}
-                onSelect={(date) => setFromDate(date || new Date())}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        
-        <div className="md:col-span-4">
-          <label className="block text-sm font-medium mb-1">To Date</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
-                {formatDate(toDate)}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={toDate}
-                onSelect={(date) => setToDate(date || new Date())}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+      <div ref={targetRef}>
+        <Card className="mb-6 dark:bg-gray-800 dark:text-white dark:border-gray-700">
+          <CardHeader>
+            <CardTitle>Sales Report</CardTitle>
+            <CardDescription className="dark:text-gray-400">
+              {startDate && endDate ? 
+                `Sales from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}` : 
+                'All time sales data'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="space-y-2">
+                <Label htmlFor="startDate" className="dark:text-gray-300">Start Date</Label>
+                <Input 
+                  id="startDate" 
+                  type="date" 
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate" className="dark:text-gray-300">End Date</Label>
+                <Input 
+                  id="endDate" 
+                  type="date" 
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  onClick={handleGenerateReport}
+                  disabled={reportLoading}
+                  className="bg-sky-500 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-700 w-full"
+                >
+                  <FileDown className="mr-2 h-4 w-4" />
+                  {reportLoading ? "Generating..." : "Export Report"}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-muted dark:bg-gray-700 p-6 rounded-lg">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-1 dark:text-white">Total Sales</h3>
+                  <p className="text-3xl font-bold text-sky-500 dark:text-sky-400">{formatCurrency(totalSales)}</p>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium mb-1 dark:text-white">Invoices</h3>
+                  <p className="text-3xl font-bold text-sky-500 dark:text-sky-400">{filteredInvoices.length}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
-      <div ref={targetRef} className="bg-white p-6 rounded-lg shadow">
-        <div className="flex items-center justify-center mb-6">
-          <BarChart className="h-6 w-6 mr-2 text-dental-primary" />
-          <h3 className="text-lg font-medium">
-            {getReportTitle()} ({formatDate(fromDate)} - {formatDate(toDate)})
-          </h3>
-        </div>
-        
-        {reportType === 'inventory-value' ? (
-          <InventoryValueReport inventory={inventory} />
-        ) : (
-          <LowStockReport inventory={inventory} />
-        )}
-      </div>
+      <Tabs defaultValue="inventory">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger 
+            value="inventory"
+            className="data-[state=active]:bg-sky-500 data-[state=active]:text-white"
+          >
+            Inventory Report
+          </TabsTrigger>
+          <TabsTrigger 
+            value="low-stock"
+            className="data-[state=active]:bg-sky-500 data-[state=active]:text-white"
+          >
+            Low Stock Report
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="inventory">
+          <InventoryValueReport />
+        </TabsContent>
+        <TabsContent value="low-stock">
+          <LowStockReport />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
