@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -13,6 +13,9 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 import { Printer, FileDown, X } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { usePDF } from 'react-to-pdf';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useAppContext } from '@/context/AppContext';
 
 interface InvoiceDialogProps {
   invoice: Invoice;
@@ -24,6 +27,9 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
   const { toPDF, targetRef } = usePDF({
     filename: `invoice-${invoice.invoiceNumber}.pdf`,
   });
+  const { clients } = useAppContext();
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const selectedClient = clients.find(client => client.id === selectedClientId);
 
   const handlePrint = () => {
     toast({
@@ -48,6 +54,23 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
           <DialogTitle className="text-xl">Invoice #{invoice.invoiceNumber}</DialogTitle>
         </DialogHeader>
         
+        <div className="mb-4">
+          <Label htmlFor="client-select">Select Client</Label>
+          <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+            <SelectTrigger id="client-select" className="w-full">
+              <SelectValue placeholder="Select a client" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No client selected</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
         <div ref={targetRef} className="bg-white p-6 rounded">
           <div className="flex justify-between items-start mb-8">
             <div>
@@ -61,6 +84,16 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
               </p>
             </div>
           </div>
+
+          {selectedClient && (
+            <div className="mb-6 p-4 border rounded">
+              <h3 className="font-medium mb-1">Client Information:</h3>
+              <p><span className="font-medium">Name:</span> {selectedClient.name}</p>
+              <p><span className="font-medium">Phone:</span> {selectedClient.phone}</p>
+              {selectedClient.email && <p><span className="font-medium">Email:</span> {selectedClient.email}</p>}
+              {selectedClient.address && <p><span className="font-medium">Address:</span> {selectedClient.address}</p>}
+            </div>
+          )}
 
           <div className="overflow-x-auto mb-6">
             <table className="min-w-full border-collapse">
@@ -108,6 +141,7 @@ const InvoiceDialog = ({ invoice, onClose }: InvoiceDialogProps) => {
 
           <div className="text-sm text-muted-foreground text-center border-t pt-4">
             <p>Thank you for your business!</p>
+            {selectedClient && <p>We appreciate your patronage, {selectedClient.name}!</p>}
           </div>
         </div>
 
