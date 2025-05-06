@@ -170,10 +170,10 @@ const ReportsTab = () => {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="inventory">
-          <InventoryValueReport />
+          <InventoryValueReport inventory={inventory} />
         </TabsContent>
         <TabsContent value="low-stock">
-          <LowStockReport />
+          <LowStockReport inventory={inventory} />
         </TabsContent>
       </Tabs>
     </div>
