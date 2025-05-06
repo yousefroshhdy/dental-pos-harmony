@@ -88,11 +88,11 @@ const LowStockReport = ({ inventory }: LowStockReportProps) => {
                         <td className="py-2 px-4">{item.code}</td>
                         <td className="py-2 px-4">{item.type}</td>
                         <td className="py-2 px-4">{item.color}</td>
-                        <td className="py-2 px-4">${item.price.toFixed(2)}</td>
+                        <td className="py-2 px-4">ج.م {item.price.toFixed(2)}</td>
                         <td className={`py-2 px-4 font-medium ${isCritical ? 'text-dental-danger' : ''}`}>
                           {item.quantity}
                         </td>
-                        <td className="py-2 px-4">${value.toFixed(2)}</td>
+                        <td className="py-2 px-4">ج.م {value.toFixed(2)}</td>
                         <td className="py-2 px-4">
                           {isCritical ? (
                             <div className="flex items-center text-dental-danger font-medium">

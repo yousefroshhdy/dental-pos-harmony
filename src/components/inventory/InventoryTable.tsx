@@ -63,7 +63,7 @@ const InventoryTable = () => {
                   <TableCell>{product.code}</TableCell>
                   <TableCell>{product.type}</TableCell>
                   <TableCell>{product.color}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>ج.م {product.price.toFixed(2)}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
                       <span className={product.quantity <= 3 ? "text-dental-danger font-medium" : ""}>

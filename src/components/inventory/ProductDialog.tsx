@@ -117,7 +117,7 @@ const ProductDialog = ({ product, onClose }: ProductDialogProps) => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="price">Price ($)</Label>
+            <Label htmlFor="price">Price (ج.م)</Label>
             <Input
               id="price"
               name="price"
