@@ -21,8 +21,11 @@ const InventoryTab = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   // Get unique product types and colors for filters
-  const productTypes = ['All', ...new Set(inventory.map(item => item.type))];
-  const productColors = ['All', ...new Set(inventory.map(item => item.color))];
+  const productTypes = ['All', ...new Set(inventory.map(item => item.type))]
+    .filter(type => type !== ''); // Filter out empty strings
+    
+  const productColors = ['All', ...new Set(inventory.map(item => item.color))]
+    .filter(color => color !== ''); // Filter out empty strings
 
   return (
     <div>
@@ -47,7 +50,7 @@ const InventoryTab = () => {
         
         <div className="md:col-span-3">
           <Select 
-            value={filter.type} 
+            value={filter.type || 'All'} 
             onValueChange={(value) => setFilter({ type: value })}
           >
             <SelectTrigger>
@@ -55,7 +58,7 @@ const InventoryTab = () => {
             </SelectTrigger>
             <SelectContent>
               {productTypes.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
+                <SelectItem key={type} value={type || 'unknown'}>{type || 'Unknown'}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -63,7 +66,7 @@ const InventoryTab = () => {
         
         <div className="md:col-span-3">
           <Select 
-            value={filter.color} 
+            value={filter.color || 'All'} 
             onValueChange={(value) => setFilter({ color: value })}
           >
             <SelectTrigger>
@@ -71,7 +74,7 @@ const InventoryTab = () => {
             </SelectTrigger>
             <SelectContent>
               {productColors.map(color => (
-                <SelectItem key={color} value={color}>{color}</SelectItem>
+                <SelectItem key={color} value={color || 'unknown'}>{color || 'Unknown'}</SelectItem>
               ))}
             </SelectContent>
           </Select>
