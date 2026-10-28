@@ -22,10 +22,9 @@ test.describe("routing without a session", () => {
     expect(root.headers()["location"]).toBe("/ar");
   });
 
-  test("/ honours an English browser preference", async ({ request }) => {
-    // next-intl locale detection: documented behaviour, not a bug. Arabic stays the default.
+  test("/ stays Arabic even for an English browser (D-11: Arabic first; locale detection off)", async ({ request }) => {
     const root = await request.get("/", { maxRedirects: 0, headers: { "Accept-Language": "en-US,en;q=0.9" } });
-    expect(root.headers()["location"]).toBe("/en");
+    expect(root.headers()["location"]).toBe("/ar");
   });
 
   test("an Arabic browser opening / lands on the Arabic login page", async ({ page }) => {

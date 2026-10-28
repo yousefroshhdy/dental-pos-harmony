@@ -8,12 +8,17 @@ const config = [
   {
     rules: {
       // Physical left/right utilities break RTL; use logical ones (ms-/me-/ps-/pe-/start-/end-).
+      // Only class contexts: className="…", className={`…`}, cn(…), cva(…).
       "no-restricted-syntax": [
         "error",
-        {
-          selector: "Literal[value=/(^|\\s)-?(ml|mr|pl|pr|left|right)-/]",
+        ...[
+          "JSXAttribute[name.name='className'] Literal",
+          "JSXAttribute[name.name='className'] TemplateElement",
+          "CallExpression[callee.name=/^(cn|cva|clsx)$/] Literal",
+        ].map((ctx) => ({
+          selector: `${ctx}[value=/(^|\\s|:)-?(ml|mr|pl|pr|left|right)-/]`.replace("TemplateElement[value=", "TemplateElement[value.raw="),
           message: "Use logical Tailwind utilities (ms-, me-, ps-, pe-, start-, end-) so layouts work in RTL.",
-        },
+        })),
       ],
     },
   },
