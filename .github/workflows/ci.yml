@@ -1,0 +1,164 @@
+# Honest OS CI (docs/ARCHITECTURE.md §2.6, docs/TESTING.md §1).
+# Every job uses placeholder, non-secret configuration only: CI never holds
+# Supabase, Paymob, WhatsApp or other production credentials.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, "ccr-*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  quality:
+    name: Lint, typecheck, unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4 # version comes from "packageManager" in package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  database:
+    name: Database tests (PostgreSQL 16)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        # Official image: ships the pg_trgm and citext contrib extensions the migrations need.
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Ensure psql client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -q
+            sudo apt-get install -y -q postgresql-client
+          fi
+          psql --version
+          psql -X -d postgres -Atc "select version()"
+      - name: Migrations, seed and pgTAP-style tests
+        run: bash scripts/db-test.sh
+
+  build:
+    name: Build and secret-leak check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # Public placeholders: next build only needs well-formed values.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-for-build-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: No server-only secret names in client bundles
+        # docs/TESTING.md §2.8. Server env names showing up in the browser bundle
+        # means server-only code (src/env.ts serverEnv, src/lib/supabase/admin.ts)
+        # was pulled into a client component.
+        run: |
+          set -euo pipefail
+          if [[ -z "$(find .next/static -type f -name '*.js' -print -quit)" ]]; then
+            echo "::error::.next/static has no JavaScript; the build output is not what this check expects"
+            exit 1
+          fi
+          pattern='SUPABASE_SERVICE_ROLE_KEY|service_role|CRON_SECRET|OUTBOX_SIGNING_SECRET'
+          if grep -rnoE "$pattern" .next/static; then
+            echo "::error::Server-only secret names found in .next/static (client bundles)"
+            exit 1
+          fi
+          echo "OK: no server-only secret names in .next/static"
+      - name: Upload build for e2e
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: |
+            .next
+            !.next/cache
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  e2e:
+    name: End-to-end (Playwright)
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-for-build-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium webkit
+      - name: Run Playwright
+        # playwright.config.ts starts `next start` on port 3100 with the placeholder env above.
+        run: pnpm e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

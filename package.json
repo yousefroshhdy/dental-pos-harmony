@@ -17,6 +17,8 @@
     "test:watch": "vitest",
     "test:db": "bash scripts/db-test.sh",
     "e2e": "playwright test",
+    "e2e:chromium": "playwright test --project=mobile-android --project=desktop-chrome",
+    "e2e:install": "playwright install --with-deps chromium webkit",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
