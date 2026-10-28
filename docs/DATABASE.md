@@ -1,9 +1,34 @@
 # Database Architecture — Honest OS
 
-> Status: **Draft schema validated locally; not yet migrated** · Phase 1 deliverable #4 · Last updated: 2026-10-28
+> Status: **Migrations implemented and tested locally (PostgreSQL 16); not yet applied to a Supabase project** · Last updated: 2026-10-28
 >
-> Source of truth for table definitions: [`docs/database/draft/10_schema_draft.sql`](database/draft/10_schema_draft.sql)
-> Invariant tests: [`docs/database/draft/90_smoke_test.sql`](database/draft/90_smoke_test.sql), **45/45 passing on PostgreSQL 16.15** (2026-10-28, against a Supabase stand-in `00_supabase_stub.sql`). Run instructions are in §9.
+> **Source of truth:** [`supabase/migrations/`](../supabase/migrations/), applied in filename order.
+> **Tests:** [`supabase/tests/database/`](../supabase/tests/database/), in pgTAP syntax. Run with `pnpm test:db` (local) or `supabase test db` (real pgTAP).
+> The Phase 1 draft in `docs/database/draft/` is kept as history only and is no longer maintained.
+
+| Migration | Contents |
+|-----------|----------|
+| `…000100_extensions_schemas_helpers` | `extensions` schema (pg_trgm, citext), domain schemas, shared helpers (`set_updated_at`, `forbid_mutation`, `distance_m`, `phone_e164`, `money`) |
+| `…000200_core` | governorates, departments, offices, territories (+coverage), employees, employee_territories, user_profiles, system_settings, gapless document numbering |
+| `…000300_catalog` | brands, categories, products, variants, product_costs (restricted), price lists |
+| `…000400_inventory` | warehouses, lots, serials, **movements ledger** + balance trigger, transfers, goods receipts |
+| `…000500_authz` | permissions, roles, role_permissions, user_roles, overrides, authz helper functions, owner safeguards |
+| `…000600_crm_work_field` | customers, contacts, assignments, opportunities, activities, customer price lists, tasks, visits, location events |
+| `…000700_sales` | discount rules, orders, items, status history, transitions, reservations, fulfillments, returns |
+| `…000800_finance` | invoices (immutable), credit notes, payments, allocations, AR ledger, balance views, collection tasks |
+| `…000900_perf` | KPI definitions/targets/results, commission plans/rules/periods/entries/adjustments |
+| `…001000_workflow` | workflow definitions/rules/stages, approval requests/steps, delegations |
+| `…001100_audit_notify_integration` | audit log + security events (append-only), audit triggers, notifications, outbox, inbound webhooks, external refs |
+| `…001200_commands` | `api.submit_order`, `api.visit_check_in`, `api.post_inventory_adjustment`, `api.grant_role`, price resolution |
+| `…001300_rls_grants` | RLS on every table, read grants, policies |
+| `…001400_platform_admin` | `api.my_context`, employees/users, suspension, roles/permissions with grant ceiling, notifications, owner bootstrap, admin read views, audit readers |
+| `…001500_reference_data` | governorates, regions, specialties, brands, categories, permission catalogue, system roles + grants, settings, order state machine, workflows, KPI catalogue, commission plan draft |
+
+**Local test harness.** This build environment has no Docker and cannot install pgTAP, so `scripts/db-test.sh` runs the migrations on plain PostgreSQL 16 with two test-only files:
+- `scripts/db/local_supabase_stub.sql` provides the Supabase roles, `auth.users` and `auth.uid()`.
+- `scripts/db/local_pgtap_shim.sql` provides the pgTAP functions the tests use.
+
+The same test files run unchanged under real pgTAP on Supabase. Test helpers and fixtures live in `supabase/seed.sql`, which runs locally and in CI and never in production.
 
 ---
 
@@ -294,21 +319,27 @@ erDiagram
 
 Audit rows are readable only with `audit.log.read` (owner/admin). The owner's **Access review** screen shows permission changes and security events.
 
-## 9. How to run the draft validation
+## 9. How to run the database tests
 
 ```bash
-# PostgreSQL 16 local server (no Supabase needed)
-createdb honest_draft
-psql -d honest_draft -v ON_ERROR_STOP=1 \
-  -f docs/database/draft/00_supabase_stub.sql \
-  -f docs/database/draft/10_schema_draft.sql \
-  -f docs/database/draft/90_smoke_test.sql
-# Expect 45 "PASS" notices and "SMOKE TEST COMPLETE".
+# Any PostgreSQL 16 server you can reach as a superuser (no Supabase needed):
+PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres pnpm test:db
+# → fresh database, stub, shim, all migrations, seed, then every *.test.sql file;
+#   exits non-zero on any "not ok", unmet plan, or SQL error.
+
+# On a Supabase stack (real pgTAP):
+supabase start && supabase db reset && supabase test db
 ```
 
-In Phase 2 the draft is split into migrations and the smoke test into pgTAP files under `supabase/tests/`. Those then run on a real local Supabase stack (`supabase start`), which replaces the stub.
+**Rules for writing migrations** (enforced by tests where possible):
+- Never edit an applied migration. Add a new one (`create or replace` is fine for functions).
+- Every migration that creates `api` functions ends with `revoke execute on all functions in schema api from public; grant execute on all functions in schema api to authenticated;`. Test 08 fails if `anon` can execute any `api` function. Schema-scoped `ALTER DEFAULT PRIVILEGES` cannot revoke PostgreSQL's global PUBLIC execute default; we learned this the hard way.
+- Hook and internal functions (`wf.on_decided_*`, retention jobs, `core.bootstrap_owner`) are revoked from `public`.
+- New tables get RLS enabled, a select policy and a `grant select` to `authenticated`. Never `insert/update/delete` grants on domain tables.
+- **Never grant `authenticated` access to `auth.users`.** Supabase applies no RLS there, so any grant leaks every user's email.
 
-**Phase 2 verification items:**
-- Confirm the Supabase `postgres` role's RLS behaviour for table-owner functions (expected: owner bypasses non-forced RLS).
-- Confirm `auth.uid()` semantics match the stub.
-- Confirm pg_cron/pg_net availability on the chosen plan.
+**Open verification items (need a real Supabase project, R-17):**
+- RLS behaviour for table-owner `SECURITY DEFINER` functions. Expected: the owner bypasses non-forced RLS.
+- `auth.uid()` semantics match the stub.
+- pg_cron/pg_net availability on the chosen plan.
+- PostgreSQL 17 compatibility (`config.toml` targets 17; local tests run on 16).

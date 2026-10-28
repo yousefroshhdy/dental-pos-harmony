@@ -22,6 +22,9 @@ test-results/
 supabase/.branches/
 supabase/.temp/
 
+# local agent worktrees
+.claude/worktrees/
+
 # misc
 .DS_Store
 *.log
