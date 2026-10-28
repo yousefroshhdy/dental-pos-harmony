@@ -4,8 +4,9 @@ Working rules and context for AI-assisted development of **Honest OS**, the busi
 
 ## Current state
 
-- **Phase 1 (architecture), awaiting owner approval.** No application code exists yet. **Do not start Phase 2 (scaffolding, migrations, features) until the owner approves D-04 in `docs/DECISIONS.md`.**
-- The draft schema in `docs/database/draft/` is an architecture artefact, not a migration. It passes its smoke test (45/45) on local PostgreSQL 16 with a Supabase stub.
+- **Phase 2 (foundation) in progress.** The owner delegated the open decisions on 2026-10-28; working decisions are in `docs/DECISIONS.md` Part A. D-01, D-02, D-03, D-05 and D-12 still need facts and gate later phases. **No real personal data until D-03 legal review clears it.**
+- Schema source of truth is now `supabase/migrations/`. `docs/database/draft/` is the historical Phase 1 artefact; do not edit it.
+- Progress is tracked in `docs/ROADMAP.md` §1.
 
 ## Document map (keep in sync with code, in the same PR)
 

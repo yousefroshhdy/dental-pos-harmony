@@ -1,0 +1,108 @@
+{
+  "app": {
+    "name": "Honest OS",
+    "tagline": "The operating system of Honest®"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "search": "Search",
+    "loading": "Loading…",
+    "none": "Nothing here yet",
+    "yes": "Yes",
+    "no": "No",
+    "reason": "Reason",
+    "status": "Status",
+    "actions": "Actions",
+    "language": "العربية"
+  },
+  "nav": {
+    "home": "Today",
+    "users": "Users",
+    "roles": "Roles & permissions",
+    "security": "Security events",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "title": "Sign in",
+    "subtitle": "Use the work email your administrator registered.",
+    "email": "Work email",
+    "password": "Password",
+    "submit": "Sign in",
+    "magicLink": "Email me a sign-in link",
+    "magicLinkSent": "If this email is registered, a sign-in link is on its way.",
+    "invalid": "Email or password is incorrect.",
+    "inactiveTitle": "Your account is not active",
+    "inactiveBody": "Your login exists but is not linked to an active employee, or it has been suspended. Contact your administrator."
+  },
+  "home": {
+    "greeting": "Hello, {name}",
+    "noRoles": "You have no roles yet. An administrator must assign one before you can use Honest OS.",
+    "yourAccess": "Your access",
+    "permissionCount": "{count, plural, =0 {No permissions} one {# permission} other {# permissions}}",
+    "owner": "Owner: full access"
+  },
+  "admin": {
+    "users": {
+      "title": "Users",
+      "employeeNo": "Employee no.",
+      "name": "Name",
+      "jobTitle": "Job title",
+      "email": "Email",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "statusActive": "Active",
+      "statusSuspended": "Suspended",
+      "statusDisabled": "Disabled"
+    },
+    "roles": {
+      "title": "Roles & permissions",
+      "code": "Code",
+      "name": "Name",
+      "permissions": "Permissions",
+      "system": "System",
+      "ownerNote": "The owner role always has every permission and cannot be edited.",
+      "permission": "Permission",
+      "scope": "Scope",
+      "limit": "Limit",
+      "grant": "Grant",
+      "notGranted": "Not granted",
+      "back": "All roles",
+      "newRole": "New role",
+      "create": "Create role"
+    },
+    "security": {
+      "title": "Security events",
+      "when": "When",
+      "event": "Event",
+      "severity": "Severity",
+      "details": "Details"
+    }
+  },
+  "scopes": {
+    "own": "Own",
+    "team": "Team",
+    "territory": "Territory",
+    "department": "Department",
+    "warehouse": "Warehouse",
+    "all": "All"
+  },
+  "errors": {
+    "PERMISSION_DENIED": "You don't have permission to do that.",
+    "ESCALATION_BLOCKED": "You can't grant access you don't hold yourself.",
+    "OWNER_ONLY": "Only an owner can do that.",
+    "SELF_GRANT_FORBIDDEN": "You can't change your own access.",
+    "SELF_SUSPEND_FORBIDDEN": "You can't suspend yourself.",
+    "LAST_OWNER": "At least one active owner must remain.",
+    "OWNER_ROLE_PROTECTED": "The owner role can't be changed.",
+    "NOT_FOUND": "That record no longer exists.",
+    "INVALID_STATE": "That action isn't possible in the current state.",
+    "VALIDATION": "Please check the values you entered.",
+    "DUPLICATE": "That already exists.",
+    "CONFLICT": "Someone else changed this record. Reload and try again.",
+    "REASON_REQUIRED": "Please give a reason.",
+    "UNAVAILABLE": "The service is temporarily unavailable. Please try again.",
+    "UNKNOWN": "Something went wrong. Reference: {requestId}"
+  }
+}

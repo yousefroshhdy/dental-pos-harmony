@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* Honest OS design tokens. Light by default, dark via prefers-color-scheme.
+   Logical properties only (RTL-safe); see eslint rule in eslint.config.mjs. */
+:root {
+  --background: oklch(0.985 0.003 247);
+  --foreground: oklch(0.21 0.03 264);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.955 0.006 247);
+  --muted-foreground: oklch(0.5 0.02 257);
+  --border: oklch(0.91 0.01 252);
+  --primary: oklch(0.45 0.13 240);
+  --primary-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.55 0.2 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.55 0.13 155);
+  --warning: oklch(0.7 0.15 75);
+  --ring: oklch(0.6 0.13 240);
+  --radius: 0.625rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.17 0.02 264);
+    --foreground: oklch(0.96 0.005 247);
+    --card: oklch(0.21 0.02 264);
+    --muted: oklch(0.26 0.02 264);
+    --muted-foreground: oklch(0.7 0.02 257);
+    --border: oklch(0.3 0.02 264);
+    --primary: oklch(0.68 0.13 240);
+    --primary-foreground: oklch(0.17 0.02 264);
+    --ring: oklch(0.68 0.13 240);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --font-sans: "Segoe UI", Tahoma, "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+* {
+  border-color: var(--border);
+}

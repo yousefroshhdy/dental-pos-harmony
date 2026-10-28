@@ -3,12 +3,30 @@
 > Architecture Decision Records (ADRs) plus the **open decisions that need the owner** (deliverable #10). · Last updated: 2026-10-28
 >
 > ADR status values: **Proposed** (awaiting owner approval) → **Accepted** → **Superseded**.
+> As of 2026-10-28, all ADRs in Part B are **Accepted** (owner delegated, D-04). ADR-020, ADR-022 and ADR-023 remain conditional on D-03, D-05 and D-01 respectively.
 
 ---
 
-## Part A — Critical unresolved decisions (owner input required)
+## Part A — Critical decisions
 
-Listed in order of how much they block. For each: options, recommendation, and what happens if it is not answered.
+On 2026-10-28 the owner delegated these decisions ("do whatever the right things and recommend the right thing for now"). Each recommendation below is therefore **adopted as the working decision**. Items marked **needs facts** still depend on information only Honest® can supply. Their working decision is designed so that the facts can change it without rework, and the phase that depends on them will not go live until they are confirmed.
+
+| ID | Working decision (adopted 2026-10-28) | Status |
+|----|----------------------------------------|--------|
+| D-01 | Honest OS issues invoices and owns operational AR; GL stays with accounting | Adopted, **needs facts** (U-03) before Phase 4 |
+| D-02 | Prefer sending invoices to an existing ETA-capable accounting system; otherwise direct ETA integration in Phase 4 | Adopted, **needs facts** before Phase 4 |
+| D-03 | Supabase eu-central-1 + Vercel fra1; **synthetic data only** until a PDPL opinion clears real personal data | Adopted, **legal review required** before production data |
+| D-04 | Stack and architecture as proposed (ADR-001…ADR-005) | **Accepted**. Phase 2 started. |
+| D-05 | Collected, VAT-exclusive, rep on the order, 90-day clawback, no threshold; implants 5%, burs/instruments 1.5% | Adopted, confirm before Phase 4 |
+| D-06 | Reps hold no stock in the MVP (rep stock warehouses remain supported) | Adopted |
+| D-07 | Honest OS is the stock and price master; Shopify receives stock and price, and sends orders | Adopted, confirm before Phase 6 |
+| D-08 | Two owner accounts with MFA; company-held GitHub/Supabase/Vercel orgs | Adopted, **owner action** |
+| D-09 | Over-limit orders route to approval | Adopted |
+| D-10 | Make.com for non-critical automations | Adopted |
+| D-11 | Arabic default (RTL), Western digits | Adopted |
+| D-12 | 14% VAT on all products until the accountant says otherwise | Adopted, confirm before Phase 4 |
+
+Details of each decision (options considered and the recommendation's reasoning) follow.
 
 ### D-01 · Who owns invoicing and the general ledger? **Blocks Phase 4**
 - **Options:**
@@ -114,3 +132,6 @@ Listed in order of how much they block. For each: options, recommendation, and w
 | Date | Decision | By |
 |------|----------|----|
 | 2026-10-28 | Repository cleared; Honest OS starts from scratch on branch `ccr-cd8ec6c2-y28xig` | Owner (request) |
+| 2026-10-28 | Owner delegated D-01…D-12 to the recommended options (Part A table); D-04 accepted, Phase 2 started | Owner (delegation) |
+| 2026-10-28 | DB tests are written in pgTAP syntax. Locally they run against a test-only pgTAP-compatible shim on plain PostgreSQL 16, because this build environment cannot install pgTAP or run Docker. On Supabase they run with real pgTAP via `supabase test db`. | Tech lead |
+| 2026-10-28 | Package manager: pnpm. Node 22 LTS. | Tech lead |
