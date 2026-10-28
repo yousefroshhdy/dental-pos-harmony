@@ -4,7 +4,7 @@ import nextTs from "eslint-config-next/typescript";
 const config = [
   ...nextVitals,
   ...nextTs,
-  { ignores: [".next/**", "node_modules/**", "docs/**", "playwright-report/**", "test-results/**", "next-env.d.ts"] },
+  { ignores: [".next/**", "node_modules/**", "docs/**", ".claude/**", "playwright-report/**", "test-results/**", "next-env.d.ts"] },
   {
     rules: {
       // Physical left/right utilities break RTL; use logical ones (ms-/me-/ps-/pe-/start-/end-).

@@ -42,7 +42,11 @@ test.describe("login ?next parameter", () => {
     expect(new URL(page.url()).origin).toBe(new URL(baseURL!).origin);
     await expect(page).toHaveURL(/\/ar\/login\?next=/);
     await expect(page.locator(nextField)).toHaveValue("//evil.com");
-    await expect(page.locator('a[href*="evil.com"], meta[http-equiv="refresh" i]')).toHaveCount(0);
+    // No link may *point to* the external host. Same-origin links may carry the raw
+    // ?next= (the locale switcher keeps the query); safeNextPath validates it server-side.
+    await expect(
+      page.locator('a[href^="//"], a[href^="http://evil"], a[href^="https://evil"], meta[http-equiv="refresh" i]'),
+    ).toHaveCount(0);
   });
 
   test("an absolute https target is not followed either", async ({ page, baseURL }) => {
