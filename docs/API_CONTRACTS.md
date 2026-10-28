@@ -1,0 +1,120 @@
+# API Contracts — Honest OS
+
+> Status: **Specified; 4 commands prototyped in the draft schema** (`api.submit_order`, `api.visit_check_in`, `api.post_inventory_adjustment`, `api.grant_role`) · Last updated: 2026-10-28
+
+## 1. Conventions
+
+- **Transport:** Next.js Server Actions → `supabase.rpc('<command>', args)` with the user's session. PostgREST exposes only the `api` schema.
+- **Naming:** `api.<verb>_<noun>` for commands, `api.v_<noun>` for read views (`security_invoker = true`).
+- **Idempotency:** every command that a device can retry takes `p_client_ref uuid` or `p_idempotency_key text`. A replay returns the original result and never applies twice.
+- **Errors:** `CODE: message` with SQLSTATE (see `docs/ARCHITECTURE.md` §8.1). The TS wrapper turns them into `AppError`.
+- **Money and quantities:** money as numeric strings in JSON (`"2234.40"`), quantities as integers. Clients **never** send prices, totals, tax or user ids. The server derives them.
+- **Time:** ISO-8601 with offset. Device-captured times are labelled `captured_at`. The server stamps `received_at`.
+
+### TS wrapper (Phase 2)
+
+```ts
+// src/lib/command.ts — every server action goes through this
+export async function command<I, O>(name: string, schema: ZodSchema<I>, input: unknown): Promise<Result<O>> {
+  const args = schema.parse(input);                       // 422 on invalid input
+  const supabase = await createServerClient();             // user JWT, never service role
+  const requestId = headers().get('x-request-id')!;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await supabase.rpc(name, args, { head: false });
+    if (!error) return ok(data as O);
+    const appErr = toAppError(error, requestId);            // maps SQLSTATE + CODE prefix
+    if (!appErr.retryable) return fail(appErr);             // 40001/40P01 are retryable
+    await sleep(100 * 2 ** attempt + Math.random() * 100);
+  }
+  return fail(AppError.unavailable(requestId));
+}
+```
+
+## 2. Commands (MVP)
+
+| Command | Permission | Input (beyond ids) | Output | Notable errors |
+|---------|------------|--------------------|--------|----------------|
+| `api.create_customer` | `crm.customer.create` | names, kind, specialty, phones, email, address, governorate, city, lat/lng?, tags, `p_client_ref` | `{customer_id, customer_no, territory_id, warnings[]}` | `DUPLICATE_CUSTOMER{existing_id}`, `PERMISSION_DENIED` |
+| `api.update_customer` | `crm.customer.update` (scope) | changed fields, `p_version` | `{customer_id, version}` | `CONFLICT{current}`, `NOT_FOUND` |
+| `api.request_customer_reassignment` | `crm.customer.reassign` or request-only | customer, to_employee, reason | `{approval_request_id}` | |
+| `api.create_opportunity` / `api.move_opportunity` | `crm.opportunity.manage` | stage, value, close date, lost_reason | `{opportunity_id, stage}` | `INVALID_STATE` |
+| `api.create_task` / `api.complete_task` | `work.task.manage` (own) | title, due_at, customer?, kind | `{task_id}` | |
+| `api.visit_check_in` ✅ | `field.visit.create` | `p_visit_id` (client uuid), customer, lat, lng, accuracy_m, captured_at, device | `{visit_id, verification_status, distance_m, anomaly_flags[], replayed}` | `PERMISSION_DENIED` (customer out of scope) |
+| `api.visit_check_out` | `field.visit.create` | visit, outcome, notes, lat/lng, next_follow_up? | `{visit_id, status}` | `INVALID_STATE` |
+| `api.request_visit_exception` | `field.visit.exception.request` | visit, reason, attachment path | `{approval_request_id}` | |
+| `api.save_order_draft` | `sales.order.create` | customer, visit?, lines[{variant_id, qty, requested_discount_pct}], notes, `p_client_ref`, `p_version` | `{order_id, version, indicative_total}` | `CONFLICT` |
+| `api.submit_order` ✅ | `sales.order.submit` (+ `sales.discount.apply` limit) | order | `{order_id, status: submitted\|pending_approval, total}` | `INVALID_STATE`, `NO_PRICE`, `EMPTY_ORDER`, `CREDIT_LIMIT` (Phase 3) |
+| `api.decide_approval` | `wf.approval.decide.<wf>` (limit) | request, decision, comment | `{request_id, status, next_stage?}` | `SELF_APPROVAL`, `LIMIT_EXCEEDED`, `INVALID_STATE` |
+| `api.reserve_order` | `sales.order.fulfil` or system on approval | order, warehouse? | `{reservations[], backordered[]}` | `INSUFFICIENT_STOCK` |
+| `api.post_fulfillment` | `sales.order.fulfil` (warehouse scope) | order, lines[{order_item_id, lot_id, qty, serial_id?}], `p_idempotency_key` | `{fulfillment_id, order_status}` | `INSUFFICIENT_STOCK`, `LOT_MISMATCH` |
+| `api.cancel_order` | `sales.order.cancel` (+ workflow after approval) | order, reason | `{order_id, status}` | `INVALID_STATE` |
+| `api.create_return` | `sales.return.create` | order, lines[{order_item_id, lot_id, qty, condition}], reason | `{return_id, status}` | `QTY_EXCEEDS_FULFILLED` |
+| `api.post_goods_receipt` | `inventory.receipt.post` (W) | receipt id | `{movements[]}` | |
+| `api.create_transfer` / `api.receive_transfer` | `inventory.transfer.*` (W) | lines | `{transfer_id, status}` | `INSUFFICIENT_STOCK` |
+| `api.post_inventory_adjustment` ✅ | `inventory.adjustment.post` (W, limit units) | warehouse, variant, lot, qty (±), reason, `p_idempotency_key` | `movement_id` | `APPROVAL_REQUIRED`, `REASON_REQUIRED` |
+| `api.issue_invoice` | `finance.invoice.issue` | order (from fulfilled qty) | `{invoice_id, invoice_no, total, eta_status}` | `NOTHING_TO_INVOICE` |
+| `api.issue_credit_note` | `finance.credit_note.issue` (+ workflow) | invoice, amount/lines, reason, return? | `{credit_note_id}` | `EXCEEDS_INVOICE_OPEN_AMOUNT` |
+| `api.record_payment` | `finance.payment.record` (own/team) | customer, method, amount, received_at, reference, cheque_due_date?, `p_client_ref` | `{payment_id, payment_no, status: pending_verification}` | |
+| `api.confirm_payment` / `api.bounce_payment` | `finance.payment.confirm` | payment | `{payment_id, status}` | `INVALID_STATE` |
+| `api.allocate_payment` | `finance.payment.allocate` (limit) | payment, allocations[{invoice_id, amount}] | `{allocations[], payment_unallocated, invoices[{id, open_amount, status}]}` | `OVER_ALLOCATION`, `INVOICE_CLOSED` |
+| `api.reverse_allocation` | `finance.payment.reverse` | allocation, reason | `{reversal_id}` | |
+| `api.grant_role` ✅ / `api.revoke_role` | `admin.role.assign` | user, role, bindings, validity, reason | `{user_role_id}` | `ESCALATION_BLOCKED`, `OWNER_ONLY`, `SELF_GRANT_FORBIDDEN`, `LAST_OWNER` |
+| `api.suspend_user` | `admin.user.suspend` | user, reason | `{user_id, status}` | `LAST_OWNER` |
+| `api.set_kpi_target` | `perf.target.manage` | kpi, assignee, period, target, weight | `{target_id}` | |
+| `api.calculate_commissions` | `perf.commission.calculate` | period | `{calc_run_id, entries, total}` | `PERIOD_LOCKED` |
+| `api.approve_commission_period` | `wf.approval.decide.perf.commission` | period | `{period_id, status}` | |
+| `api.mark_notification_read` | self | ids[] | `{count}` | |
+
+✅ = prototyped and tested in the draft.
+
+## 3. Read views (MVP)
+
+`api.v_my_today` (planned visits, due tasks), `api.v_customers` (masked balance column), `api.v_customer_timeline`, `api.v_catalog` (variant, product, brand, price for caller's default list, **no cost**), `api.v_stock_available` (available qty only for reps), `api.v_stock_detail` (lot-level, inventory roles), `api.v_orders`, `api.v_order_detail`, `api.v_approvals_inbox`, `api.v_invoices`, `api.v_aging`, `api.v_kpi_scorecard`, `api.v_commission_statement`, `api.v_notifications`. Every view is `security_invoker`, so RLS applies.
+
+## 4. HTTP endpoints (Next.js route handlers)
+
+| Endpoint | Caller | Auth | Behaviour |
+|----------|--------|------|-----------|
+| `POST /api/webhooks/paymob` | Paymob | HMAC (Paymob HMAC secret, computed over Paymob's documented field order; verify against current Paymob docs at integration time) | Verify → `insert integration.inbound_webhooks` (unique provider + transaction id) → `api.ingest_paymob_event` → 200 fast. Invalid signature → 401 + security event. |
+| `POST /api/webhooks/shopify` | Shopify | `X-Shopify-Hmac-Sha256` (base64 HMAC-SHA256 of raw body with app secret) | Same pattern. Handles `orders/create`, `orders/paid`, `products/update` (log only; Honest OS wins). |
+| `GET/POST /api/webhooks/whatsapp` | Meta | GET: `hub.verify_token` challenge. POST: `X-Hub-Signature-256` (HMAC-SHA256 with app secret) | Delivery statuses + inbound replies → `notify` / CRM activity |
+| `POST /api/cron/outbox` | Vercel Cron (every 1–5 min) | `Authorization: Bearer $CRON_SECRET` | Claim ≤ 100 rows `FOR UPDATE SKIP LOCKED` → deliver → update status/backoff |
+| `POST /api/cron/kpi-snapshot` | Vercel Cron nightly 02:00 Cairo | `CRON_SECRET` | Calls `api.snapshot_kpis(period)` (or pg_cron directly) |
+| `POST /api/cron/overdue-scan` | daily 07:00 Cairo | `CRON_SECRET` | Overdue invoices → collection tasks + outbox `invoice.overdue` |
+
+## 5. Outbound event contract (outbox → Make.com / consumers)
+
+```http
+POST https://hook.eu2.make.com/<scenario-hook-id>
+Content-Type: application/json
+X-Honest-Event: order.pending_approval
+X-Honest-Event-Id: 6f1c…   (outbox.id — consumers dedupe on this)
+X-Honest-Timestamp: 1767225600
+X-Honest-Signature: sha256=<hex HMAC-SHA256(secret, timestamp + "." + raw_body)>
+```
+
+```json
+{
+  "id": "6f1c2b9e-…",
+  "type": "order.pending_approval",
+  "occurred_at": "2026-11-02T09:15:00+02:00",
+  "version": 1,
+  "data": {
+    "order_id": "…",
+    "order_no": "SO-2026-000123",
+    "customer": {"id": "…", "display_name": "Dr. Ahmed Clinic", "territory": "CAI-NASR"},
+    "rep": {"employee_id": "…", "name": "…"},
+    "total": "2234.40",
+    "currency": "EGP",
+    "reason": "discount above limit",
+    "approve_url": "https://app.honesteg.co/ar/approvals/…"
+  }
+}
+```
+
+Rules:
+1. Payloads carry the **minimum** data the consumer needs. There are no costs, no national IDs and no GPS coordinates, and phone numbers appear only when the consumer must send a message.
+2. Consumers must reject signatures older than 5 minutes and dedupe on `X-Honest-Event-Id`.
+3. Any event schema change bumps `version`. Consumers ignore unknown fields.
+
+Event catalogue (MVP): `customer.created`, `order.submitted`, `order.pending_approval`, `order.approved`, `order.rejected`, `order.fulfilled`, `invoice.issued`, `invoice.overdue`, `payment.recorded`, `payment.confirmed`, `stock.below_reorder`, `lot.expiring`, `task.overdue`, `kpi.below_threshold`, `visit.exception_requested`, `report.daily_sales`, `report.weekly_kpi`.
