@@ -64,16 +64,41 @@ async function command(name: string, args: Record<string, unknown>, ...pages: (k
 // Users
 // ---------------------------------------------------------------------------
 
+/**
+ * Defence in depth for suspension. The database already denies a suspended
+ * user on every request; banning the Auth user additionally stops refresh
+ * tokens, ending live sessions. Runs only AFTER the DB command succeeded (which
+ * re-checked admin.user.suspend), and is best-effort: a failure is logged, not
+ * shown as an error, because access is already blocked.
+ */
+async function setAuthBan(userId: string, banned: boolean): Promise<void> {
+  try {
+    const { error } = await createServiceClient().auth.admin.updateUserById(userId, {
+      ban_duration: banned ? "876000h" : "none",
+    });
+    if (error) throw error;
+  } catch (err) {
+    log("error", banned ? "admin.auth_ban_failed" : "admin.auth_unban_failed", {
+      requestId: await getRequestId(),
+      detail: err instanceof Error ? err.message : "unknown",
+    });
+  }
+}
+
 export async function suspendUser(_prev: ActionState, form: FormData): Promise<ActionResult> {
   const parsed = suspendUserSchema.safeParse(formToObject(form));
   if (!parsed.success) return invalid(parsed.error);
-  return command("suspend_user", { p_user_id: parsed.data.user_id, p_reason: parsed.data.reason }, "users", "user");
+  const result = await command("suspend_user", { p_user_id: parsed.data.user_id, p_reason: parsed.data.reason }, "users", "user");
+  if (result.ok) await setAuthBan(parsed.data.user_id, true);
+  return result;
 }
 
 export async function reactivateUser(_prev: ActionState, form: FormData): Promise<ActionResult> {
   const parsed = reactivateUserSchema.safeParse(formToObject(form));
   if (!parsed.success) return invalid(parsed.error);
-  return command("reactivate_user", { p_user_id: parsed.data.user_id, p_reason: parsed.data.reason }, "users", "user");
+  const result = await command("reactivate_user", { p_user_id: parsed.data.user_id, p_reason: parsed.data.reason }, "users", "user");
+  if (result.ok) await setAuthBan(parsed.data.user_id, false);
+  return result;
 }
 
 export async function grantRole(_prev: ActionState, form: FormData): Promise<ActionResult> {

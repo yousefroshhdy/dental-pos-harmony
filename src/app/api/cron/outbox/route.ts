@@ -18,9 +18,9 @@ const noStore = { "Cache-Control": "no-store" };
 async function handle(request: Request): Promise<NextResponse> {
   const requestId = request.headers.get("x-vercel-id") ?? crypto.randomUUID();
 
-  let env: ReturnType<typeof serverEnv>;
+  let env: ReturnType<typeof serverEnv<"CRON_SECRET" | "OUTBOX_SIGNING_SECRET">>;
   try {
-    env = serverEnv();
+    env = serverEnv("CRON_SECRET", "OUTBOX_SIGNING_SECRET");
   } catch (err) {
     log("error", "outbox.misconfigured", { request_id: requestId, error: err instanceof Error ? err.message : "unknown" });
     return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });

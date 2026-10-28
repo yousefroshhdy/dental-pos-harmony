@@ -41,12 +41,22 @@ export function publicEnv(): PublicEnv {
   return cachedPublic;
 }
 
-let cachedServer: ServerEnv | undefined;
-export function serverEnv(): ServerEnv {
+type ServerKey = keyof ServerEnv;
+
+/**
+ * Validates and returns only the server variables a caller needs, so e.g. the
+ * invite flow (service key only) is not blocked by a missing CRON_SECRET.
+ */
+export function serverEnv<K extends ServerKey>(...keys: K[]): Pick<ServerEnv, K> {
   if (typeof window !== "undefined") throw new Error("serverEnv() must never run in the browser");
-  if (cachedServer) return cachedServer;
-  const parsed = serverSchema.safeParse(process.env);
-  if (!parsed.success) throw new Error(`Invalid server environment: ${format(parsed.error)}`);
-  cachedServer = parsed.data;
-  return cachedServer;
+  const wanted = keys.length ? keys : (Object.keys(serverSchema.shape) as K[]);
+  const out: Partial<ServerEnv> = {};
+  const problems: string[] = [];
+  for (const key of wanted) {
+    const parsed = serverSchema.shape[key].safeParse(process.env[key]);
+    if (parsed.success) out[key] = parsed.data;
+    else problems.push(`${key}: ${parsed.error.issues.map((i) => i.message).join(", ")}`);
+  }
+  if (problems.length) throw new Error(`Invalid server environment: ${problems.join("; ")}`);
+  return out as Pick<ServerEnv, K>;
 }

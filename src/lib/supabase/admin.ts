@@ -10,7 +10,7 @@ import { publicEnv, serverEnv } from "@/env";
  */
 export function createServiceClient() {
   const { NEXT_PUBLIC_SUPABASE_URL } = publicEnv();
-  const { SUPABASE_SERVICE_ROLE_KEY } = serverEnv();
+  const { SUPABASE_SERVICE_ROLE_KEY } = serverEnv("SUPABASE_SERVICE_ROLE_KEY");
   return createClient(NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     db: { schema: "service" },
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
