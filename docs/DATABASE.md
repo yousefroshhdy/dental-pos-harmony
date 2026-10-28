@@ -23,6 +23,11 @@
 | `…001300_rls_grants` | RLS on every table, read grants, policies |
 | `…001400_platform_admin` | `api.my_context`, employees/users, suspension, roles/permissions with grant ceiling, notifications, owner bootstrap, admin read views, audit readers |
 | `…001500_reference_data` | governorates, regions, specialties, brands, categories, permission catalogue, system roles + grants, settings, order state machine, workflows, KPI catalogue, commission plan draft |
+| `20261029000100_outbox_dispatch` | `service` schema (service_role only), `integration.routes`, outbox claim/result with lease recovery and backoff, admin retry and health views |
+| `20261029000200_crm_field_commands` | customers (create/update/location/reassign), opportunities, tasks, activities, visit check-out and exceptions, approval hooks, GPS retention purge, CRM read views |
+| `20261029000300_orders_inventory_workflow` | approval engine (`decide_approval`, rule conditions, stages, limits, scope, delegation), order drafts/approve/reject/reserve (FEFO)/fulfil/cancel, credit check, goods receipts, transfers, adjustment approvals, read views |
+| `20261029000900_views_security_invoker` | every view runs with caller rights (fix: plain views leaked balances) |
+| `20261029000950_approval_request_context` | approval requests get subject employee + territory/warehouse filled from their entity |
 
 **Local test harness.** This build environment has no Docker and cannot install pgTAP, so `scripts/db-test.sh` runs the migrations on plain PostgreSQL 16 with two test-only files:
 - `scripts/db/local_supabase_stub.sql` provides the Supabase roles, `auth.users` and `auth.uid()`.

@@ -64,12 +64,22 @@ Working rules and context for AI-assisted development of **Honest OS**, the busi
 ## Commands
 
 ```bash
-# Validate the draft schema (needs a local PostgreSQL 16 server)
-createdb honest_draft
-psql -d honest_draft -v ON_ERROR_STOP=1 \
-  -f docs/database/draft/00_supabase_stub.sql \
-  -f docs/database/draft/10_schema_draft.sql \
-  -f docs/database/draft/90_smoke_test.sql
+pnpm install --frozen-lockfile
+pnpm dev                      # app on http://localhost:3000 (needs .env.local, see .env.example)
+pnpm check                    # lint + typecheck + unit tests
+pnpm test:db                  # all migrations + pgTAP-format suites on a plain PostgreSQL 16
+                              #   PGHOST=… PGUSER=postgres HONEST_TEST_DB=<unique name> pnpm test:db
+pnpm build                    # production build (placeholder NEXT_PUBLIC_* values are fine)
+pnpm e2e:chromium             # Playwright (needs a build; PW_CHROMIUM_PATH for a custom chromium)
+supabase test db              # same DB tests with real pgTAP on a Supabase stack
 ```
 
-Phase 2 will add: `pnpm dev`, `pnpm test`, `pnpm e2e`, `supabase start`, `supabase db reset`, `supabase test db`.
+## Gotchas learned the hard way
+
+- Plain views bypass RLS. Every view must be `security_invoker` (test 15).
+- Schema-scoped `ALTER DEFAULT PRIVILEGES` cannot revoke PostgreSQL's global PUBLIC execute. Revoke explicitly at the end of migrations that add `api` functions (test 08).
+- Never grant `authenticated` anything on `auth.users`; Supabase applies no RLS there.
+- RLS policies that reference each other recurse infinitely. Use `SECURITY DEFINER` helpers such as `authz.assigned_customer_ids`.
+- Deferred constraint triggers (owner guard) fire at commit. Use `set constraints all immediate` in rolled-back tests.
+- Next.js 16 renamed `middleware.ts` to `proxy.ts`. Its bundled docs are in `node_modules/next/dist/docs`.
+- Agent worktrees live in `.claude/worktrees/`; lint, tsc and git ignore them.

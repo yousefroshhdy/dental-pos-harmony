@@ -134,4 +134,12 @@ Details of each decision (options considered and the recommendation's reasoning)
 | 2026-10-28 | Repository cleared; Honest OS starts from scratch on branch `ccr-cd8ec6c2-y28xig` | Owner (request) |
 | 2026-10-28 | Owner delegated D-01…D-12 to the recommended options (Part A table); D-04 accepted, Phase 2 started | Owner (delegation) |
 | 2026-10-28 | DB tests are written in pgTAP syntax. Locally they run against a test-only pgTAP-compatible shim on plain PostgreSQL 16, because this build environment cannot install pgTAP or run Docker. On Supabase they run with real pgTAP via `supabase test db`. | Tech lead |
-| 2026-10-28 | Package manager: pnpm. Node 22 LTS. | Tech lead |
+| 2026-10-28 | Package manager: pnpm. Node 22 LTS. TypeScript 6.0 (7.x is the new native compiler; Next.js tooling compatibility unverified). | Tech lead |
+| 2026-10-28 | **`service` schema** (ADR-024): functions only `service_role` may execute, such as the outbox claim/result. It is exposed to PostgREST next to `api`, but `authenticated`/`anon` have no usage on it, so service-only code never sits in `api`, where the blanket grant to `authenticated` would expose it. | Tech lead |
+| 2026-10-28 | Every view is `security_invoker` (ADR-025). Plain views skip RLS; this was found to leak customer balances and has been fixed. Enforced by test 15. | Tech lead |
+| 2026-10-28 | Approval requests always carry subject employee + territory/warehouse context, filled by trigger (ADR-026), so scope-limited approvers work for every request creator. | Tech lead |
+| 2026-10-28 | Customer GPS location is set only by `crm.customer_location.verify` holders or by an approved `no_customer_location` visit exception. Reps cannot pin a location at creation, which stops them pinning a fake location and then "verifying" their own check-ins. | Tech lead (owner may override) |
+| 2026-10-28 | GPS fix retention cannot be set below 30 days. Purges are logged as security events. | Tech lead |
+| 2026-10-28 | D-09 detail: an order over its credit limit routes first to Finance (`wf.decide.credit_limit`), then to discount approval if the discount was also exceeded. Area managers cannot approve credit breaches. The Sales Director has no credit authority by default. | Tech lead (owner may override) |
+| 2026-10-28 | `/` always opens Arabic; browser-language detection is off (D-11). | Tech lead |
+| 2026-10-28 | Suspending a user also bans the Supabase Auth account (ends refresh tokens); reactivating lifts it. The DB status gate remains the primary control. | Tech lead |

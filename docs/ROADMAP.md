@@ -1,6 +1,6 @@
 # Roadmap & Execution Plan — Honest OS
 
-> Status: **Proposed** · Phase 1 deliverables #6 (MVP scope), #7 (phased roadmap), #10 (execution checklist) · Last updated: 2026-10-28
+> Status: **Accepted** (owner delegated, 2026-10-28) · Phase 1 deliverables #6 (MVP scope), #7 (phased roadmap), #10 (execution checklist) · Last updated: 2026-10-28
 >
 > Durations are **rough estimates for 1 full-time developer working with Claude Code**. They are not commitments and are re-estimated at each phase gate.
 
@@ -8,17 +8,39 @@
 
 ## 1. Progress tracker
 
+Definitions are in `docs/TESTING.md` §4.
+- **"Tested"** means automated tests pass locally: PostgreSQL 16 with the Supabase stub, Vitest, and Playwright on Chromium.
+- **"Verified"** needs a real Supabase/Vercel staging environment, which does not exist yet (runbook: `docs/runbooks/supabase-vercel-setup.md`).
+
 | Phase | Planned | Implemented | Tested | Verified | Deployed |
 |-------|:-------:|:-----------:|:------:|:--------:|:--------:|
 | 0 Discovery | ✅ | n/a | n/a | ⏳ owner review | n/a |
-| 1 Architecture | ✅ | ✅ docs + draft schema | ✅ draft smoke test 45/45 (local PG16) | ⏳ owner review | n/a |
-| 2 Foundation | ✅ | — | — | — | — |
-| 3 Core operations | ✅ | — | — | — | — |
+| 1 Architecture | ✅ | ✅ docs + draft schema | ✅ draft smoke test 45/45 | ✅ owner delegated decisions | n/a |
+| 2 Foundation | ✅ | ✅ (see detail) | ✅ (see detail) | — needs staging | — |
+| 3 Core operations | ✅ | 🟡 database commands done; field/CRM/order/inventory UI not started | 🟡 DB only | — | — |
 | 4 Financial operations | ✅ | — | — | — | — |
 | 5 Management intelligence | ✅ | — | — | — | — |
 | 6 Integrations | ✅ | — | — | — | — |
 | 7 Advanced modules | ✅ | — | — | — | — |
 | 8 Production hardening | ✅ | — | — | — | — |
+
+### Detail (as of 2026-10-28)
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Migrations (19 files) + reference data | Implemented, Tested | `pnpm test:db`: 553 assertions in 16 suites |
+| Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
+| Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
+| Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
+| Approval engine (rules, stages, limits, scope, delegation, hooks) | Implemented, Tested | suites 14, 16 |
+| CRM (customers, duplicates, reassignment, opportunities), tasks, visits (check-in/out, exceptions), GPS retention | Implemented, Tested | suites 04, 10, 11, 16 |
+| Outbox dispatcher (DB, `/api/cron/outbox`, HMAC signing) | Implemented, Tested | suite 09 + unit tests |
+| Views never bypass RLS | Implemented, Tested | suite 15 |
+| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | unit tests + 46 Playwright (Chromium) |
+| Admin console v1 (users, invite, roles editor, security events) | Implemented, unit-tested | never clicked through against a live database |
+| CI pipeline | Implemented | has not run on GitHub yet |
+| WebKit (iOS) end-to-end tests | Implemented | not run (no WebKit in the build sandbox) |
+| Phase 3 user interfaces (rep "Today", customers, visits, order builder, inventory, approvals inbox) | Not started | next |
 
 ## 2. MVP scope (prioritised)
 

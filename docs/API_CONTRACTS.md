@@ -30,6 +30,38 @@ export async function command<I, O>(name: string, schema: ZodSchema<I>, input: u
 }
 ```
 
+## 1a. As built (2026-10-28)
+
+Implemented and tested on local PostgreSQL 16 with the stub. Not yet on a live Supabase project. The authoritative signatures are in the migration files.
+
+| Area | Commands | Migration |
+|------|----------|-----------|
+| Platform | `my_context()`, `create_employee(…)`, `register_user(user, employee, locale)`, `suspend_user(user, reason)`, `reactivate_user(user, reason)`, `create_role(code, name_en, name_ar?, description?)`, `set_role_permission(role, perm, scope, limit?)`, `remove_role_permission(role, perm)`, `grant_role(user, role, territory?, reason?)`, `revoke_role(user_role, reason)`, `mark_notifications_read(ids[])` | 1200, 1400 |
+| CRM | `create_customer(…, p_client_ref)`, `update_customer(id, version, changes jsonb)`, `set_customer_location(id, lat, lng)`, `request_customer_reassignment(id, to_employee, reason)`, `create_opportunity(…)`, `move_opportunity(id, stage, lost_reason?)`, `log_activity(customer, type, summary, at?)` | 0200 |
+| Tasks | `create_task(title, due_at, customer?, kind?, assignee?, client_ref?)`, `complete_task(id, outcome)` | 0200 |
+| Field | `visit_check_in(visit_id, customer, lat, lng, accuracy, captured_at, device)`, `visit_check_out(visit_id, outcome, notes, lat, lng, accuracy, captured_at, next_follow_up_at?)`, `request_visit_exception(visit_id, reason)` | 1200, 0200 |
+| Orders | `save_order_draft(order_id, customer, lines jsonb, notes?, visit?, version?, employee?)`, `submit_order(id)`, `approve_order(id)`, `reject_order(id, reason)`, `reserve_order(id, warehouse)`, `post_fulfillment(id, idempotency_key)`, `cancel_order(id, reason)` | 1200, 0300 |
+| Inventory | `create_goods_receipt(warehouse, supplier, shipment_ref, items jsonb)`, `post_goods_receipt(id)`, `create_transfer(from, to, items jsonb)`, `ship_transfer(id)`, `receive_transfer(id)`, `post_inventory_adjustment(…)`, `request_inventory_adjustment(…, idempotency_key)` | 1200, 0300 |
+| Approvals | `decide_approval(request, 'approve'\|'reject', comment?)` | 0300 |
+| Integrations | `retry_outbox_event(id)`; service-only: `service.outbox_claim(limit)`, `service.outbox_result(id, ok, http_status, error)` | 0100 (2026-10-29) |
+
+**Read views:**
+- **Admin and platform:** `v_users`, `v_user_roles`, `v_roles`, `v_role_permissions`, `v_permissions`, `v_employees`, `v_territories`, `v_notifications`, `v_security_events`, `v_audit_log`.
+- **CRM, field and tasks:** `v_customers` (balance masked), `v_customer_timeline`, `v_opportunities`, `v_tasks`, `v_visits`, `v_my_today`.
+- **Orders, stock and approvals:** `v_orders`, `v_order_lines`, `v_stock_available`, `v_stock_detail`, `v_movements` (cost masked), `v_transfers`, `v_approvals_inbox`.
+- **Integrations:** `v_outbox_health`, `v_outbox_dead`, `v_integration_routes`.
+
+**Additional error codes (beyond §8.1 of ARCHITECTURE):**
+- **Duplicates and conflicts:** `DUPLICATE_CUSTOMER`, `CONFLICT` (stale `version`), `IDEMPOTENCY_CONFLICT`.
+- **Approvals:** `SELF_APPROVAL`, `LIMIT_EXCEEDED`, `ALREADY_DECIDED`, `CANCEL_PENDING`.
+- **Stock:** `INSUFFICIENT_STOCK`, `LOT_EXPIRY_MISMATCH`, `EXPIRED_LOT`, `NOTHING_TO_FULFIL`.
+- **Customers:** `CUSTOMER_BLOCKED`.
+- **Configuration:** `WORKFLOW_MISSING`.
+
+**Approval hook contract:**
+- `wf.on_decided_<code>(request_id uuid, approved boolean)` is called exactly once at the final decision, in the same transaction, by `wf.dispatch_decision_hook` (a hard-coded CASE, never dynamic SQL).
+- Hooks are not client-executable. They must not call `authz.require`: the workflow decision is the authorization.
+
 ## 2. Commands (MVP)
 
 | Command | Permission | Input (beyond ids) | Output | Notable errors |

@@ -1,6 +1,12 @@
 # Testing Plan — Honest OS
 
-> Status: **Plan approved pending review; draft-schema smoke test passing (45/45)** · Phase 1 deliverable #8 · Last updated: 2026-10-28
+> Status: **In use** · Last updated: 2026-10-28
+>
+> **Current suite (all passing locally):**
+> - Database: 553 assertions in 16 pgTAP-format suites (`pnpm test:db`)
+> - Unit: 112 Vitest tests (`pnpm test`)
+> - End-to-end: 23 Playwright specs × 2 Chromium projects (`pnpm e2e:chromium`). The WebKit project has not been run yet.
+> - CI (`.github/workflows/ci.yml`) has not run on GitHub yet.
 
 ## 1. Test pyramid and tooling
 
