@@ -1,0 +1,37 @@
+# Supabase CLI configuration (local stack: `supabase start`, `supabase db reset`, `supabase test db`).
+# Hosted projects take these values from the dashboard; keep both in sync.
+
+project_id = "honest-os"
+
+[api]
+enabled = true
+port = 54321
+# PostgREST exposes only `api` to the app and `service` to the service-role
+# dispatcher. Both schemas deny anon/authenticated by grants, not by this list.
+schemas = ["api", "service"]
+extra_search_path = ["extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = [
+  "http://localhost:3000/ar/auth/confirm",
+  "http://localhost:3000/en/auth/confirm",
+]
+jwt_expiry = 3600
+# Accounts are created by an admin (invite); nobody signs themselves up.
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+enable_confirmations = true
+double_confirm_changes = true
