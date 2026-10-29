@@ -7,15 +7,28 @@ import { Card } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import type { NavItem } from "@/lib/nav";
+import { approvalsNav } from "@/modules/approvals/nav";
+import { catalogNav } from "@/modules/catalog/nav";
+import { crmNav } from "@/modules/crm/nav";
+import { fieldNav } from "@/modules/field/nav";
+import { inventoryNav } from "@/modules/inventory/nav";
+import { ordersNav } from "@/modules/orders/nav";
 import { signOut } from "../login/actions";
 
 /** Navigation entries; each is shown only if the user holds its permission. */
-const NAV = [
-  { href: "/", key: "home", permission: null },
-  { href: "/admin/users", key: "users", permission: "admin.user.read" },
-  { href: "/admin/roles", key: "roles", permission: "admin.role.read" },
-  { href: "/admin/security", key: "security", permission: "audit.security.read" },
-] as const;
+const NAV: NavItem[] = [
+  { href: "/", labelKey: "nav.home", permission: null },
+  ...fieldNav,
+  ...crmNav,
+  ...ordersNav,
+  ...approvalsNav,
+  ...inventoryNav,
+  ...catalogNav,
+  { href: "/admin/users", labelKey: "nav.users", permission: "admin.user.read" },
+  { href: "/admin/roles", labelKey: "nav.roles", permission: "admin.role.read" },
+  { href: "/admin/security", labelKey: "nav.security", permission: "audit.security.read" },
+];
 
 export default async function AppLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -24,6 +37,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
   if (!ctx.user_id) redirect(`/${locale}/login`);
 
   const t = await getTranslations("nav");
+  const tAll = await getTranslations();
   const tAuth = await getTranslations("auth");
   const app = await getTranslations("app");
   const signOutAction = signOut.bind(null, locale);
@@ -53,8 +67,8 @@ export default async function AppLayout({ children, params }: { children: ReactN
           </Link>
           <nav className="flex flex-1 gap-1 overflow-x-auto" aria-label="Main">
             {items.map((item) => (
-              <Link key={item.key} href={item.href} className="rounded-md px-3 py-2 text-sm whitespace-nowrap hover:bg-muted">
-                {t(item.key)}
+              <Link key={item.href} href={item.href} className="rounded-md px-3 py-2 text-sm whitespace-nowrap hover:bg-muted">
+                {tAll(item.labelKey)}
               </Link>
             ))}
           </nav>
