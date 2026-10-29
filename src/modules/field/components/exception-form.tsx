@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, Input, Label } from "@/components/ui/primitives";
+import { useOnline } from "@/modules/offline/use-offline-queue";
 import { sendVisitException } from "../device";
 import type { DeviceResult, ExceptionResult } from "../types";
 import { FieldError } from "./field-error";
@@ -13,10 +14,13 @@ import { FieldError } from "./field-error";
  * Ask a manager to accept a visit whose GPS verdict is not "verified"
  * (api.request_visit_exception → approvals inbox). The DB checks the
  * permission, the visit's owner and that the verdict is eligible.
+ * Online only: the command has no client ref, so it is not queued (device.ts).
  */
 export function ExceptionForm({ visitId, refreshOnSuccess = false }: { visitId: string; refreshOnSuccess?: boolean }) {
   const t = useTranslations("field.exception");
+  const tOffline = useTranslations("field.offline");
   const router = useRouter();
+  const online = useOnline();
   const inputId = useId();
   const [reason, setReason] = useState("");
   const [result, setResult] = useState<DeviceResult<ExceptionResult> | null>(null);
@@ -36,7 +40,13 @@ export function ExceptionForm({ visitId, refreshOnSuccess = false }: { visitId: 
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => {
-          const r = await sendVisitException({ visit_id: visitId, reason: reason.trim() });
+          let r: DeviceResult<ExceptionResult>;
+          try {
+            r = await sendVisitException({ visit_id: visitId, reason: reason.trim() });
+          } catch {
+            // No answer (connection lost). Sending again is safe: a pending request answers "replayed".
+            r = { ok: false, code: "UNAVAILABLE", messageKey: "UNAVAILABLE", retryable: true };
+          }
           setResult(r);
           if (r.ok && refreshOnSuccess) router.refresh(); // show the new verdict on the page
         });
@@ -55,7 +65,12 @@ export function ExceptionForm({ visitId, refreshOnSuccess = false }: { visitId: 
         autoComplete="off"
       />
       <p className="text-xs text-muted-foreground">{t("hint")}</p>
-      <Button type="submit" variant="outline" disabled={pending} className="w-full sm:w-auto">
+      {!online ? (
+        <Alert tone="info" role="status">
+          {tOffline("exceptionOffline")}
+        </Alert>
+      ) : null}
+      <Button type="submit" variant="outline" disabled={pending || !online} className="w-full sm:w-auto">
         {pending ? t("sending") : t("submit")}
       </Button>
       {result && !result.ok ? <FieldError code={result.code} messageKey={result.messageKey} requestId={result.requestId} /> : null}

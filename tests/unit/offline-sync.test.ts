@@ -133,7 +133,7 @@ describe("sync engine", () => {
       throw new TypeError("Failed to fetch");
     });
     const second = vi.fn(async (): Promise<SendResult> => ({ ok: true, data: null }));
-    registry.register("field.visit_check_in", first);
+    registry.register("field.visit_check_in", first, { idempotent: true });
     registry.register("work.create_task", second);
     const a = await engine.enqueue({ command: "field.visit_check_in", args: {} });
     advance(1);
@@ -158,13 +158,60 @@ describe("sync engine", () => {
     expect((await engine.queue.get(item.id))?.status).toBe("failed");
   });
 
+  describe("idempotency is opt-in (audit #15, F9): a sender registered without the flag", () => {
+    it("is recorded as not idempotent", () => {
+      const registry = createSenderRegistry();
+      registry.register("legacy.command", async () => ({ ok: true }));
+      registry.register("legacy.other", async () => ({ ok: true }), {});
+      expect(registry.get("legacy.command")?.idempotent).toBe(false);
+      expect(registry.get("legacy.other")?.idempotent).toBe(false);
+    });
+
+    it("is NOT auto-retried after a network failure (the request threw)", async () => {
+      const { engine, registry } = setup({ attemptsPerRun: 3 });
+      const send = vi.fn(async (): Promise<SendResult> => {
+        throw new TypeError("Failed to fetch");
+      });
+      registry.register("legacy.command", send);
+      const item = await engine.enqueue({ command: "legacy.command", args: {} });
+      expect(await engine.sync()).toMatchObject({ done: 0, failed: 1, interrupted: false });
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(await engine.queue.get(item.id)).toMatchObject({ status: "failed", attempts: 1, lastError: { code: "UNAVAILABLE" } });
+      // Later runs leave it alone too: only the user can retry it.
+      await engine.sync();
+      expect(send).toHaveBeenCalledTimes(1);
+    });
+
+    it("is NOT auto-retried after an ambiguous server answer (connection lost after send)", async () => {
+      const { engine, registry } = setup({ attemptsPerRun: 3 });
+      const send = vi.fn(async (): Promise<SendResult> => ({ ok: false, error: err({ code: "UNAVAILABLE", messageKey: "UNAVAILABLE", ambiguous: true }) }));
+      registry.register("legacy.command", send);
+      const item = await engine.enqueue({ command: "legacy.command", args: {} });
+      expect(await engine.sync()).toMatchObject({ failed: 1 });
+      expect(send).toHaveBeenCalledTimes(1);
+      expect((await engine.queue.get(item.id))?.status).toBe("failed");
+    });
+
+    it("is still retried after a rolled-back failure (the server certainly did not commit)", async () => {
+      const { engine, registry } = setup({ attemptsPerRun: 2 });
+      const send = vi
+        .fn<() => Promise<SendResult>>()
+        .mockResolvedValueOnce({ ok: false, error: err({ code: "UNAVAILABLE", messageKey: "UNAVAILABLE", retryable: true }) })
+        .mockResolvedValueOnce({ ok: true, data: null });
+      registry.register("legacy.command", send);
+      await engine.enqueue({ command: "legacy.command", args: {} });
+      expect(await engine.sync()).toMatchObject({ done: 1 });
+      expect(send).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("an ambiguous server-side error (connection lost after send) is retried for idempotent senders", async () => {
     const { engine, registry } = setup({ attemptsPerRun: 2 });
     const send = vi
       .fn<() => Promise<SendResult>>()
       .mockResolvedValueOnce({ ok: false, error: err({ code: "UNAVAILABLE", messageKey: "UNAVAILABLE", ambiguous: true }) })
       .mockResolvedValueOnce({ ok: true, data: { replayed: true } });
-    registry.register("field.visit_check_in", send);
+    registry.register("field.visit_check_in", send, { idempotent: true });
     await engine.enqueue({ command: "field.visit_check_in", args: {} });
     expect(await engine.sync()).toMatchObject({ done: 1, replayed: 1 });
   });
@@ -385,6 +432,6 @@ describe("sync engine", () => {
     registry.register("work.create_task", two);
     offOne();
     expect(registry.get("work.create_task")?.send).toBe(two);
-    expect(registry.get("work.create_task")?.idempotent).toBe(true);
+    expect(registry.get("work.create_task")?.idempotent).toBe(false); // opt-in only
   });
 });

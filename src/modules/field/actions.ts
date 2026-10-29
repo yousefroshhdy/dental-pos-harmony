@@ -12,7 +12,15 @@ import {
   invalidFieldsOf,
   visitExceptionSchema,
 } from "./schemas";
-import type { ActionResult, ActionState, CheckInResult, CheckOutResult, DeviceResult, ExceptionResult } from "./types";
+import type {
+  ActionResult,
+  ActionState,
+  CheckInResult,
+  CheckOutResult,
+  CompleteTaskResult,
+  DeviceResult,
+  ExceptionResult,
+} from "./types";
 
 /**
  * Field and task mutations. Each action validates its input, calls exactly one
@@ -20,10 +28,11 @@ import type { ActionResult, ActionState, CheckInResult, CheckOutResult, DeviceRe
  * that show the result. Authorization is NOT decided here: ids are untrusted
  * and the database re-checks permission, scope, state and the GPS verdict.
  *
- * The device commands (check-in, check-out, exception) take a plain,
- * serializable payload that is fully built on the device before the first
- * attempt — ids, fix and device timestamp included — so the offline queue can
- * store it and replay it unchanged. Replays are idempotent on the visit id.
+ * The device commands (check-in, check-out, exception, task completion) take a
+ * plain, serializable payload that is fully built on the device before the
+ * first attempt — ids, fix and device timestamp included — so the offline
+ * queue can store it and replay it unchanged (src/modules/field/offline.ts).
+ * Replays are idempotent on the visit id / task id.
  */
 
 const PAGES = {
@@ -134,14 +143,19 @@ export async function createTask(_prev: ActionState, form: FormData): Promise<Ac
   return { ok: true };
 }
 
-export async function completeTask(_prev: ActionState, form: FormData): Promise<ActionResult> {
-  const parsed = completeTaskSchema.safeParse(formToObject(form));
+/**
+ * Task completion, a device command like check-in: the payload is built once
+ * and may be replayed by the offline queue (a replay of a done task answers
+ * `replayed: true`).
+ */
+export async function completeTask(payload: unknown): Promise<DeviceResult<CompleteTaskResult>> {
+  const parsed = completeTaskSchema.safeParse(payload);
   if (!parsed.success) {
     const outcomeMissing = invalidFieldsOf(parsed.error).includes("outcome");
-    return { ok: false, messageKey: outcomeMissing ? "REASON_REQUIRED" : "VALIDATION", code: "VALIDATION" };
+    return { ok: false, code: "VALIDATION", messageKey: outcomeMissing ? "REASON_REQUIRED" : "VALIDATION", retryable: false };
   }
-  const result = await callCommand("complete_task", { p_task_id: parsed.data.task_id, p_outcome: parsed.data.outcome });
-  if (!result.ok) return failed(result.error);
+  const result = await callCommand<CompleteTaskResult>("complete_task", { p_task_id: parsed.data.task_id, p_outcome: parsed.data.outcome });
+  if (!result.ok) return deviceFailure(result.error);
   refresh("tasks", "today");
-  return { ok: true };
+  return { ok: true, data: result.data };
 }

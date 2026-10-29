@@ -103,10 +103,14 @@ export const createTaskSchema = z.object({
 });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
-export const completeTaskSchema = z.object({
-  task_id: id,
-  outcome: z.string().min(2).max(1000),
-});
+/** Task completion payload; built once on the device so the offline queue can replay it unchanged. */
+export const completeTaskSchema = z
+  .object({
+    task_id: id,
+    outcome: z.string().trim().min(2).max(1000),
+  })
+  .strict();
+export type CompleteTaskPayload = z.infer<typeof completeTaskSchema>;
 
 /** Field names that failed validation (first path segment). */
 export function invalidFieldsOf(error: z.ZodError): string[] {

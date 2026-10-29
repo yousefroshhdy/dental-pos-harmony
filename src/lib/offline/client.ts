@@ -1,4 +1,11 @@
-import { clearForUser as deleteUserQueue, createIdbStore, createMemoryStore, createQueue } from "./queue";
+import {
+  assertUserId,
+  clearForUser as deleteUserQueue,
+  clearOtherUsers as deleteOtherQueues,
+  createIdbStore,
+  createMemoryStore,
+  createQueue,
+} from "./queue";
 import { createSyncEngine, type SyncEngine } from "./sync";
 import type { QueueStore } from "./types";
 
@@ -136,10 +143,43 @@ export async function countUnsynced(userId: string): Promise<number> {
  * in this tab and in every other open tab.
  */
 export async function clearForUser(userId: string): Promise<void> {
+  announceCleared(userId);
+  dispose(userId);
+  await deleteUserQueue(userId);
+}
+
+/** Tells every open tab of this user that their queue is gone (they drop their engine). */
+function announceCleared(userId: string) {
   const own = entries.get(userId)?.channel;
   const channel = own ?? (typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(channelName(userId)));
   channel?.postMessage("cleared");
   if (!own) channel?.close();
-  dispose(userId);
-  await deleteUserQueue(userId);
+}
+
+/**
+ * App start on a shared device: deletes every OTHER user's queue and keeps the
+ * signed-in user's. A queue is otherwise wiped only by an explicit sign-out, so
+ * when a session expires and someone else signs in, the previous user's saved
+ * commands (GPS fixes, notes) would stay on the device. Their unsynced items are
+ * lost; this device could not send them anyway without that user's own session
+ * (each queue is sent only as its owner). Returns the wiped user ids, or null
+ * when the browser cannot list its databases (then nothing is deleted).
+ */
+export async function clearOtherUsers(currentUserId: string): Promise<string[] | null> {
+  if (typeof window === "undefined") return null;
+  for (const userId of [...entries.keys()]) {
+    if (userId !== currentUserId) {
+      announceCleared(userId);
+      dispose(userId);
+    }
+  }
+  const wiped = await deleteOtherQueues(currentUserId);
+  for (const userId of wiped ?? []) {
+    try {
+      announceCleared(assertUserId(userId));
+    } catch {
+      // A database name that is not a valid user id: deleted, nobody to tell.
+    }
+  }
+  return wiped;
 }

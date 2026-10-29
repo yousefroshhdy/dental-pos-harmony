@@ -11,8 +11,8 @@ import type { Json, JsonObject, QueueError, QueueItem, SendError, SendResult, Se
  *   replay answers `{ replayed: true }`, which is a success.
  * - Retries reuse src/lib/retry.ts. Only failures that are safe to re-run are
  *   retried: rolled-back attempts (serialization, deadlock) always; ambiguous ones
- *   (connection lost, outcome unknown — audit #15) only for senders that are
- *   idempotent by key, which queued commands are by contract.
+ *   (connection lost, outcome unknown — audit #15) only for senders registered
+ *   with `idempotent: true` (opt-in; the default is false).
  * - A transient failure stops the run (the device is probably offline) and keeps
  *   later items waiting, so order is preserved.
  * - Business errors move the item to `failed`, version conflicts to `conflict`;
@@ -30,9 +30,11 @@ export const DONE_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 export interface SenderOptions {
   /**
-   * The command is idempotent by the item id (it takes it as p_client_ref /
-   * p_idempotency_key / entity id). Default true: every queued command must be.
-   * When false, an ambiguous failure is never retried automatically.
+   * The command is idempotent by a key the device fixed before the first send
+   * (p_client_ref / p_idempotency_key / entity id). Default false (audit #15,
+   * F9): a sender must opt in, and only then is an ambiguous failure
+   * (connection lost, outcome unknown) re-sent automatically. Without it, an
+   * ambiguous failure moves the item to `failed` for the user to decide.
    */
   idempotent?: boolean;
   /**
@@ -58,7 +60,7 @@ export function createSenderRegistry(): SenderRegistry {
   const map = new Map<string, Registration>();
   return {
     register(command, send, opts = {}) {
-      const registration: Registration = { send: send as Sender, idempotent: opts.idempotent ?? true, versionArg: opts.versionArg };
+      const registration: Registration = { send: send as Sender, idempotent: opts.idempotent === true, versionArg: opts.versionArg };
       map.set(command, registration);
       return () => {
         if (map.get(command) === registration) map.delete(command);
