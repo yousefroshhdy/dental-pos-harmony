@@ -25,6 +25,7 @@ On 2026-10-28 the owner delegated these decisions ("do whatever the right things
 | D-10 | Make.com for non-critical automations | Adopted |
 | D-11 | Arabic default (RTL), Western digits | Adopted |
 | D-12 | 14% VAT on all products until the accountant says otherwise | Adopted, confirm before Phase 4 |
+| D-13 | Moving stock from quarantine into a sellable warehouse requires `inventory.quarantine.release` (inventory manager by default) | Adopted 2026-10-30, owner may change |
 
 Details of each decision (options considered and the recommendation's reasoning) follow.
 
@@ -94,6 +95,11 @@ Details of each decision (options considered and the recommendation's reasoning)
 
 ### D-12 · Product tax treatment
 - **Default:** 14% VAT on all products (A-09). Confirm with your accountant whether any medical devices are exempt or zero-rated (U-09).
+
+### D-13 · Releasing quarantine stock
+- **Problem (audit 2026-10-30, F3):** returned or recalled goods received into a quarantine warehouse could be made sellable by an ordinary transfer, with no control.
+- **Decision:** a transfer from a non-sellable warehouse into a sellable one needs the permission `inventory.quarantine.release`. It is checked when the transfer is created and again when it is received. The inventory-manager role holds it by default; the owner holds everything. Every transfer is audited.
+- **Alternative kept open:** route each release through an approval (`wf`) instead, if Honest® wants a second person to check recalled lots. That can be added without changing data.
 
 ---
 
