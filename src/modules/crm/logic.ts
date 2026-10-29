@@ -5,6 +5,8 @@ import {
   type ActionFailure,
   type CrmErrorCode,
   type CustomerRow,
+  type DuplicateCheck,
+  type DuplicateOutcome,
   type LifecycleStage,
   type OpportunityRow,
   type OpportunityStage,
@@ -339,6 +341,21 @@ export function locationStatus(row: Pick<CustomerRow, "latitude" | "location_ver
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
+
+/**
+ * Duplicate pre-check → what the create form does. A same-phone match stops the submit (with
+ * its number only when the caller can see that customer); similar names, visible or not, ask
+ * for confirmation. Hidden matches never carry a number or a count (audit Phase 3 F7).
+ */
+export function duplicateOutcome(check: DuplicateCheck): DuplicateOutcome {
+  if (check.phone_duplicate_customer_no) return { kind: "phone", customerNo: check.phone_duplicate_customer_no };
+  if (check.phone_duplicate_outside_scope) return { kind: "phoneOutsideScope" };
+  const outsideScope = check.similar_outside_scope === true;
+  if (check.similar_count > 0 || outsideScope) {
+    return { kind: "similar", similar: check.similar_customer_nos ?? [], similarCount: check.similar_count, outsideScope };
+  }
+  return { kind: "none" };
+}
 
 /** Existing customer number from a DUPLICATE_CUSTOMER error (the only detail the DB reveals). */
 export function duplicateCustomerNo(detail: string | null | undefined): string | null {

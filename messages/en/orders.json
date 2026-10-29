@@ -144,7 +144,7 @@
     "INSUFFICIENT_STOCK": "Not enough sellable stock in this warehouse for every line. Nothing was reserved.",
     "NO_PRICE": "A product on this order has no active price. Ask for a price list update.",
     "EMPTY_ORDER": "The order has no priced lines.",
-    "VARIANT_NOT_SELLABLE": "A product on this order is no longer sold. Remove it and try again.",
+    "VARIANT_NOT_SELLABLE": "A product on this order is no longer sold (discontinued). Remove it from the draft, or cancel the order if it is already accepted.",
     "CANCEL_PENDING": "A cancellation request is pending, so this step is paused.",
     "SELF_APPROVAL": "You can't accept or reject your own order.",
     "NOTHING_TO_FULFIL": "There is no reserved stock to fulfil.",

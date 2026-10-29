@@ -10,7 +10,7 @@ import { FilterBar } from "@/modules/inventory/components/filter-bar";
 import { InventoryError } from "@/modules/inventory/components/inventory-error";
 import { TransferForm } from "@/modules/inventory/components/transfer-form";
 import { CALENDAR_DATE, calendarDate } from "@/modules/inventory/format";
-import { lotsFefo, stockLineValue, type SearchParams } from "@/modules/inventory/logic";
+import { canReleaseQuarantine, lotsFefo, stockLineValue, type SearchParams } from "@/modules/inventory/logic";
 import { listStockDetail, listWarehouses } from "@/modules/inventory/queries";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -77,6 +77,8 @@ export default async function NewTransferPage({ params, searchParams }: { params
             key={from.id}
             locale={locale}
             fromWarehouseId={from.id}
+            sourceKind={from.kind}
+            mayRelease={canReleaseQuarantine(ctx)}
             destinations={active
               .filter((w) => w.id !== from.id)
               .map((w) => ({ id: w.id, label: `${w.code} · ${w.name}`, kind: w.kind, sellable: w.is_sellable }))}

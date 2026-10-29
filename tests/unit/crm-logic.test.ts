@@ -6,6 +6,7 @@ import {
   customerChanges,
   customerSearchFilter,
   duplicateCustomerNo,
+  duplicateOutcome,
   formatEgyptPhone,
   groupByStage,
   lifecycleOptions,
@@ -354,6 +355,24 @@ describe("errors", () => {
     );
     expect(duplicateCustomerNo("P0001 | DUPLICATE_CUSTOMER: phone is already registered to customer C-0001")).toBe("C-0001");
     expect(duplicateCustomerNo("P0001 | DUPLICATE_CUSTOMER: phone is already registered to another customer")).toBeNull();
+  });
+
+  it("duplicate pre-check: a match outside the caller's scope carries no number (audit F7)", () => {
+    const none = { phone_duplicate_customer_no: null, similar_count: 0, similar_customer_nos: [] };
+    expect(duplicateOutcome(none)).toEqual({ kind: "none" });
+    expect(duplicateOutcome({ ...none, exists_outside_scope: false, phone_duplicate_outside_scope: false, similar_outside_scope: false })).toEqual({ kind: "none" });
+    expect(duplicateOutcome({ ...none, phone_duplicate_customer_no: "C-0001" })).toEqual({ kind: "phone", customerNo: "C-0001" });
+    expect(duplicateOutcome({ ...none, phone_duplicate_outside_scope: true, exists_outside_scope: true })).toEqual({ kind: "phoneOutsideScope" });
+    // Phone beats a similar name; a visible phone match beats a hidden one.
+    expect(duplicateOutcome({ ...none, phone_duplicate_outside_scope: true, similar_count: 1, similar_customer_nos: ["C-0001"] }).kind).toBe("phoneOutsideScope");
+    expect(duplicateOutcome({ ...none, similar_count: 1, similar_customer_nos: ["C-0001"] })).toEqual({
+      kind: "similar",
+      similar: ["C-0001"],
+      similarCount: 1,
+      outsideScope: false,
+    });
+    const hidden = duplicateOutcome({ ...none, similar_outside_scope: true, exists_outside_scope: true });
+    expect(hidden).toEqual({ kind: "similar", similar: [], similarCount: 0, outsideScope: true });
   });
 
   it("maps CRM codes to crm.errors keys with safe values only", () => {

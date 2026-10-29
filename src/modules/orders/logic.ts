@@ -307,6 +307,8 @@ const isOrderErrorCode = (code: string): code is OrderErrorCode => (ORDER_ERROR_
 export function orderErrorCode(error: Pick<AppError, "code" | "messageKey" | "detail">): OrderErrorCode {
   // api.save_order_draft raises 'NOT_FOUND: variant … is not sellable' for inactive variants.
   if (error.code === "NOT_FOUND" && /not sellable/i.test(error.detail)) return "VARIANT_NOT_SELLABLE";
+  // api.submit_order / api.reserve_order raise NOT_SELLABLE for a variant or product discontinued after the draft.
+  if (error.code === "NOT_SELLABLE") return "VARIANT_NOT_SELLABLE";
   if (isOrderErrorCode(error.code)) return error.code;
   if (isOrderErrorCode(error.messageKey)) return error.messageKey;
   return "UNKNOWN";
