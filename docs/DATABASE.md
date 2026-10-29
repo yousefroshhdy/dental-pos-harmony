@@ -48,6 +48,7 @@ The same test files run unchanged under real pgTAP on Supabase. Test helpers and
 | Quantities | `integer` base units (unit, box defined by variant `uom`) | No fractional stock errors |
 | Status fields | `text` + `CHECK (...)` | Evolvable by migration without enum lock-in |
 | Time | `timestamptz` everywhere (UTC); display in `Africa/Cairo` | DST-safe (Egypt reinstated DST in 2023) |
+| Business day | `core.business_date()` = today in `Africa/Cairo`; never `current_date` (UTC on Supabase) in new code | Expiry, price-list and promotion dates must match the day the user sees (audit 2026-10-30, F10) |
 | Phone | Domain `core.phone_e164`: `+20` + mobile `1[0125]xxxxxxxx` or landline | Validated at the DB, not only the UI |
 | Ledgers | `inventory.movements`, `finance.customer_ledger`, `finance.payment_allocations`, `finance.credit_notes`, `finance.invoice_items`, `wf.approval_steps`, `sales.order_status_history`, `audit.*` are **append-only** (trigger `core.forbid_mutation`) | Corrections are visible reversals, never silent edits |
 | Derived data | Balances, open amounts, KPI results are derived (trigger-maintained or views/snapshots) | One source of truth per fact |
@@ -285,7 +286,7 @@ erDiagram
 ## 6. RLS strategy
 
 1. **RLS enabled on every table** in domain schemas. A table with no policy returns no rows to `authenticated`/`anon` (deny by default, tested).
-2. **Not FORCED (ADR-005).** Tables and `SECURITY DEFINER` functions share one owner role, so commands run without RLS but do their own explicit `authz` checks. FORCE would make definer functions subject to RLS and re-create policy recursion. We found and fixed that recursion in testing (customers ↔ assignments) by moving assignment lookups into `authz.assigned_customer_ids()`.
+2. **Not FORCED (ADR-005).** Tables and `SECURITY DEFINER` functions share one owner role, so commands run without RLS but do their own explicit `authz` checks. FORCE would make definer functions subject to RLS and re-create policy recursion. We found and fixed that recursion in testing (customers ↔ assignments) by moving assignment lookups into `authz.assigned_customer_ids()`. The same pattern scopes customer-specific price lists: `catalog.readable_price_list_ids()` returns the lists the caller may read (audit 2026-10-30, F1).
 3. **Reads:** `authenticated` gets `SELECT`, and policies filter by scope:
    - `has_global(perm)` → all rows
    - `territory_id = any(authz.territory_ids(perm))` → territory (incl. descendants)

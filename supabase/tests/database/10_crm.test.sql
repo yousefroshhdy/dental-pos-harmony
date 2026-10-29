@@ -79,11 +79,12 @@ select throws_like($$select api.create_customer(p_clinic_name => 'T', p_phone_pr
   p_owner_employee_id => '20000000-0000-0000-0000-000000000005')$$,
   'PERMISSION_DENIED: employee%', 'an own-scoped rep cannot assign a customer to someone else');
 
--- Another rep hits the hard duplicate on a customer they cannot see: only customer_no leaks.
+-- Another rep hits the hard duplicate on a customer they cannot see: nothing about
+-- that customer is revealed (audit 2026-10-30 follow-up to F7; suite 26).
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a5');
 select throws_ok($$select api.create_customer(p_clinic_name => 'Copy', p_phone_primary => '+20 100 123 4567', p_governorate_code => 'EG-DK')$$,
-  'P0001', 'DUPLICATE_CUSTOMER: phone is already registered to customer C-0001',
-  'duplicate message reveals only the existing customer number');
+  'P0001', 'DUPLICATE_CUSTOMER: phone is already registered to a customer outside your scope',
+  'duplicate message does not name a customer the caller cannot read');
 
 -- Area manager (territory scope) may assign within the territory, not outside it.
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a3');

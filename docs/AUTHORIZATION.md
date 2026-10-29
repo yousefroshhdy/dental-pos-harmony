@@ -55,7 +55,7 @@ flowchart LR
 | field | `field.visit.create`, `field.visit.read`, `field.visit.exception.request`, `field.location.read` |
 | work | `work.task.read`, `work.task.manage` |
 | catalog | `catalog.product.read`, `catalog.product.manage`, `catalog.price.read`, `catalog.price.manage`, `catalog.cost.read`, `catalog.cost.manage` |
-| inventory | `inventory.module.access`, `inventory.stock.read`, `inventory.movement.read`, `inventory.receipt.post`, `inventory.transfer.create`, `inventory.transfer.receive`, `inventory.adjustment.post` (limit = units), `inventory.writeoff.post` |
+| inventory | `inventory.module.access`, `inventory.stock.read`, `inventory.movement.read`, `inventory.receipt.post`, `inventory.transfer.create`, `inventory.transfer.receive`, `inventory.adjustment.post` (limit = units), `inventory.writeoff.post`, `inventory.quarantine.release` (sensitive; D-13) |
 | sales | `sales.order.read`, `sales.order.create`, `sales.order.submit`, `sales.order.cancel`, `sales.order.fulfil`, `sales.discount.apply` (limit = %), `sales.return.create`, `sales.order.export` |
 | finance | `finance.invoice.read`, `finance.invoice.issue`, `finance.credit_note.issue`, `finance.payment.read`, `finance.payment.record`, `finance.payment.confirm`, `finance.payment.allocate` (limit = EGP), `finance.payment.reverse`, `finance.ledger.read`, `finance.collection.manage`, `finance.credit_limit.change`, `finance.page.aging` |
 | perf | `perf.kpi.read`, `perf.kpi.manage`, `perf.target.manage`, `perf.commission.read`, `perf.commission_plan.read`, `perf.commission_plan.manage`, `perf.commission.calculate`, `perf.commission.adjust` |
@@ -85,6 +85,7 @@ Legend:
 | wf.approval.decide.sales.order.discount | A (∞) | — | A 20% | T 10% | — | — | — | — | — | — |
 | inventory.stock.read | A | — | A | A | A (available qty only, via view) | A | A | — | A | — |
 | inventory.adjustment.post | A (∞) | — | — | — | — | W 5 units | — | — | — | — |
+| inventory.quarantine.release | A | — | — | — | — | A | — | — | — | — |
 | finance.invoice.issue | A | — | — | — | — | — | A | — | — | — |
 | finance.payment.record | A | — | — | T | O | — | A | O | — | — |
 | finance.payment.confirm | A | — | — | — | — | — | A | — | — | — |

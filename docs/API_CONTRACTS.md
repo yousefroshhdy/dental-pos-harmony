@@ -63,6 +63,18 @@ Implemented and tested on local PostgreSQL 16 with the stub. Not yet on a live S
 
 All the new views are `security_invoker`. Suites 19 and 21–24 cover them, and suites 17 and 18 still guard the privilege sweep and per-statement `auth.uid()`.
 
+**Contract changes from the 2026-10-30 audit (migrations `0700`, `0800`; suites 25, 26):**
+- **Customer duplicates never reveal what the caller can't read.**
+  - `find_duplicate_customers` names only customers the caller can read. Other matches appear only as `phone_duplicate_outside_scope`, `similar_outside_scope` or `exists_outside_scope`.
+  - `create_customer` follows the same rule. An out-of-scope hard duplicate raises `DUPLICATE_CUSTOMER: … outside your scope`, with detail `{"outside_scope": true}`. The `POSSIBLE_DUPLICATE` warning names only readable customers and carries `outside_scope`.
+- **Discontinued items:** `submit_order` (via `sales.price_order`) and `reserve_order` raise `NOT_SELLABLE` (P0001) for an inactive variant or product.
+- **Quarantine release:** `create_transfer` and `receive_transfer` raise 42501 when stock leaves a quarantine warehouse for any other kind of warehouse and the caller lacks `inventory.quarantine.release` (D-13). The scope is checked on the source warehouse.
+- **Price lists:**
+  - The DEFAULT list cannot start in the future (`upsert_price_list`).
+  - `assign_customer_price_list` refuses a past end date and ignores cancelled assignments in its overlap check.
+  - Customer-specific lists are readable only by price managers or for customers in the caller's scope.
+- **Dates:** business dates are Cairo days (`core.business_date()`).
+
 **Additional error codes (beyond §8.1 of ARCHITECTURE):**
 - **Duplicates and conflicts:** `DUPLICATE_CUSTOMER`, `CONFLICT` (stale `version`), `IDEMPOTENCY_CONFLICT`.
 - **Approvals:** `SELF_APPROVAL`, `LIMIT_EXCEEDED`, `ALREADY_DECIDED`, `CANCEL_PENDING`.

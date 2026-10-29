@@ -28,7 +28,7 @@ Definitions are in `docs/TESTING.md` §4.
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Migrations (27 files) + reference data | Implemented, Tested; the first 22 applied to staging | `pnpm test:db`: 797 assertions in 23 suites. Suites 01–17 (577) pass on Supabase staging with real pgTAP |
+| Migrations (29 files) + reference data | Implemented, Tested; applied to staging (see below) | `pnpm test:db`: 869 assertions in 25 suites. Suites 01–17 (577) pass on Supabase staging with real pgTAP |
 | Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
 | Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
 | Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
@@ -37,7 +37,8 @@ Definitions are in `docs/TESTING.md` §4.
 | Outbox dispatcher (DB, `/api/cron/outbox`, HMAC signing) | Implemented, Tested | suite 09 + unit tests |
 | Views never bypass RLS | Implemented, Tested | suite 15 |
 | Independent security audit (15 findings) | All fixed, Tested | `docs/security/audit-2026-10-29.md`, suite 17 |
-| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 595 unit tests + 162 Playwright (Chromium) |
+| Phase 3 audit (10 findings + 1 follow-up) | All fixed, Tested | `docs/security/audit-2026-10-30.md`, suites 25, 26 |
+| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 600 unit tests + 162 Playwright (Chromium) |
 | Admin console v1 (users, invite, roles editor, security events) | Implemented, unit-tested | never clicked through against a live database |
 | CI pipeline | Implemented | has not run on GitHub yet |
 | WebKit (iOS) end-to-end tests | Implemented | not run (no WebKit in the build sandbox) |

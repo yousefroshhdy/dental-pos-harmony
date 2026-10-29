@@ -374,8 +374,13 @@ export function toActionFailure(error: AppError): ActionFailure {
   const failure: ActionFailure = { ok: false, messageKey: error.messageKey, requestId: error.requestId };
   if (isCrmErrorCode(error.code)) failure.crmCode = error.code;
   if (error.code === "DUPLICATE_CUSTOMER") {
-    const customerNo = duplicateCustomerNo(error.detail);
-    failure.params = { customerNo: customerNo ?? "—" };
+    // The DB names the existing customer only if the caller may read it.
+    if (/"outside_scope"\s*:\s*true/.test(error.detail ?? "")) {
+      failure.crmCode = "DUPLICATE_CUSTOMER_HIDDEN";
+    } else {
+      const customerNo = duplicateCustomerNo(error.detail);
+      failure.params = { customerNo: customerNo ?? "—" };
+    }
   }
   return failure;
 }

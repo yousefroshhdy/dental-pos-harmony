@@ -381,6 +381,13 @@ describe("errors", () => {
     expect(JSON.stringify(failure)).not.toContain("P0001");
   });
 
+  it("an out-of-scope DUPLICATE_CUSTOMER becomes the 'ask your manager' code with no number", () => {
+    const failure = toActionFailure(
+      appError("DUPLICATE_CUSTOMER", 'P0001 | phone is already registered to a customer outside your scope | {"outside_scope": true}'),
+    );
+    expect(failure).toEqual({ ok: false, messageKey: "UNKNOWN", crmCode: "DUPLICATE_CUSTOMER_HIDDEN", requestId: "req-1" });
+  });
+
   it("leaves generic codes to errors.*", () => {
     const failure = toActionFailure({ ...appError("CONFLICT", "secret detail"), messageKey: "CONFLICT" });
     expect(failure).toEqual({ ok: false, messageKey: "CONFLICT", requestId: "req-1" });
