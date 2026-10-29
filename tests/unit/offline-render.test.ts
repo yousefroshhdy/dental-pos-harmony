@@ -14,6 +14,7 @@ vi.mock("@/i18n/navigation", async () => {
 import type { SyncEngine } from "@/lib/offline/sync";
 import type { QueueItem } from "@/lib/offline/types";
 import { QueueItemCard } from "@/modules/offline/components/queue-item-card";
+import { OfflineSignOutForm } from "@/modules/offline/components/sign-out-form";
 import { SyncIndicator } from "@/modules/offline/components/sync-indicator";
 import { SyncQueueView } from "@/modules/offline/components/sync-queue-view";
 
@@ -37,6 +38,15 @@ describe.each(["ar", "en"] as const)("offline components render on the server (%
     expect(html).toMatch(/<button[^>]+aria-label="[^"]+"/);
     expect(html).toContain("<dialog");
     expect(html).not.toContain("<h2");
+  });
+
+  it("the sign-out form wraps the layout's sign-out button", () => {
+    const html = render(locale, createElement(
+        OfflineSignOutForm,
+        { userId: USER, action: async () => {} } as unknown as ComponentProps<typeof OfflineSignOutForm>,
+        createElement("button", null, "x"),
+      ));
+    expect(html).toMatch(/^<form[^>]*><button>x<\/button><\/form>/);
   });
 
   it("the sync view renders its heading and loading state", () => {

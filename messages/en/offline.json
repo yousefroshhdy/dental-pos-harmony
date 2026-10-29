@@ -82,6 +82,9 @@
     "INSUFFICIENT_STOCK": "There isn't enough stock.",
     "WORKFLOW_MISSING": "No approval workflow is set up for this. Ask an admin."
   },
+  "signOut": {
+    "unsyncedWarning": "{count, plural, one {# saved item hasn't synced yet.} other {# saved items haven't synced yet.}} Signing out deletes them from this device. Sign out anyway?"
+  },
   "commands": {
     "unknown": "Saved action",
     "field": {
