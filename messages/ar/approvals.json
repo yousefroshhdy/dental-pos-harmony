@@ -1,1 +1,200 @@
-{}
+{
+  "nav": {
+    "approvals": "الموافقات",
+    "notifications": "الإشعارات"
+  },
+  "loading": "جارٍ التحميل…",
+  "unknownPerson": "أحد الزملاء",
+  "inbox": {
+    "title": "الموافقات",
+    "subtitle": "الطلبات التي تنتظر قرارك، وطلباتك، وما قررته.",
+    "tabsLabel": "قوائم الموافقات",
+    "tabs": {
+      "decide": "بانتظار قرارك",
+      "mine": "طلباتي",
+      "decided": "قراراتي"
+    },
+    "empty": {
+      "decide": "لا يوجد ما ينتظر قرارك.",
+      "mine": "لم تطلب أي موافقة بعد.",
+      "decided": "لم تتخذ قرارًا في أي طلب بعد."
+    },
+    "truncated": "يُعرض أول {limit} طلب فقط."
+  },
+  "workflows": {
+    "orderDiscount": "خصم أو ائتمان طلبية",
+    "orderCancel": "إلغاء طلبية",
+    "salesReturn": "مرتجع عميل",
+    "inventoryAdjustment": "تسوية مخزون",
+    "customerReassign": "نقل عميل لمندوب آخر",
+    "visitException": "استثناء زيارة",
+    "creditNote": "إشعار دائن",
+    "creditLimit": "تعديل حد الائتمان",
+    "commissionPeriod": "فترة عمولات",
+    "commissionAdjustment": "تعديل عمولة",
+    "dataExport": "تصدير بيانات حساسة"
+  },
+  "status": {
+    "pending": "قيد الانتظار",
+    "approved": "تمت الموافقة",
+    "rejected": "مرفوض",
+    "cancelled": "ملغى",
+    "expired": "منتهي"
+  },
+  "decision": {
+    "approved": "موافقة",
+    "rejected": "رفض"
+  },
+  "card": {
+    "requestedBy": "مقدم الطلب: {name}",
+    "stageOf": "المرحلة {stage} من {count}",
+    "stage": "المرحلة {stage}",
+    "waiting": {
+      "minute": "{count, plural, =0 {ينتظر منذ أقل من دقيقة} one {ينتظر منذ دقيقة} two {ينتظر منذ دقيقتين} few {ينتظر منذ # دقائق} many {ينتظر منذ # دقيقة} other {ينتظر منذ # دقيقة}}",
+      "hour": "{count, plural, one {ينتظر منذ ساعة} two {ينتظر منذ ساعتين} few {ينتظر منذ # ساعات} many {ينتظر منذ # ساعة} other {ينتظر منذ # ساعة}}",
+      "day": "{count, plural, one {ينتظر منذ يوم} two {ينتظر منذ يومين} few {ينتظر منذ # أيام} many {ينتظر منذ # يومًا} other {ينتظر منذ # يوم}}"
+    },
+    "decidedAt": "تقرر في {date}",
+    "overdue": "متأخر",
+    "myDecision": {
+      "approved": "وافقت",
+      "rejected": "رفضت"
+    }
+  },
+  "facts": {
+    "orderNo": "الطلبية",
+    "customer": "العميل",
+    "orderTotal": "إجمالي الطلبية",
+    "discountExceeded": "الخصم أعلى من حد المندوب",
+    "creditExceeded": "تجاوز حد ائتمان العميل",
+    "requestedDiscount": "أعلى خصم مطلوب",
+    "requesterDiscountLimit": "حد خصم مقدم الطلب",
+    "creditLimit": "حد الائتمان",
+    "balance": "الرصيد الحالي",
+    "exposure": "الرصيد بعد هذه الطلبية",
+    "creditExcess": "المبلغ المتجاوز لحد الائتمان",
+    "fromStatus": "حالة الطلبية",
+    "reason": "السبب",
+    "warehouse": "المخزن",
+    "variant": "المنتج",
+    "quantity": "التسوية",
+    "requesterUnitLimit": "حد مقدم الطلب بدون موافقة",
+    "adjustedToday": "ما تمت تسويته اليوم",
+    "fromEmployee": "المندوب الحالي",
+    "toEmployee": "المندوب الجديد",
+    "visitStatus": "نتيجة تسجيل الوصول",
+    "distance": "المسافة عن العيادة",
+    "accuracy": "دقة الموقع",
+    "amount": "المبلغ"
+  },
+  "units": {
+    "percent": "{value}٪",
+    "units": "{value} وحدة",
+    "meters": "{value} م"
+  },
+  "visitStatus": {
+    "out_of_range": "خارج نطاق العيادة",
+    "no_customer_location": "لا يوجد موقع محفوظ للعيادة",
+    "no_device_location": "لم يُرسل الجهاز موقعًا",
+    "low_accuracy": "دقة الموقع منخفضة"
+  },
+  "subject": {
+    "openOrder": "فتح الطلبية",
+    "openCustomer": "فتح العميل",
+    "openVisit": "فتح الزيارة",
+    "openStock": "فتح المخزون"
+  },
+  "detail": {
+    "metaTitle": "طلب موافقة",
+    "back": "العودة إلى الموافقات",
+    "whatTitle": "المطلوب",
+    "noFacts": "لم تُسجل تفاصيل إضافية مع هذا الطلب.",
+    "contextTitle": "الطلب",
+    "requester": "مقدم الطلب",
+    "you": "أنت",
+    "subjectEmployee": "بخصوص",
+    "requestedAt": "تاريخ الطلب",
+    "stage": "المرحلة",
+    "approvalsProgress": "{done} من {required} موافقات",
+    "neededPermission": "صلاحية المعتمد",
+    "waiting": "مدة الانتظار",
+    "decided": "تاريخ القرار",
+    "trailTitle": "القرارات",
+    "noSteps": "لا توجد قرارات بعد.",
+    "onBehalfOf": "نيابةً عن {name}",
+    "decisionTitle": "قرارك",
+    "youDecided": {
+      "approved": "وافقت على هذا الطلب في {date}.",
+      "rejected": "رفضت هذا الطلب في {date}."
+    },
+    "closed": {
+      "approved": "تمت الموافقة على هذا الطلب، ولا حاجة لقرار آخر.",
+      "rejected": "رُفض هذا الطلب، ولا حاجة لقرار آخر.",
+      "cancelled": "أُلغي هذا الطلب.",
+      "expired": "انتهت صلاحية هذا الطلب."
+    }
+  },
+  "verdict": {
+    "own_request": "أنت مقدم هذا الطلب، لذا يجب أن يقرره شخص آخر.",
+    "about_you": "هذا الطلب يخصك، لذا يجب أن يقرره شخص آخر.",
+    "limit": "هذا الطلب أعلى من حد الموافقة الخاص بك، ويحتاج إلى معتمد بحد أعلى.",
+    "already_decided": "لقد قررت في مرحلة سابقة، ويجب أن يقرر هذه المرحلة معتمد آخر.",
+    "not_approver": "لست معتمدًا لهذه المرحلة، أو أن الطلب خارج نطاقك.",
+    "closed": "تم البت في هذا الطلب بالفعل."
+  },
+  "decide": {
+    "comment": "تعليق",
+    "commentPlaceholder": "مثال: موافق لهذه الطلبية فقط",
+    "commentHint": "اختياري عند الموافقة، ومطلوب عند الرفض ليعرف مقدم الطلب السبب.",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "movedToStage": "تمت الموافقة، وانتقل الطلب إلى المرحلة {stage}.",
+    "approvedDone": "تمت الموافقة، واكتمل الطلب.",
+    "rejectedDone": "تم الرفض، وأُبلغ مقدم الطلب."
+  },
+  "errors": {
+    "SELF_APPROVAL": "لا يمكنك البت في طلبك أو في طلب يخصك.",
+    "LIMIT_EXCEEDED": "هذا الطلب أعلى من حد الموافقة الخاص بك.",
+    "ALREADY_DECIDED": "لقد قررت في هذا الطلب بالفعل، ويجب أن يقرر هذه المرحلة معتمد آخر.",
+    "PERMISSION_DENIED": "لست معتمدًا لهذه المرحلة، أو أن الطلب خارج نطاقك.",
+    "INVALID_STATE": "تم البت في هذا الطلب أو إغلاقه بالفعل. أعد التحميل لرؤية حالته.",
+    "NOT_FOUND": "هذا الطلب لم يعد موجودًا، أو لا يمكنك رؤيته.",
+    "WORKFLOW_MISSING": "لا يوجد مسار موافقة مُعد لهذا الطلب. تواصل مع مسؤول النظام.",
+    "INSUFFICIENT_STOCK": "لا يوجد مخزون كافٍ لتطبيق هذه التسوية الآن.",
+    "COMMENT_REQUIRED": "يرجى كتابة تعليق (3 أحرف على الأقل) عند الرفض.",
+    "VALIDATION": "يرجى مراجعة القيم المدخلة.",
+    "UNAVAILABLE": "الخدمة غير متاحة مؤقتًا. حاول مرة أخرى.",
+    "UNKNOWN": "حدث خطأ ما. المرجع: {requestId}"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "unreadCount": "{count, plural, =0 {لا توجد إشعارات غير مقروءة} one {إشعار واحد غير مقروء} two {إشعاران غير مقروءين} few {# إشعارات غير مقروءة} many {# إشعارًا غير مقروء} other {# إشعار غير مقروء}}",
+    "markAllRead": "تحديد الكل كمقروء",
+    "markRead": "تحديد كمقروء",
+    "filterLabel": "تصفية الإشعارات",
+    "filters": {
+      "all": "الكل",
+      "unread": "غير المقروءة"
+    },
+    "empty": {
+      "all": "لا توجد لديك إشعارات.",
+      "unread": "لا توجد إشعارات جديدة."
+    },
+    "new": "جديد",
+    "badgeLabel": "{count, plural, one {الإشعارات: واحد غير مقروء} two {الإشعارات: اثنان غير مقروءين} few {الإشعارات: # غير مقروءة} many {الإشعارات: # غير مقروء} other {الإشعارات: # غير مقروء}}",
+    "badgeLabelNone": "الإشعارات",
+    "types": {
+      "approvalRequested": "طلب موافقة: {workflow}",
+      "approvalApproved": "تمت الموافقة على طلبك: {workflow}",
+      "approvalRejected": "رُفض طلبك: {workflow}",
+      "orderApproved": "تمت الموافقة على الطلبية {orderNo}",
+      "orderRejected": "رُفضت الطلبية {orderNo}",
+      "orderCancelled": "أُلغيت الطلبية {orderNo}",
+      "visitExceptionApproved": "تمت الموافقة على استثناء الزيارة",
+      "visitExceptionRejected": "رُفض استثناء الزيارة",
+      "customerAssigned": "تم إسناد عميل إليك",
+      "customerUnassigned": "نُقل أحد عملائك إلى مندوب آخر",
+      "taskAssigned": "تم إسناد مهمة إليك"
+    }
+  }
+}
