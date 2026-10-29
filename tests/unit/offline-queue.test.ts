@@ -3,6 +3,7 @@ import {
   DB_PREFIX,
   clearAllUsers,
   clearForUser,
+  clearOtherUsers,
   createIdbStore,
   createMemoryStore,
   createQueue,
@@ -162,5 +163,36 @@ describe("per-user isolation on a shared device", () => {
   it("clearing is a no-op without IndexedDB", async () => {
     await expect(clearForUser(USER_A, undefined)).resolves.toBeUndefined();
     expect(await clearAllUsers(undefined)).toBe(false);
+    expect(await clearOtherUsers(USER_A, undefined)).toBeNull();
+    expect(await clearAllUsers(undefined, { keep: USER_A })).toBe(false);
+  });
+
+  it("shared device: user A queued, user B starts → A's queue is deleted, B's is kept (F9)", async () => {
+    const idb = createFakeIdb();
+    const a = createQueue(createIdbStore(USER_A, idb.factory), USER_A);
+    const b = createQueue(createIdbStore(USER_B, idb.factory), USER_B);
+    await a.enqueue({ id: ID_1, command: "field.visit_check_in", args: { lat: 30.0, lng: 31.2 } });
+    await b.enqueue({ id: ID_2, command: "work.complete_task", args: {} });
+    await new Promise<void>((resolve) => {
+      const r = idb.factory.open("some-other-db");
+      r.onsuccess = () => resolve();
+    });
+
+    expect(await clearOtherUsers(USER_B, idb.factory)).toEqual([USER_A]);
+    expect(idb.names().sort()).toEqual([dbNameFor(USER_B), "some-other-db"].sort());
+    expect(await clearOtherUsers(USER_B, idb.factory)).toEqual([]); // idempotent
+    expect((await b.list()).map((i) => i.id)).toEqual([ID_2]);
+    // A's open connection let go: a later read finds nothing of A's (a fresh, empty queue).
+    expect(await a.list()).toEqual([]);
+  });
+
+  it("clearAllUsers with keep deletes everyone else's queue", async () => {
+    const idb = createFakeIdb();
+    await createQueue(createIdbStore(USER_A, idb.factory), USER_A).enqueue({ command: "work.create_task", args: {} });
+    await createQueue(createIdbStore(USER_B, idb.factory), USER_B).enqueue({ command: "work.create_task", args: {} });
+    expect(await clearAllUsers(idb.factory, { keep: USER_A })).toBe(true);
+    expect(idb.names()).toEqual([dbNameFor(USER_A)]);
+    await expect(clearOtherUsers("not a user id", idb.factory)).rejects.toThrow(/invalid user id/);
+    expect(idb.names()).toEqual([dbNameFor(USER_A)]);
   });
 });

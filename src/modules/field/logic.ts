@@ -1,6 +1,12 @@
 import { can, type UserContext } from "@/lib/authz/can";
+import type { TranslatedCode } from "@/lib/errors";
+import type { EnqueueInput } from "@/lib/offline/queue";
+import type { Json, JsonObject, QueueItem, SendResult } from "@/lib/offline/types";
 import {
   EXCEPTION_ELIGIBLE,
+  VERIFICATION_STATUSES,
+  type CheckInResult,
+  type DeviceResult,
   type TaskRow,
   type TodayItem,
   type VerificationStatus,
@@ -302,4 +308,195 @@ export function sanitizeSearch(q: string): string {
 export function localizedName(locale: string, en: string | null | undefined, ar: string | null | undefined): string {
   if (locale === "ar" && ar) return ar;
   return en ?? ar ?? "";
+}
+
+// ---------------------------------------------------------------------------
+// Offline: send now or save on the device (docs/ARCHITECTURE.md §6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Field commands the offline queue may replay. Each is idempotent on a key the
+ * device fixes before the first attempt, so a replay answers `replayed: true`
+ * and never applies twice:
+ * - check-in: the visit id (a check_in location event exists → replay);
+ * - check-out: the visit id (a check_out location event exists → replay);
+ * - task completion: the task id (status done → replay).
+ * The visit exception request is NOT queued (see device.ts). The ids double as
+ * the labels under `offline.commands.*`.
+ */
+export const FIELD_QUEUED_COMMANDS = {
+  checkIn: "field.visit_check_in",
+  checkOut: "field.visit_check_out",
+  completeTask: "work.complete_task",
+} as const;
+export type FieldQueuedCommand = (typeof FIELD_QUEUED_COMMANDS)[keyof typeof FIELD_QUEUED_COMMANDS];
+
+/** 32-bit FNV-1a. */
+function fnv1a(text: string, seed: number): number {
+  let h = (0x811c9dc5 ^ seed) >>> 0;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/**
+ * A stable, name-based id in UUID format (RFC 9562 version 8, "custom"): the same
+ * name always gives the same id, so saving the same command twice on this device
+ * stores one queue item. Not a security token; it never leaves the device.
+ */
+export function nameBasedId(name: string): string {
+  const hex = [0, 1, 2, 3].map((seed) => fnv1a(`${seed}|${name}`, seed).toString(16).padStart(8, "0")).join("");
+  const variant = ((parseInt(hex.charAt(16), 16) & 0x3) | 0x8).toString(16);
+  const h = `${hex.slice(0, 12)}8${hex.slice(13, 16)}${variant}${hex.slice(17)}`;
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
+}
+
+/**
+ * The queue item id of a field command. A check-in's item id IS its visit id
+ * (the command's client ref). Check-out shares that visit id, so its item id is
+ * derived from it; task completion derives one from the task id. The senders
+ * always send the payload's own ids, never the item id.
+ */
+export function deviceQueueId(command: FieldQueuedCommand, key: string): string {
+  return command === FIELD_QUEUED_COMMANDS.checkIn ? key : nameBasedId(`${command}:${key}`);
+}
+
+/** One field command as the device fixed it before the first attempt. */
+export interface DeviceCommand {
+  command: FieldQueuedCommand;
+  /** Queue item id (see deviceQueueId). */
+  id: string;
+  /** The exact payload of the server action (ids, GPS fix and device time included). */
+  args: JsonObject;
+  /** Commands on one visit (check-in, then check-out) apply strictly in order. */
+  groupKey: string | null;
+  /** Synthetic, human summary for the sync screen (e.g. the clinic name). */
+  summary?: string | null;
+}
+
+/** The part of the sync engine the decision needs (a SyncEngine satisfies it). */
+export interface DeviceQueue {
+  list(): Promise<QueueItem[]>;
+  enqueue(input: EnqueueInput): Promise<QueueItem>;
+}
+
+export type QueueReason =
+  /** The device is offline. */
+  | "offline"
+  /** The request failed in a way that is safe to repeat (connection lost, rolled back). */
+  | "network"
+  /** An earlier command on the same visit still waits in the queue. */
+  | "ordered"
+  /** This very command was already saved on this device. */
+  | "already_saved";
+
+export type SubmitOutcome<T> =
+  | { kind: "sent"; data: T }
+  | { kind: "queued"; item: QueueItem; reason: QueueReason }
+  | { kind: "error"; code: string; messageKey: TranslatedCode; requestId?: string; retryable: boolean };
+
+/**
+ * Send a field command now, or save it on the device for the sync engine.
+ *
+ * - Already saved (same item id): never sent again from here; a synced one
+ *   answers with its saved server result.
+ * - An unresolved earlier command on the same visit: queued behind it (order).
+ * - Offline: queued.
+ * - Online: sent directly. A failure that is safe to repeat — the request threw
+ *   (connection lost, outcome unknown) or the action says `retryable`
+ *   (UNAVAILABLE, rolled back) — is queued: the command is idempotent on its
+ *   key, so the replay applies at most once. A business error (validation,
+ *   permission, state) goes back to the caller and is NEVER queued.
+ * - No usable queue (no IndexedDB, server render): direct send only.
+ */
+export async function submitDeviceCommand<T>(
+  cmd: DeviceCommand,
+  deps: { online: boolean; queue: DeviceQueue | null; send: () => Promise<DeviceResult<T>> },
+): Promise<SubmitOutcome<T>> {
+  let queue = deps.queue;
+  let items: QueueItem[] = [];
+  if (queue) {
+    try {
+      items = await queue.list();
+    } catch {
+      queue = null; // offline storage is broken on this device: behave as online-only
+    }
+  }
+
+  const unavailable = (): SubmitOutcome<T> => ({ kind: "error", code: "UNAVAILABLE", messageKey: "UNAVAILABLE", retryable: true });
+  const save = async (reason: QueueReason): Promise<SubmitOutcome<T>> => {
+    if (!queue) return unavailable();
+    try {
+      const item = await queue.enqueue({ command: cmd.command, id: cmd.id, args: cmd.args, groupKey: cmd.groupKey, summary: cmd.summary ?? null });
+      return { kind: "queued", item, reason };
+    } catch {
+      return unavailable(); // could not store it: the caller keeps the payload for a manual retry
+    }
+  };
+
+  const existing = items.find((i) => i.id === cmd.id);
+  if (existing) {
+    if (existing.status === "done") return { kind: "sent", data: existing.result as T };
+    return { kind: "queued", item: existing, reason: "already_saved" };
+  }
+  if (cmd.groupKey && items.some((i) => i.groupKey === cmd.groupKey && i.status !== "done")) return save("ordered");
+  if (!deps.online && queue) return save("offline");
+
+  let result: DeviceResult<T>;
+  try {
+    result = await deps.send();
+  } catch {
+    // A server action rejects when the request got no answer (offline, connection dropped).
+    return save("network");
+  }
+  if (result.ok) return { kind: "sent", data: result.data };
+  if (result.retryable) return save("network");
+  return { kind: "error", code: result.code, messageKey: result.messageKey, requestId: result.requestId, retryable: false };
+}
+
+/**
+ * A field server action's answer → what a queue sender returns. UNAVAILABLE
+ * means the outcome is unknown (the database connection was lost): `ambiguous`,
+ * which the engine re-sends only because the field senders are idempotent.
+ */
+export function deviceToSendResult(result: DeviceResult<unknown>): SendResult {
+  if (result.ok) return { ok: true, data: (result.data ?? null) as Json };
+  const unknownOutcome = result.code === "UNAVAILABLE";
+  return {
+    ok: false,
+    error: {
+      code: result.code,
+      messageKey: result.messageKey,
+      retryable: result.retryable && !unknownOutcome,
+      ambiguous: unknownOutcome,
+      ...(result.requestId ? { requestId: result.requestId } : {}),
+    },
+  };
+}
+
+/** A synced check-in item's stored server answer, if it has the shape of api.visit_check_in's result. */
+export function asCheckInResult(value: Json | null | undefined): CheckInResult | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  if (typeof value.visit_id !== "string") return null;
+  if (!(VERIFICATION_STATUSES as readonly unknown[]).includes(value.verification_status)) return null;
+  return value as unknown as CheckInResult;
+}
+
+/** /visits/[id]?checkedOut=… after a check-out: selects the confirmation text. */
+export function checkedOutParam(result: Json | null | undefined): "followUp" | "1" {
+  const isObject = typeof result === "object" && result !== null && !Array.isArray(result);
+  return isObject && typeof result.follow_up_task_id === "string" ? "followUp" : "1";
+}
+
+export type QueuedView = "none" | "waiting" | "synced" | "attention";
+
+/** What a field screen shows for a saved command: waiting, synced, or needs a decision on the sync screen. */
+export function queuedView(item: QueueItem | undefined | null): QueuedView {
+  if (!item) return "none";
+  if (item.status === "done") return "synced";
+  if (item.status === "failed" || item.status === "conflict") return "attention";
+  if (item.flag === "stale" && !item.staleAcknowledged) return "attention";
+  return "waiting";
 }

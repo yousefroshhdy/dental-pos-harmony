@@ -2,11 +2,12 @@
 
 import { Cloud, CloudOff, RefreshCw, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { countItems } from "../logic";
+import { startOfflineDevice } from "../senders";
 import { useOfflineQueue } from "../use-offline-queue";
 import { SyncQueueView } from "./sync-queue-view";
 
@@ -14,7 +15,8 @@ import { SyncQueueView } from "./sync-queue-view";
  * Header indicator: online / offline, syncing, and how many saved items the
  * server has not confirmed yet. Mounting it also starts automatic syncing (app
  * start, `online`, tab visible, every minute), so the app layout renders it
- * once for the signed-in user:
+ * once for the signed-in user. It also registers every module's queue senders
+ * and deletes other users' queues on this device (../senders.ts):
  *
  *   <SyncIndicator userId={ctx.user_id} />
  *
@@ -24,6 +26,8 @@ import { SyncQueueView } from "./sync-queue-view";
  */
 export function SyncIndicator({ userId, className }: { userId: string; className?: string }) {
   const t = useTranslations("offline.indicator");
+  // Every page: register all queue senders and wipe other users' queues on this device.
+  useEffect(() => startOfflineDevice(userId), [userId]);
   const { items, online, syncing } = useOfflineQueue(userId, { autoSync: true });
   const { unsynced, attention } = countItems(items ?? []);
   const dialog = useRef<HTMLDialogElement>(null);

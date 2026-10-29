@@ -234,5 +234,19 @@
     "noMatch": "No customer in your list matches.",
     "noCustomers": "You have no customers assigned yet.",
     "noClinicLocation": "No clinic location"
+  },
+  "offline": {
+    "savedTitle": "Saved on this device.",
+    "checkIn": "Your check-in, with the location and time taken when you tapped, will be sent automatically when you're back online. The GPS result then shows here and under Visits.",
+    "checkOut": "Your check-out will be sent automatically when you're back online.",
+    "task": "This task will be marked done automatically when you're back online.",
+    "capturedAt": "Recorded at {time}.",
+    "sending": "Sending now…",
+    "followSync": "You can follow it with the sync icon at the top of the screen.",
+    "attention": "The server did not accept this saved item. Open pending sync (the sync icon at the top) to retry or discard it.",
+    "stale": "This was saved more than 7 days ago, so it is not sent automatically. Review it in pending sync (the sync icon at the top).",
+    "checkOutNow": "Check out",
+    "taskDone": "Marked as done.",
+    "exceptionOffline": "You're offline. Request the exception when you're back online."
   }
 }

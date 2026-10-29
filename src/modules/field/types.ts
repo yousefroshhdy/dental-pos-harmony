@@ -139,6 +139,13 @@ export interface CheckOutResult {
   replayed: boolean;
 }
 
+/** api.complete_task result. */
+export interface CompleteTaskResult {
+  task_id: string;
+  status: "done";
+  replayed: boolean;
+}
+
 /** api.request_visit_exception result. */
 export interface ExceptionResult {
   approval_request_id: string;

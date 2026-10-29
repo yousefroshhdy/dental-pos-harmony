@@ -79,6 +79,20 @@ describe("offline client wiring", () => {
     await clearForUser(USER_A);
   });
 
+  it("app start for user B wipes user A's queue (session expired, no sign-out) and keeps B's (F9)", async () => {
+    const { getSyncEngine, clearOtherUsers, countUnsynced, clearForUser } = await load();
+    const a = getSyncEngine(USER_A);
+    await a.enqueue({ command: "field.visit_check_in", args: { lat: 30.0, lng: 31.2, notes: "synthetic" } });
+    await getSyncEngine(USER_B).enqueue({ command: "work.complete_task", args: {} });
+
+    expect(await clearOtherUsers(USER_B)).toEqual([USER_A]);
+    expect(idb.names()).toEqual([`honest-offline-v1:${USER_B}`]);
+    expect(getSyncEngine(USER_A)).not.toBe(a); // this tab dropped A's engine
+    expect(await countUnsynced(USER_B)).toBe(1);
+    await clearForUser(USER_A);
+    await clearForUser(USER_B);
+  });
+
   it("sign-out: countUnsynced warns, clearForUser wipes this user's queue only", async () => {
     const { getSyncEngine, countUnsynced, clearForUser } = await load();
     await getSyncEngine(USER_A).enqueue({ command: "work.create_task", args: {} });

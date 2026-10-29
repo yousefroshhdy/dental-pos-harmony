@@ -192,14 +192,35 @@ export async function clearForUser(userId: string, idb: IDBFactory | undefined =
 }
 
 /**
- * Deletes every user's queue on this device (e.g. a "reset device" action).
+ * Deletes every user's queue on this device (e.g. a "reset device" action), or,
+ * with `keep`, every user's queue except that user's (see clearOtherUsers).
  * Returns false when the browser cannot list databases (indexedDB.databases()).
  */
-export async function clearAllUsers(idb: IDBFactory | undefined = defaultIdb()): Promise<boolean> {
-  if (!idb || typeof idb.databases !== "function") return false;
-  const dbs = await idb.databases();
-  await Promise.all(dbs.filter((d) => d.name?.startsWith(DB_PREFIX)).map((d) => deleteDatabase(idb, d.name as string)));
-  return true;
+export async function clearAllUsers(
+  idb: IDBFactory | undefined = defaultIdb(),
+  opts: { keep?: string } = {},
+): Promise<boolean> {
+  return (await deleteUserDatabases(idb, opts.keep === undefined ? null : dbNameFor(opts.keep))) !== null;
+}
+
+/**
+ * Shared devices: deletes the queues of every user except `keepUserId`. Run it
+ * when a signed-in user starts the app, so a previous user's unsynced commands
+ * (GPS fixes, notes) do not stay on the device after their session simply
+ * expired instead of signing out. Returns the user ids whose queues were
+ * deleted, or null when the browser cannot list databases.
+ */
+export async function clearOtherUsers(keepUserId: string, idb: IDBFactory | undefined = defaultIdb()): Promise<string[] | null> {
+  return deleteUserDatabases(idb, dbNameFor(keepUserId));
+}
+
+async function deleteUserDatabases(idb: IDBFactory | undefined, keepName: string | null): Promise<string[] | null> {
+  if (!idb || typeof idb.databases !== "function") return null;
+  const names = (await idb.databases())
+    .map((d) => d.name)
+    .filter((name): name is string => typeof name === "string" && name.startsWith(DB_PREFIX) && name !== keepName);
+  await Promise.all(names.map((name) => deleteDatabase(idb, name)));
+  return names.map((name) => name.slice(DB_PREFIX.length));
 }
 
 // ---------------------------------------------------------------------------
