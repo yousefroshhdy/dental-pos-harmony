@@ -51,6 +51,18 @@ Implemented and tested on local PostgreSQL 16 with the stub. Not yet on a live S
 - **Orders, stock and approvals:** `v_orders`, `v_order_lines`, `v_stock_available`, `v_stock_detail`, `v_movements` (cost masked), `v_transfers`, `v_approvals_inbox`.
 - **Integrations:** `v_outbox_health`, `v_outbox_dead`, `v_integration_routes`.
 
+**Phase 3 additions (migrations `20261030000100`–`0600`, 2026-10-30):**
+
+| Area | Commands | Read views | Migration |
+|------|----------|------------|-----------|
+| CRM | `find_duplicate_customers(…)` (read-only) | `v_crm_assignable_employees`, `v_governorates`, `v_specialties` | 0100 |
+| Orders | — | `v_sellable_variants`, `v_order_status_history` | 0300 |
+| Inventory | — | `v_inventory_stock`, `v_inventory_variants`, `v_inventory_warehouses`, `v_reorder_alerts`, `v_goods_receipts`, `v_transfer_lines` | 0400 |
+| Approvals | — | `v_approval_requests`, `v_approval_steps` | 0500 |
+| Catalogue | `upsert_product`, `upsert_variant`, `set_product_status`, `set_variant_status` (no hard delete), `upsert_price_list`, `set_price_list_item`, `remove_price_list_item`, `assign_customer_price_list`, `end_customer_price_list`, `create_promotion`, `end_promotion`; all require a company-wide `catalog.*` grant | `v_catalog_products`, `v_catalog_variants`, `v_catalog_brands`, `v_catalog_categories`, `v_price_lists`, `v_price_list_items`, `v_customer_price_lists`, `v_promotions` | 0600 |
+
+All the new views are `security_invoker`. Suites 19 and 21–24 cover them, and suites 17 and 18 still guard the privilege sweep and per-statement `auth.uid()`.
+
 **Additional error codes (beyond §8.1 of ARCHITECTURE):**
 - **Duplicates and conflicts:** `DUPLICATE_CUSTOMER`, `CONFLICT` (stale `version`), `IDEMPOTENCY_CONFLICT`.
 - **Approvals:** `SELF_APPROVAL`, `LIMIT_EXCEEDED`, `ALREADY_DECIDED`, `CANCEL_PENDING`.

@@ -17,18 +17,18 @@ Definitions are in `docs/TESTING.md` §4.
 | 0 Discovery | ✅ | n/a | n/a | ⏳ owner review | n/a |
 | 1 Architecture | ✅ | ✅ docs + draft schema | ✅ draft smoke test 45/45 | ✅ owner delegated decisions | n/a |
 | 2 Foundation | ✅ | ✅ (see detail) | ✅ (see detail) | — needs staging | — |
-| 3 Core operations | ✅ | 🟡 database commands done; field/CRM/order/inventory UI not started | 🟡 DB only | — | — |
+| 3 Core operations | ✅ | 🟡 DB commands + first UI for every area (see detail); offline queue not yet wired into check-in/orders; migration tooling and pilot not started | 🟡 DB, unit and route-protection e2e; no live click-through | — | — |
 | 4 Financial operations | ✅ | — | — | — | — |
 | 5 Management intelligence | ✅ | — | — | — | — |
 | 6 Integrations | ✅ | — | — | — | — |
 | 7 Advanced modules | ✅ | — | — | — | — |
 | 8 Production hardening | ✅ | — | — | — | — |
 
-### Detail (as of 2026-10-28)
+### Detail (as of 2026-10-30)
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Migrations (22 files) + reference data | Implemented, Tested; applied to staging | `pnpm test:db`: 578 assertions in 18 suites. Suites 01–17 (577) pass on Supabase staging with real pgTAP |
+| Migrations (27 files) + reference data | Implemented, Tested; the first 22 applied to staging | `pnpm test:db`: 797 assertions in 23 suites. Suites 01–17 (577) pass on Supabase staging with real pgTAP |
 | Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
 | Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
 | Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
@@ -37,11 +37,19 @@ Definitions are in `docs/TESTING.md` §4.
 | Outbox dispatcher (DB, `/api/cron/outbox`, HMAC signing) | Implemented, Tested | suite 09 + unit tests |
 | Views never bypass RLS | Implemented, Tested | suite 15 |
 | Independent security audit (15 findings) | All fixed, Tested | `docs/security/audit-2026-10-29.md`, suite 17 |
-| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | unit tests + 46 Playwright (Chromium) |
+| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 542 unit tests + 162 Playwright (Chromium) |
 | Admin console v1 (users, invite, roles editor, security events) | Implemented, unit-tested | never clicked through against a live database |
 | CI pipeline | Implemented | has not run on GitHub yet |
 | WebKit (iOS) end-to-end tests | Implemented | not run (no WebKit in the build sandbox) |
-| Phase 3 user interfaces (rep "Today", customers, visits, order builder, inventory, approvals inbox) | Not started | next |
+| Phase 3 UI: rep Today, visits (GPS check-in/out, exceptions, consent screen), tasks | Implemented, unit-tested | `src/modules/field`, routes `/today` `/visits` `/tasks` |
+| Phase 3 UI: customers (create/edit, duplicates, reassignment, location, timeline), opportunities pipeline | Implemented, Tested | `src/modules/crm`, suite 19 |
+| Phase 3 UI: order builder, list, detail, lifecycle actions (server pricing only) | Implemented, Tested | `src/modules/orders`, suite 21 |
+| Phase 3 UI: stock, ledger, receipts, transfers, adjustments, reorder/expiry alerts | Implemented, Tested | `src/modules/inventory`, suite 22 |
+| Phase 3 UI: approvals inbox and detail, notifications, header bell | Implemented, Tested | `src/modules/approvals`, suite 23 |
+| Catalogue maintenance commands and admin UI (products, SKUs, price lists, promotions) | Implemented, Tested | `src/modules/catalog`, suite 24 |
+| Offline queue (IndexedDB), sync engine, /sync screen, header indicator, queue wipe on sign-out | Implemented, unit-tested | `src/lib/offline`, `src/modules/offline`. **Not yet used by check-in or orders** (next step) |
+| Every Phase 3 screen redirects signed-out visitors to login | Tested | `tests/e2e/phase3-routes.spec.ts` (116 checks) |
+| Data migration tooling, rep pilot | Not started | Needs U-01/U-02 data and D-03 clearance |
 
 ## 2. MVP scope (prioritised)
 

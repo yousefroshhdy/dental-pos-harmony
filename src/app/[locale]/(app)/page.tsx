@@ -1,11 +1,15 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { redirect } from "next/navigation";
 import { Badge, Card, CardTitle } from "@/components/ui/primitives";
+import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const ctx = await getUserContext();
+  // Field staff start their day on /today; everyone else sees this overview.
+  if (!ctx.is_owner && can(ctx, "field.visit.create")) redirect(`/${locale}/today`);
   const t = await getTranslations("home");
   const tScopes = await getTranslations("scopes");
 

@@ -8,11 +8,14 @@ import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import type { NavItem } from "@/lib/nav";
+import { NotificationBadge } from "@/modules/approvals/components/notification-badge";
 import { approvalsNav } from "@/modules/approvals/nav";
 import { catalogNav } from "@/modules/catalog/nav";
 import { crmNav } from "@/modules/crm/nav";
 import { fieldNav } from "@/modules/field/nav";
 import { inventoryNav } from "@/modules/inventory/nav";
+import { OfflineSignOutForm } from "@/modules/offline/components/sign-out-form";
+import { SyncIndicator } from "@/modules/offline/components/sync-indicator";
 import { ordersNav } from "@/modules/orders/nav";
 import { signOut } from "../login/actions";
 
@@ -72,12 +75,14 @@ export default async function AppLayout({ children, params }: { children: ReactN
               </Link>
             ))}
           </nav>
+          <SyncIndicator userId={ctx.user_id} />
+          <NotificationBadge />
           <LocaleSwitcher />
-          <form action={signOutAction}>
+          <OfflineSignOutForm userId={ctx.user_id} action={signOutAction}>
             <Button variant="ghost" size="sm">
               {t("signOut")}
             </Button>
-          </form>
+          </OfflineSignOutForm>
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
