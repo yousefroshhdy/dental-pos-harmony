@@ -1,1 +1,200 @@
-{}
+{
+  "nav": {
+    "approvals": "Approvals",
+    "notifications": "Notifications"
+  },
+  "loading": "Loading…",
+  "unknownPerson": "A colleague",
+  "inbox": {
+    "title": "Approvals",
+    "subtitle": "Requests waiting for your decision, your own requests, and what you decided.",
+    "tabsLabel": "Approval lists",
+    "tabs": {
+      "decide": "To decide",
+      "mine": "My requests",
+      "decided": "Decided by me"
+    },
+    "empty": {
+      "decide": "Nothing is waiting for your decision.",
+      "mine": "You have not requested any approvals.",
+      "decided": "You have not decided any requests yet."
+    },
+    "truncated": "Showing the first {limit} requests only."
+  },
+  "workflows": {
+    "orderDiscount": "Order discount / credit",
+    "orderCancel": "Order cancellation",
+    "salesReturn": "Customer return",
+    "inventoryAdjustment": "Inventory adjustment",
+    "customerReassign": "Customer reassignment",
+    "visitException": "Visit exception",
+    "creditNote": "Credit note",
+    "creditLimit": "Credit limit change",
+    "commissionPeriod": "Commission period",
+    "commissionAdjustment": "Commission adjustment",
+    "dataExport": "Sensitive data export"
+  },
+  "status": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "expired": "Expired"
+  },
+  "decision": {
+    "approved": "Approved",
+    "rejected": "Rejected"
+  },
+  "card": {
+    "requestedBy": "Requested by {name}",
+    "stageOf": "Stage {stage} of {count}",
+    "stage": "Stage {stage}",
+    "waiting": {
+      "minute": "{count, plural, =0 {Waiting less than a minute} one {Waiting # minute} other {Waiting # minutes}}",
+      "hour": "{count, plural, one {Waiting # hour} other {Waiting # hours}}",
+      "day": "{count, plural, one {Waiting # day} other {Waiting # days}}"
+    },
+    "decidedAt": "Decided {date}",
+    "overdue": "Overdue",
+    "myDecision": {
+      "approved": "You approved",
+      "rejected": "You rejected"
+    }
+  },
+  "facts": {
+    "orderNo": "Order",
+    "customer": "Customer",
+    "orderTotal": "Order total",
+    "discountExceeded": "Discount above the rep's limit",
+    "creditExceeded": "Customer credit limit exceeded",
+    "requestedDiscount": "Highest requested discount",
+    "requesterDiscountLimit": "Requester's discount limit",
+    "creditLimit": "Credit limit",
+    "balance": "Current balance",
+    "exposure": "Balance after this order",
+    "creditExcess": "Amount over the credit limit",
+    "fromStatus": "Order status",
+    "reason": "Reason",
+    "warehouse": "Warehouse",
+    "variant": "Product",
+    "quantity": "Adjustment",
+    "requesterUnitLimit": "Requester's limit without approval",
+    "adjustedToday": "Already adjusted today",
+    "fromEmployee": "Current representative",
+    "toEmployee": "New representative",
+    "visitStatus": "Check-in result",
+    "distance": "Distance from the clinic",
+    "accuracy": "GPS accuracy",
+    "amount": "Amount"
+  },
+  "units": {
+    "percent": "{value}%",
+    "units": "{value} units",
+    "meters": "{value} m"
+  },
+  "visitStatus": {
+    "out_of_range": "Outside the clinic radius",
+    "no_customer_location": "Clinic has no saved location",
+    "no_device_location": "No location from the device",
+    "low_accuracy": "GPS accuracy too low"
+  },
+  "subject": {
+    "openOrder": "Open the order",
+    "openCustomer": "Open the customer",
+    "openVisit": "Open the visit",
+    "openStock": "Open the stock"
+  },
+  "detail": {
+    "metaTitle": "Approval request",
+    "back": "Back to approvals",
+    "whatTitle": "What is requested",
+    "noFacts": "No further details were recorded with this request.",
+    "contextTitle": "Request",
+    "requester": "Requested by",
+    "you": "You",
+    "subjectEmployee": "About",
+    "requestedAt": "Requested on",
+    "stage": "Stage",
+    "approvalsProgress": "{done} of {required} approvals",
+    "neededPermission": "Approver permission",
+    "waiting": "Waiting",
+    "decided": "Decided",
+    "trailTitle": "Decisions",
+    "noSteps": "No decisions yet.",
+    "onBehalfOf": "on behalf of {name}",
+    "decisionTitle": "Your decision",
+    "youDecided": {
+      "approved": "You approved this on {date}.",
+      "rejected": "You rejected this on {date}."
+    },
+    "closed": {
+      "approved": "This request was approved. No further decision is needed.",
+      "rejected": "This request was rejected. No further decision is needed.",
+      "cancelled": "This request was cancelled.",
+      "expired": "This request expired."
+    }
+  },
+  "verdict": {
+    "own_request": "You made this request, so someone else must decide it.",
+    "about_you": "This request is about you, so someone else must decide it.",
+    "limit": "This request is above your approval limit. It needs an approver with a higher limit.",
+    "already_decided": "You already decided an earlier stage. A different approver must decide this stage.",
+    "not_approver": "You are not an approver for this stage, or the request is outside your scope.",
+    "closed": "This request is already decided."
+  },
+  "decide": {
+    "comment": "Comment",
+    "commentPlaceholder": "e.g. Agreed for this order only",
+    "commentHint": "Optional when approving. Required when rejecting, so the requester knows why.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "movedToStage": "Approved. The request moved to stage {stage}.",
+    "approvedDone": "Approved. The request is complete.",
+    "rejectedDone": "Rejected. The requester has been notified."
+  },
+  "errors": {
+    "SELF_APPROVAL": "You can't decide your own request, or a request about you.",
+    "LIMIT_EXCEEDED": "This request is above your approval limit.",
+    "ALREADY_DECIDED": "You already decided this request. A different approver must decide this stage.",
+    "PERMISSION_DENIED": "You are not an approver for this stage, or the request is outside your scope.",
+    "INVALID_STATE": "This request has already been decided or closed. Reload to see its status.",
+    "NOT_FOUND": "That request no longer exists, or you can't see it.",
+    "WORKFLOW_MISSING": "This request has no approval route configured. Contact an administrator.",
+    "INSUFFICIENT_STOCK": "Not enough stock to apply this adjustment now.",
+    "COMMENT_REQUIRED": "Please write a comment (at least 3 characters) when rejecting.",
+    "VALIDATION": "Please check the values you entered.",
+    "UNAVAILABLE": "The service is temporarily unavailable. Please try again.",
+    "UNKNOWN": "Something went wrong. Reference: {requestId}"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadCount": "{count, plural, =0 {No unread notifications} one {# unread notification} other {# unread notifications}}",
+    "markAllRead": "Mark all as read",
+    "markRead": "Mark as read",
+    "filterLabel": "Filter notifications",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "empty": {
+      "all": "You have no notifications.",
+      "unread": "You're all caught up."
+    },
+    "new": "New",
+    "badgeLabel": "{count, plural, one {Notifications: # unread} other {Notifications: # unread}}",
+    "badgeLabelNone": "Notifications",
+    "types": {
+      "approvalRequested": "Approval requested: {workflow}",
+      "approvalApproved": "Your request was approved: {workflow}",
+      "approvalRejected": "Your request was rejected: {workflow}",
+      "orderApproved": "Order approved {orderNo}",
+      "orderRejected": "Order rejected {orderNo}",
+      "orderCancelled": "Order cancelled {orderNo}",
+      "visitExceptionApproved": "Visit exception approved",
+      "visitExceptionRejected": "Visit exception rejected",
+      "customerAssigned": "A customer was assigned to you",
+      "customerUnassigned": "A customer was moved to another representative",
+      "taskAssigned": "A task was assigned to you"
+    }
+  }
+}
