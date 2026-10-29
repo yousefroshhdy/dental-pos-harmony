@@ -392,13 +392,12 @@ Metric rules that prevent double counting and define edge cases are in `docs/DAS
 Queue rules: max age 7 days (older items are flagged for review, not silently applied). Commands carry the device `captured_at`. Late syncs are flagged (`late_sync`) so KPI disputes can be resolved from data.
 
 **As built (2026-10-30):**
-- **Merge status:** the field senders and the two F9 fixes are on an agent branch and not yet merged; the F9 fixes are still in progress.
 - **Code:** the queue lives in `src/lib/offline` (IndexedDB, one database per user) and the sync engine runs commands in order, through senders registered in `src/modules/offline/senders.ts`.
 - **Queued today:** visit check-in (item id = visit id), visit check-out and task completion (ids derived from the visit or task id). A replay is a server-side no-op that reports `replayed`.
 - **Not queued:** a visit exception request stays online-only. It has no client ref, and once a manager decides, a late replay would fail even though it was applied.
-- **Retry rule:** a sender is auto-retried after an ambiguous failure only if it is registered as idempotent (audit 2026-10-30, F9; in progress).
-- **Shared devices:** sign-out wipes the user's queue, and on start the app wipes every other user's queue on the device (F9; in progress).
-- **Limits:** pages are never cached, so the field page must be open before signal is lost. Orders, leads, payments and the read cache are still to come.
+- **Retry rule:** a sender is auto-retried after an ambiguous failure only if it is registered as idempotent (audit 2026-10-30, F9).
+- **Shared devices:** sign-out wipes the user's queue, and on start the app wipes every other user's queue on the device (F9). This needs `indexedDB.databases()`; on older Firefox (before 126) it does nothing.
+- **Limits:** pages are never cached, so the field page must be open before signal is lost. An unplanned check-in saved offline and tapped again after a reload can create a second visit. Orders, leads, payments and the read cache are still to come.
 
 ---
 

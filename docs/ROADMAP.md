@@ -17,7 +17,7 @@ Definitions are in `docs/TESTING.md` §4.
 | 0 Discovery | ✅ | n/a | n/a | ⏳ owner review | n/a |
 | 1 Architecture | ✅ | ✅ docs + draft schema | ✅ draft smoke test 45/45 | ✅ owner delegated decisions | n/a |
 | 2 Foundation | ✅ | ✅ (see detail) | ✅ (see detail) | — needs staging | — |
-| 3 Core operations | ✅ | 🟡 DB commands + first UI for every area (see detail); offline queue not yet wired into check-in/orders; migration tooling and pilot not started | 🟡 DB, unit and route-protection e2e; no live click-through | — | — |
+| 3 Core operations | ✅ | 🟡 DB commands + first UI for every area (see detail); offline field check-in/out and tasks; migration tooling and pilot not started | 🟡 DB, unit and route-protection e2e; no live click-through | — | — |
 | 4 Financial operations | ✅ | — | — | — | — |
 | 5 Management intelligence | ✅ | — | — | — | — |
 | 6 Integrations | ✅ | — | — | — | — |
@@ -37,7 +37,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Outbox dispatcher (DB, `/api/cron/outbox`, HMAC signing) | Implemented, Tested | suite 09 + unit tests |
 | Views never bypass RLS | Implemented, Tested | suite 15 |
 | Independent security audit (15 findings) | All fixed, Tested | `docs/security/audit-2026-10-29.md`, suite 17 |
-| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 542 unit tests + 162 Playwright (Chromium) |
+| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 595 unit tests + 162 Playwright (Chromium) |
 | Admin console v1 (users, invite, roles editor, security events) | Implemented, unit-tested | never clicked through against a live database |
 | CI pipeline | Implemented | has not run on GitHub yet |
 | WebKit (iOS) end-to-end tests | Implemented | not run (no WebKit in the build sandbox) |
@@ -47,7 +47,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Phase 3 UI: stock, ledger, receipts, transfers, adjustments, reorder/expiry alerts | Implemented, Tested | `src/modules/inventory`, suite 22 |
 | Phase 3 UI: approvals inbox and detail, notifications, header bell | Implemented, Tested | `src/modules/approvals`, suite 23 |
 | Catalogue maintenance commands and admin UI (products, SKUs, price lists, promotions) | Implemented, Tested | `src/modules/catalog`, suite 24 |
-| Offline queue (IndexedDB), sync engine, /sync screen, header indicator, queue wipe on sign-out | Implemented, unit-tested | `src/lib/offline`, `src/modules/offline`. **Not yet used by check-in or orders** (next step) |
+| Offline queue (IndexedDB), sync engine, /sync screen, header indicator; check-in, check-out and task completion queue offline and sync exactly once; per-user wipe on shared devices | Implemented, unit-tested | `src/lib/offline`, `src/modules/offline`, `src/modules/field/offline.ts`. Offline Playwright flow and order drafts not done yet |
 | Every Phase 3 screen redirects signed-out visitors to login | Tested | `tests/e2e/phase3-routes.spec.ts` (116 checks) |
 | Data migration tooling, rep pilot | Not started | Needs U-01/U-02 data and D-03 clearance |
 
