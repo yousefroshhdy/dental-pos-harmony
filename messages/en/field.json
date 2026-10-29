@@ -1,1 +1,238 @@
-{}
+{
+  "nav": {
+    "today": "My day",
+    "visits": "Visits",
+    "tasks": "Tasks"
+  },
+  "errors": {
+    "NO_EMPLOYEE_PROFILE": "Your login is not linked to an employee record. Ask your administrator.",
+    "WORKFLOW_MISSING": "The approval workflow for this request is not set up. Ask your administrator."
+  },
+  "verdict": {
+    "pending": "Pending",
+    "verified": "Verified",
+    "out_of_range": "Out of range",
+    "low_accuracy": "Low GPS accuracy",
+    "no_customer_location": "No clinic location",
+    "no_device_location": "No location",
+    "exception_requested": "Exception requested",
+    "exception_approved": "Exception approved",
+    "exception_rejected": "Exception rejected"
+  },
+  "visitStatus": {
+    "planned": "Planned",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "missed": "Missed"
+  },
+  "outcome": {
+    "order_taken": "Order taken",
+    "interested": "Interested",
+    "follow_up": "Needs follow-up",
+    "not_interested": "Not interested",
+    "doctor_unavailable": "Doctor unavailable",
+    "collection": "Collection",
+    "demo": "Product demo",
+    "complaint": "Complaint",
+    "other": "Other"
+  },
+  "anomaly": {
+    "clock_skew": "Device clock differs from server",
+    "late_sync": "Sent late (offline)",
+    "duplicate_fix": "Same coordinates as the previous fix",
+    "impossible_travel": "Implausible travel speed"
+  },
+  "taskKind": {
+    "follow_up": "Follow-up",
+    "collection": "Collection",
+    "visit_prep": "Visit preparation",
+    "approval": "Approval",
+    "quality": "Quality",
+    "general": "General"
+  },
+  "priority": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "taskStatus": {
+    "open": "Open",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "consent": {
+    "title": "Location at check-in",
+    "intro": "To confirm that a visit took place at the clinic, Honest OS reads your location once when you check in and once when you check out.",
+    "what": "What is collected: one GPS position (latitude, longitude and its accuracy) and the time on your phone, at the moment you tap the button.",
+    "when": "When: only when you tap check-in or check-out. There is no background or continuous tracking.",
+    "why": "Why: the server compares the position with the clinic's location and marks the visit verified, out of range or low accuracy.",
+    "retention": "Retention: raw positions are kept for 12 months and then deleted automatically. The visit result (verified or not) is kept as a work record.",
+    "access": "Who can see it: you can see your own data; your managers see their team's visits.",
+    "without": "You can check in without location. The visit then needs a manager's approval to count.",
+    "accept": "I understand, use my location",
+    "withoutLocation": "Check in without location",
+    "cancel": "Not now"
+  },
+  "privacy": {
+    "title": "Location & privacy",
+    "accepted": "You acknowledged this notice on this device on {when}.",
+    "notAccepted": "You have not acknowledged this notice on this device yet. You will be asked at your next check-in.",
+    "withdraw": "Withdraw on this device",
+    "accept": "I understand, use my location",
+    "deviceOnly": "Your acknowledgement is currently stored on this device only. Your browser's own location permission is managed in the browser settings."
+  },
+  "exception": {
+    "requested": "Exception requested. A manager will review it.",
+    "reasonLabel": "Why should this visit count?",
+    "reasonPlaceholder": "e.g. the clinic moved to the next street",
+    "hint": "Your manager sees the distance, the GPS accuracy and your reason.",
+    "submit": "Request exception",
+    "sending": "Sending…"
+  },
+  "checkIn": {
+    "button": "Check in",
+    "buttonFor": "Check in at {name}",
+    "locating": "Getting your location… stay where you are.",
+    "sending": "Checking in…",
+    "geo": {
+      "denied": "Location permission is blocked for this site. Allow it in your browser settings, or check in without location (needs a manager's approval).",
+      "unavailable": "Your position could not be found. Move near a window or outside and try again.",
+      "timeout": "Getting your position took too long. Try again.",
+      "unsupported": "This browser cannot share your location. You can check in without location.",
+      "insecure": "Location only works on a secure (https) connection. You can check in without location."
+    },
+    "retryGps": "Try again",
+    "withoutLocation": "Check in without location",
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "close": "Close",
+    "verdictLabel": "Result:",
+    "distance": "{distance} from the clinic",
+    "help": {
+      "pending": "The visit has not been checked yet.",
+      "verified": "You are at the clinic. The visit counts.",
+      "out_of_range": "You were too far from the clinic's saved location. Request an exception if you were really there.",
+      "low_accuracy": "The GPS reading was not accurate enough. Request an exception, or check in from a place with a clearer sky next time.",
+      "no_customer_location": "This clinic has no verified location yet, so the visit could not be checked. Request an exception.",
+      "no_device_location": "No location was sent. The visit needs a manager's approval to count.",
+      "exception_requested": "A manager is reviewing your exception request.",
+      "exception_approved": "A manager approved the exception. The visit counts.",
+      "exception_rejected": "A manager rejected the exception. The visit does not count."
+    },
+    "replayed": "This check-in had already reached the server; this is its saved result.",
+    "openVisit": "Open visit"
+  },
+  "checkOut": {
+    "outcome": "Outcome",
+    "chooseOutcome": "Choose an outcome",
+    "notes": "Notes (optional)",
+    "notesPlaceholder": "What was discussed",
+    "nextFollowUp": "Next follow-up (optional)",
+    "nextFollowUpHint": "Creates a follow-up task for you at this time (Cairo time).",
+    "invalid": "Choose an outcome. A follow-up must be later than now.",
+    "submit": "Check out",
+    "retry": "Send again",
+    "locating": "Getting your location…",
+    "sending": "Checking out…",
+    "done": "Checked out.",
+    "doneWithFollowUp": "Checked out. A follow-up task was created."
+  },
+  "tasks": {
+    "title": "Tasks",
+    "new": "New task",
+    "titleLabel": "Task",
+    "titlePlaceholder": "e.g. Send the price list",
+    "dueLabel": "Due (Cairo time)",
+    "kindLabel": "Type",
+    "forCustomer": "For customer: {name}",
+    "create": "Create task",
+    "created": "Task created.",
+    "complete": "Done",
+    "completeFor": "Mark “{title}” as done",
+    "outcomeLabel": "Outcome",
+    "outcomePlaceholder": "What happened",
+    "completeConfirm": "Mark as done",
+    "filters": "Task filters",
+    "mine": "Mine",
+    "everyone": "Team",
+    "open": "Open",
+    "done": "Done",
+    "anyDue": "Any date",
+    "dueToday": "Due today",
+    "overdue": "Overdue",
+    "empty": "No tasks match these filters.",
+    "dueAt": "Due {when}",
+    "completedAt": "Done {when}",
+    "limited": "Showing the first {limit}. Narrow the filters to see others."
+  },
+  "routeError": {
+    "title": "This page could not be loaded",
+    "body": "Check your connection and try again.",
+    "retry": "Try again"
+  },
+  "today": {
+    "title": "My day",
+    "actions": "Day actions",
+    "unplanned": "Unplanned visit",
+    "allClear": "Nothing planned or due today.",
+    "inProgress": "Visits in progress",
+    "checkedInAt": "Checked in at {when}",
+    "checkOut": "Check out",
+    "planned": "Planned visits",
+    "noPlanned": "No visits planned for today.",
+    "followUps": "Follow-ups",
+    "noFollowUps": "No follow-ups due.",
+    "tasks": "Tasks",
+    "noTasks": "No other tasks due.",
+    "overdue": "Overdue",
+    "due": "Due {when}",
+    "allTasks": "All tasks",
+    "privacy": "Location & privacy"
+  },
+  "visits": {
+    "title": "Visits",
+    "actions": "Visit actions",
+    "checkInUnplanned": "Unplanned check-in",
+    "filters": "Visit filters",
+    "mine": "Mine",
+    "team": "Team",
+    "allStatuses": "All",
+    "empty": "No visits match these filters.",
+    "plannedFor": "Planned for {date}",
+    "distance": "{distance} away",
+    "flagged": "{count, plural, one {# flag} other {# flags}}",
+    "limited": "Showing the latest {limit}."
+  },
+  "visit": {
+    "metaTitle": "Visit",
+    "back": "All visits",
+    "status": "Status",
+    "employee": "Representative",
+    "verdict": "GPS result",
+    "plannedFor": "Planned for",
+    "checkIn": "Checked in",
+    "checkOut": "Checked out",
+    "distance": "Distance from clinic",
+    "accuracy": "GPS accuracy",
+    "outcome": "Outcome",
+    "flags": "Flags for review",
+    "flagsHint": "Flags are hints for a manager's review, not penalties.",
+    "notes": "Notes",
+    "exceptionTitle": "Request an exception",
+    "exceptionUnavailable": "This visit needs an exception to count. Ask your manager.",
+    "checkOutTitle": "Check out",
+    "newTask": "New task for this customer"
+  },
+  "newVisit": {
+    "title": "Unplanned visit",
+    "intro": "Find the customer you are visiting, then check in.",
+    "searchLabel": "Customer",
+    "searchPlaceholder": "Name or customer number",
+    "search": "Search",
+    "noMatch": "No customer in your list matches.",
+    "noCustomers": "You have no customers assigned yet.",
+    "noClinicLocation": "No clinic location"
+  }
+}
