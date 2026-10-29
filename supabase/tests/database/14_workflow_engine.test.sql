@@ -141,7 +141,7 @@ select tests.authenticate_as('00000000-0000-0000-0000-0000000000a3');
 select is(api.decide_approval((select id from wf.approval_requests where entity_id = 'b0000000-0000-0000-0000-000000000001'), 'approve', 'ok') ->> 'current_stage',
   '2', 'manager approval advances to stage 2');
 select throws_like($$select api.decide_approval((select id from wf.approval_requests where entity_id = 'b0000000-0000-0000-0000-000000000001'), 'approve')$$,
-  'PERMISSION_DENIED%', 'manager lacks the stage-2 permission');
+  'ALREADY_DECIDED%', 'the stage-1 approver cannot also decide stage 2 (separation of duties, audit #10)');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a6');
 select is(api.decide_approval((select id from wf.approval_requests where entity_id = 'b0000000-0000-0000-0000-000000000001'), 'approve') ->> 'status',
   'pending', 'one of two required approvals keeps the request pending');

@@ -34,8 +34,8 @@ describe("parseDbError", () => {
     expect(e.detail).toContain("internal error");
   });
 
-  it("treats network failures as retryable UNAVAILABLE", () => {
+  it("does not auto-retry network failures (the command may already have committed)", () => {
     const e = networkError(new TypeError("fetch failed"));
-    expect(e).toMatchObject({ code: "UNAVAILABLE", messageKey: "UNAVAILABLE", retryable: true });
+    expect(e).toMatchObject({ code: "UNAVAILABLE", messageKey: "UNAVAILABLE", retryable: false });
   });
 });

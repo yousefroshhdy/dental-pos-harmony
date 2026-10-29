@@ -182,9 +182,9 @@ select set_config('t.e3', api.request_visit_exception('81000000-0000-0000-0000-0
   is not null as setup;
 select tests.clear_authentication();
 select wf.on_decided_field_visit_exception((current_setting('t.e3')::jsonb ->> 'approval_request_id')::uuid, true);
-select ok((select location_verified and latitude = 30.100000 and longitude = 31.300000 from crm.customers
+select ok((select latitude is null and not location_verified from crm.customers
            where id = (current_setting('t.c1')::jsonb ->> 'customer_id')::uuid),
-  'approving a no-location exception sets the clinic location from the check-in fix');
+  'approving a no-location exception does NOT pin the clinic from the rep''s own fix (audit #6)');
 
 -- ===========================================================================
 -- Visit RLS per role and raw GPS privacy

@@ -1,7 +1,7 @@
 -- Inventory: append-only ledger, derived balances, negative-stock policy, adjustment limits.
 begin;
 select tests.load_fixture();
-select plan(13);
+select plan(14);
 
 insert into inventory.movements (movement_type, warehouse_id, variant_id, lot_id, quantity, source_doc_type)
 values ('receipt','60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', 10, 'receipt');
@@ -19,18 +19,20 @@ select throws_like($$insert into inventory.movements (movement_type, warehouse_i
 -- Rep: no write path to stock
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select throws_like($$update inventory.stock_balances set on_hand = 1000$$, '%permission denied%', 'rep cannot write balances directly');
-select throws_like($$select api.post_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', 5, 'found', 'k1')$$,
+select throws_like($$select api.request_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', 5, 'found', 'k1')$$,
   'PERMISSION_DENIED%', 'rep cannot post inventory adjustments');
+select throws_like($$select api.post_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', 5, 'found', 'k1b')$$,
+  '%permission denied%', 'the unvalidated direct adjustment command is not client-callable (audit #11)');
 
 -- Inventory manager: limit 5 units without approval
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a8');
-select isnt(api.post_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', -3, 'damaged in storage', 'adj-1'),
-  null, 'inventory manager posts an adjustment within limit');
-select is(api.post_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', -3, 'damaged in storage', 'adj-1'),
-  (select id from inventory.movements where idempotency_key = 'adj-1'), 'replaying the same idempotency key returns the same movement');
-select throws_like($$select api.post_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', -6, 'count', 'adj-2')$$,
-  'APPROVAL_REQUIRED%', 'adjustment above the unit limit needs approval');
-select throws_like($$select api.post_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', 1, ' ', 'adj-3')$$,
+select is(api.request_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', -3, 'damaged in storage', 'adj-1') ->> 'status',
+  'posted', 'inventory manager posts an adjustment within limit');
+select is(api.request_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', -3, 'damaged in storage', 'adj-1') ->> 'movement_id',
+  (select id::text from inventory.movements where idempotency_key = 'adj-1'), 'replaying the same idempotency key returns the same movement');
+select is(api.request_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', -6, 'count', 'adj-2') ->> 'status',
+  'pending_approval', 'adjustment above the unit limit needs approval');
+select throws_like($$select api.request_inventory_adjustment('60000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','61000000-0000-0000-0000-000000000001', 1, ' ', 'adj-3')$$,
   'REASON_REQUIRED%', 'adjustments need a reason');
 select tests.clear_authentication();
 

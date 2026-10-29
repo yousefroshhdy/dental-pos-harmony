@@ -28,7 +28,7 @@ Definitions are in `docs/TESTING.md` §4.
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Migrations (19 files) + reference data | Implemented, Tested | `pnpm test:db`: 553 assertions in 16 suites |
+| Migrations (21 files) + reference data | Implemented, Tested | `pnpm test:db`: 577 assertions in 17 suites |
 | Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
 | Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
 | Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
@@ -36,6 +36,7 @@ Definitions are in `docs/TESTING.md` §4.
 | CRM (customers, duplicates, reassignment, opportunities), tasks, visits (check-in/out, exceptions), GPS retention | Implemented, Tested | suites 04, 10, 11, 16 |
 | Outbox dispatcher (DB, `/api/cron/outbox`, HMAC signing) | Implemented, Tested | suite 09 + unit tests |
 | Views never bypass RLS | Implemented, Tested | suite 15 |
+| Independent security audit (15 findings) | All fixed, Tested | `docs/security/audit-2026-10-29.md`, suite 17 |
 | Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | unit tests + 46 Playwright (Chromium) |
 | Admin console v1 (users, invite, roles editor, security events) | Implemented, unit-tested | never clicked through against a live database |
 | CI pipeline | Implemented | has not run on GitHub yet |

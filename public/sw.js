@@ -1,12 +1,14 @@
-/* Honest OS service worker — Phase 2: app-shell caching only.
+/* Honest OS service worker — app-shell caching only.
  * - Static build assets (/_next/static/*, icons): cache-first (they are content-hashed).
- * - Page navigations: network-first; offline → last cached copy of that page, else /offline.html.
+ * - Page navigations: ALWAYS network; offline → /offline.html. Authenticated pages are
+ *   never cached: on a shared field device a cached page would show the previous
+ *   user's data after sign-out (audit #9). Bumping VERSION deletes old page caches.
  * - API, auth and Supabase traffic: never cached (always network).
- * The offline command queue for field reps arrives in Phase 3 (docs/ARCHITECTURE.md §6).
+ * The offline command queue for field reps arrives in Phase 3 (docs/ARCHITECTURE.md §6);
+ * offline reads will use per-user IndexedDB that is wiped on sign-out, not this cache.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `honest-static-${VERSION}`;
-const PAGE_CACHE = `honest-pages-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -17,7 +19,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => ![STATIC_CACHE, PAGE_CACHE].includes(k)).map((k) => caches.delete(k))),
+      Promise.all(keys.filter((k) => k !== STATIC_CACHE).map((k) => caches.delete(k))),
     ),
   );
   self.clients.claim();
@@ -46,17 +48,6 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
-          // Only cache successful, non-redirected pages (never login redirects).
-          if (res.ok && !res.redirected) {
-            const copy = res.clone();
-            caches.open(PAGE_CACHE).then((c) => c.put(request, copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match(request).then((hit) => hit || caches.match(OFFLINE_URL))),
-    );
+    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
   }
 });

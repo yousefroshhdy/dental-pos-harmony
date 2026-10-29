@@ -32,6 +32,7 @@ export interface AppError {
   messageKey: TranslatedCode;
   /** Developer detail — log it, never render it. */
   detail: string;
+  /** Safe to re-run automatically: the server rolled the attempt back (serialization failure / deadlock). */
   retryable: boolean;
   requestId?: string;
 }
@@ -48,7 +49,10 @@ export interface DbErrorLike {
   details?: string | null;
 }
 
-const RETRYABLE_SQLSTATES = new Set(["40001", "40P01", "57014", "53300", "08006", "08001"]);
+// Only states where the server certainly did NOT commit: serialization failure,
+// deadlock, statement cancelled, too many connections, could not connect.
+// (08006 "connection failure" is excluded — the commit status is unknown.)
+const RETRYABLE_SQLSTATES = new Set(["40001", "40P01", "57014", "53300", "08001"]);
 
 const SQLSTATE_TO_CODE: Record<string, string> = {
   "42501": "PERMISSION_DENIED",
@@ -86,12 +90,18 @@ export function parseDbError(error: DbErrorLike, requestId?: string): AppError {
   };
 }
 
+/**
+ * A network failure is NOT auto-retried: the request may have committed before the
+ * response was lost, and re-running a non-idempotent command would apply it twice
+ * (audit #15). The user sees UNAVAILABLE and can retry deliberately; device
+ * commands carry idempotency keys so a deliberate retry is safe.
+ */
 export function networkError(cause: unknown, requestId?: string): AppError {
   return {
     code: "UNAVAILABLE",
     messageKey: "UNAVAILABLE",
     detail: cause instanceof Error ? cause.message : String(cause),
-    retryable: true,
+    retryable: false,
     requestId,
   };
 }
