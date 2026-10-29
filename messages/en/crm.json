@@ -9,7 +9,8 @@
     "WORKFLOW_MISSING": "The approval workflow for this request isn't configured. Contact your administrator.",
     "CUSTOMER_BLOCKED": "This customer is blocked or archived.",
     "LOCATION_UNAVAILABLE": "Your location could not be read.",
-    "LOCATION_INACCURATE": "The location fix isn't accurate enough. Move to an open spot and try again."
+    "LOCATION_INACCURATE": "The location fix isn't accurate enough. Move to an open spot and try again.",
+    "DUPLICATE_CUSTOMER_HIDDEN": "A customer with this phone number already exists that you can't see. Ask your manager for access or a reassignment instead of creating a new record."
   },
   "stage": {
     "lead": "Lead",
@@ -123,7 +124,8 @@
     "displayName": "Display name",
     "tags": "Tags",
     "tagsHint": "Separate tags with commas.",
-    "notes": "Notes"
+    "notes": "Notes",
+    "duplicateOutsideScope": "A matching customer exists that you can't see — ask your manager before creating a new record."
   },
   "detail": {
     "metaTitle": "Customer",

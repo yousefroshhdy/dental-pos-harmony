@@ -23,8 +23,8 @@ insert into catalog.product_variants (id, product_id, sku, name_en, reorder_poin
   ('53000000-0000-0000-0000-000000000023', '52000000-0000-0000-0000-000000000001', 'BIO-TOP-3508', 'Top DM 3.5x8', 0);
 
 insert into inventory.lots (id, variant_id, lot_no, expiry_date) values
-  ('61000000-0000-0000-0000-000000000021', '53000000-0000-0000-0000-000000000001', 'LNEAR', current_date + 30),
-  ('61000000-0000-0000-0000-000000000022', '53000000-0000-0000-0000-000000000001', 'LOLD', current_date - 10),
+  ('61000000-0000-0000-0000-000000000021', '53000000-0000-0000-0000-000000000001', 'LNEAR', core.business_date() + 30),
+  ('61000000-0000-0000-0000-000000000022', '53000000-0000-0000-0000-000000000001', 'LOLD', core.business_date() - 10),
   ('61000000-0000-0000-0000-000000000023', '53000000-0000-0000-0000-000000000023', 'NO-LOT', null);
 
 insert into inventory.movements (movement_type, warehouse_id, variant_id, lot_id, quantity, source_doc_type) values
@@ -85,7 +85,7 @@ select is((select sellable_available from api.v_inventory_stock where warehouse_
 select is((select expired_qty || '/' || near_expiry_qty from api.v_inventory_stock where warehouse_code = 'WH-CAI' and sku = 'BIO-TOP-4110'),
           '2/4', 'expired and near-expiry quantities');
 select is((select earliest_expiry from api.v_inventory_stock where warehouse_code = 'WH-CAI' and sku = 'BIO-TOP-4110'),
-          current_date + 30, 'earliest unexpired expiry');
+          core.business_date() + 30, 'earliest unexpired expiry');
 select is((select days_to_earliest_expiry from api.v_inventory_stock where warehouse_code = 'WH-CAI' and sku = 'BIO-TOP-4110'), 30,
           'days to the earliest expiry');
 select is((select lot_count from api.v_inventory_stock where warehouse_code = 'WH-CAI' and sku = 'BIO-TOP-4110'), 3, 'lots with stock');
@@ -121,7 +121,7 @@ select api.create_transfer('60000000-0000-0000-0000-000000000001', '60000000-000
   '[{"variant_id":"53000000-0000-0000-0000-000000000001","lot_id":"61000000-0000-0000-0000-000000000021","quantity":2}]');
 select is((select string_agg(sku || ':' || lot_no || ':' || quantity || ':' || received_qty, ',') from api.v_transfer_lines),
           'BIO-TOP-4110:LNEAR:2:0', 'transfer lines carry SKU and lot');
-select is((select expiry_date from api.v_transfer_lines), current_date + 30, 'transfer lines carry the lot expiry');
+select is((select expiry_date from api.v_transfer_lines), core.business_date() + 30, 'transfer lines carry the lot expiry');
 
 -- ---------------------------------------------------------------------------
 -- Ledger reader without cost.read (sales director + movement.read override)

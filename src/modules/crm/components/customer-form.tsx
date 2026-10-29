@@ -46,11 +46,17 @@ export function CreateCustomerForm({ clientRef, ...shared }: Shared & { clientRe
       {state && state.ok === false ? <CrmErrorMessage failure={state} /> : null}
       {confirming ? (
         <Alert tone="info" className="space-y-1">
-          <p className="font-medium">{t("duplicateTitle", { count: state.similarCount })}</p>
-          <p>{t("duplicateBody")}</p>
-          <p dir="ltr" className="text-start font-mono text-xs">
-            {state.similar.join(" · ")}
-          </p>
+          {state.similarCount > 0 ? (
+            <>
+              <p className="font-medium">{t("duplicateTitle", { count: state.similarCount })}</p>
+              <p>{t("duplicateBody")}</p>
+              <p dir="ltr" className="text-start font-mono text-xs">
+                {state.similar.join(" · ")}
+              </p>
+            </>
+          ) : null}
+          {/* A match the user cannot see: no number, no count (audit Phase 3 F7). */}
+          {state.outsideScope ? <p className={state.similarCount > 0 ? undefined : "font-medium"}>{t("duplicateOutsideScope")}</p> : null}
         </Alert>
       ) : null}
 

@@ -73,10 +73,11 @@ select tests.clear_authentication();
 update core.user_profiles set status = 'active' where user_id = '00000000-0000-0000-0000-0000000000a5';
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select is((select count(*)::int from api.v_customers where customer_no = 'C-0002'), 0, 'the Cairo rep cannot read C-0002');
+-- Audit Phase 3 F7 (suite 25): an out-of-scope match is only a flag, never a customer number.
 select is(api.find_duplicate_customers(p_clinic_name => 'Dr. Mona Clinic', p_governorate_code => 'EG-DK')::jsonb
-            - 'phone_duplicate_customer_no',
-  '{"similar_count": 1, "similar_customer_nos": ["C-0002"]}'::jsonb,
-  'only the customer number of an out-of-scope duplicate is revealed');
+            - 'phone_duplicate_customer_no' - 'phone_duplicate_outside_scope',
+  '{"similar_count": 0, "similar_customer_nos": [], "similar_outside_scope": true, "exists_outside_scope": true}'::jsonb,
+  'an out-of-scope duplicate is reported only as a flag');
 
 select throws_like($$select api.find_duplicate_customers(p_clinic_name => 'X', p_phone_primary => '12345', p_governorate_code => 'EG-C')$$,
   'VALIDATION%phone_primary%', 'an invalid phone is a validation error');

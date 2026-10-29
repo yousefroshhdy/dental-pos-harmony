@@ -161,12 +161,29 @@ export interface EmployeeOption {
   job_title: string;
 }
 
-/** api.find_duplicate_customers result. */
+/**
+ * api.find_duplicate_customers result. Matches the caller cannot see (outside their
+ * crm.customer.read scope) are only flagged: no customer number, not counted.
+ */
 export interface DuplicateCheck {
+  /** Same phone on a customer the caller can see. */
   phone_duplicate_customer_no: string | null;
+  /** Same phone on a customer the caller cannot see. */
+  phone_duplicate_outside_scope?: boolean;
+  /** Similar names among customers the caller can see. */
   similar_count: number;
   similar_customer_nos: string[];
+  /** A similar name on a customer the caller cannot see. */
+  similar_outside_scope?: boolean;
+  exists_outside_scope?: boolean;
 }
+
+/** What the create form does with a duplicate pre-check (see duplicateOutcome). */
+export type DuplicateOutcome =
+  | { kind: "none" }
+  | { kind: "phone"; customerNo: string }
+  | { kind: "phoneOutsideScope" }
+  | { kind: "similar"; similar: string[]; similarCount: number; outsideScope: boolean };
 
 /** api.create_customer result. */
 export interface CreateCustomerResult {
@@ -181,6 +198,7 @@ export interface CreateCustomerResult {
 /** Codes with a CRM-specific message under crm.errors.* (others fall back to errors.*). */
 export const CRM_ERROR_CODES = [
   "DUPLICATE_CUSTOMER",
+  "DUPLICATE_CUSTOMER_HIDDEN",
   "NO_EMPLOYEE_PROFILE",
   "WORKFLOW_MISSING",
   "CUSTOMER_BLOCKED",
@@ -212,7 +230,7 @@ export type FormFailure = ActionFailure & { values?: Record<string, string> };
 export type CreateCustomerState =
   | null
   | FormFailure
-  | { ok: "confirm"; similar: string[]; similarCount: number; values: Record<string, string> };
+  | { ok: "confirm"; similar: string[]; similarCount: number; outsideScope: boolean; values: Record<string, string> };
 
 /** A small form whose failure refills what the user typed (React resets forms after an action). */
 export type FormResultState = null | { ok: true } | FormFailure;

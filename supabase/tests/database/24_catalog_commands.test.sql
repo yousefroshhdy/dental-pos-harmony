@@ -156,13 +156,13 @@ select throws_ok($$select api.upsert_price_list(gen_random_uuid(), 'TEST-INV', '
   '42501', null, 'catalog.product.manage does not allow price management');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a1');
 select is(api.upsert_price_list('e5400000-0000-0000-0000-000000000001', 'test-vip', 'Synthetic VIP clinics', 'customer', 10,
-  current_date - 1) ->> 'kind', 'customer', 'owner creates a customer price list');
+  core.business_date() - 1) ->> 'kind', 'customer', 'owner creates a customer price list');
 select throws_like($$select api.upsert_price_list('e5400000-0000-0000-0000-000000000001', 'TEST-VIP', 'Synthetic VIP clinics', 'standard')$$,
   'VALIDATION: the kind%', 'the kind of a list cannot change');
 select throws_like($$select api.upsert_price_list('54000000-0000-0000-0000-000000000001', 'DEFAULT', 'Default 2026', 'standard', 100,
   '2026-01-01', null, false)$$, 'DEFAULT_LIST_PROTECTED%', 'the DEFAULT list cannot be deactivated');
 select throws_like($$select api.upsert_price_list(gen_random_uuid(), 'TEST-DATES', 'Synthetic dates', 'standard', 100,
-  current_date, current_date - 1)$$, 'VALIDATION%', 'valid to before valid from is rejected');
+  core.business_date(), core.business_date() - 1)$$, 'VALIDATION%', 'valid to before valid from is rejected');
 select throws_like($$select api.upsert_price_list(gen_random_uuid(), 'default', 'Synthetic second default')$$,
   'DUPLICATE_CODE%', 'price list codes are unique');
 
@@ -193,11 +193,11 @@ select throws_ok($$select api.set_price_list_item('54000000-0000-0000-0000-00000
 -- ===========================================================================
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a1');
 select is(api.assign_customer_price_list('40000000-0000-0000-0000-000000000001','e5400000-0000-0000-0000-000000000001',
-  current_date - 1) ->> 'replayed', 'false', 'owner assigns the customer list');
+  core.business_date() - 1) ->> 'replayed', 'false', 'owner assigns the customer list');
 select throws_like($$select api.assign_customer_price_list('40000000-0000-0000-0000-000000000001','54000000-0000-0000-0000-000000000001')$$,
   'VALIDATION: only customer price lists%', 'a standard list cannot be assigned to a customer');
 select throws_like($$select api.assign_customer_price_list('40000000-0000-0000-0000-000000000001','e5400000-0000-0000-0000-000000000001',
-  current_date + 5)$$, 'OVERLAP%', 'overlapping assignments of the same list are refused');
+  core.business_date() + 5)$$, 'OVERLAP%', 'overlapping assignments of the same list are refused');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select throws_ok($$select api.assign_customer_price_list('40000000-0000-0000-0000-000000000001','e5400000-0000-0000-0000-000000000001')$$,
   '42501', null, 'a sales rep cannot assign price lists');
@@ -238,22 +238,22 @@ select is((select list_price::numeric from sales.order_items where order_id = '7
 -- Promotions
 -- ===========================================================================
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a8');
-select throws_ok($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 5, current_date)$$,
+select throws_ok($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 5, core.business_date())$$,
   '42501', null, 'the inventory manager cannot create promotions');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a1');
-select throws_ok($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 0, current_date)$$,
+select throws_ok($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 0, core.business_date())$$,
   'P0001', null, 'a 0% promotion is rejected');
-select throws_ok($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 101, current_date)$$,
+select throws_ok($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 101, core.business_date())$$,
   'P0001', null, 'more than 100% is rejected');
-select throws_like($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 5, current_date - 10, current_date - 1)$$,
+select throws_like($$select api.create_promotion(gen_random_uuid(), 'Synthetic promo', 5, core.business_date() - 10, core.business_date() - 1)$$,
   'VALIDATION%', 'a promotion cannot be created already ended');
-select is(api.create_promotion('e6400000-0000-0000-0000-000000000001', 'Synthetic Bioner week', 10, current_date,
-  current_date + 7, p_brand_id => (select id from catalog.brands where code = 'BIONER')) ->> 'replayed', 'false',
+select is(api.create_promotion('e6400000-0000-0000-0000-000000000001', 'Synthetic Bioner week', 10, core.business_date(),
+  core.business_date() + 7, p_brand_id => (select id from catalog.brands where code = 'BIONER')) ->> 'replayed', 'false',
   'owner creates a 10% brand promotion');
-select is(api.create_promotion('e6400000-0000-0000-0000-000000000001', 'Synthetic Bioner week', 10, current_date,
-  current_date + 7, p_brand_id => (select id from catalog.brands where code = 'BIONER')) ->> 'replayed', 'true',
+select is(api.create_promotion('e6400000-0000-0000-0000-000000000001', 'Synthetic Bioner week', 10, core.business_date(),
+  core.business_date() + 7, p_brand_id => (select id from catalog.brands where code = 'BIONER')) ->> 'replayed', 'true',
   'creating with the same id again is an idempotent replay');
-select api.create_promotion('e6400000-0000-0000-0000-000000000002', 'Synthetic Delta clinic offer', 2, current_date,
+select api.create_promotion('e6400000-0000-0000-0000-000000000002', 'Synthetic Delta clinic offer', 2, core.business_date(),
   p_customer_id => '40000000-0000-0000-0000-000000000002');
 
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
@@ -280,9 +280,9 @@ select is((select promo_discount_pct::numeric from sales.order_items where order
 -- ===========================================================================
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a1');
 select is((api.end_customer_price_list('40000000-0000-0000-0000-000000000001','e5400000-0000-0000-0000-000000000001',
-  current_date - 1) ->> 'valid_to')::date, current_date, 'ending an assignment keeps it valid through today');
+  core.business_date() - 1) ->> 'valid_to')::date, core.business_date(), 'ending an assignment keeps it valid through today');
 select throws_like($$select api.end_customer_price_list('40000000-0000-0000-0000-000000000001','e5400000-0000-0000-0000-000000000001',
-  current_date - 1, current_date - 1)$$, 'VALIDATION%', 'an assignment cannot be ended in the past');
+  core.business_date() - 1, core.business_date() - 1)$$, 'VALIDATION%', 'an assignment cannot be ended in the past');
 select api.set_price_list_item('e5400000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001', 880, 10);
 select is(api.remove_price_list_item('e5400000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001', 10) ->> 'removed',
   'true', 'owner removes a quantity tier');
@@ -296,7 +296,7 @@ select ok((select count(*) from audit.audit_log where table_name = 'price_list_i
            and (old_data ->> 'unit_price')::numeric = 900 and (new_data ->> 'unit_price')::numeric = 950) = 1,
   'the price change is in the audit log with old and new price');
 select ok((select count(*) from audit.audit_log where table_name = 'customer_price_lists' and action = 'UPDATE'
-           and new_data ->> 'valid_to' = current_date::text) = 1,
+           and new_data ->> 'valid_to' = core.business_date()::text) = 1,
   'customer price list changes are audited (trigger added by this migration)');
 select ok((select count(*) from audit.audit_log where table_name = 'price_list_items' and action = 'DELETE'
            and (old_data ->> 'min_qty')::int = 10) = 1, 'a removed tier stays in the audit log');

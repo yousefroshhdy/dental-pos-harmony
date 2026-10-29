@@ -12,6 +12,8 @@ import {
   daysBetween,
   errorMessageRef,
   expiryStatus,
+  canReleaseQuarantine,
+  isQuarantineRelease,
   isSellableKind,
   lotsFefo,
   parseAdjustmentResult,
@@ -21,6 +23,7 @@ import {
   parseStockLineValue,
   productOptions,
   receiptLineIssues,
+  releaseBlocked,
   signedQuantity,
   stockLineValue,
   stockOverview,
@@ -307,6 +310,38 @@ describe("permissions (UX only)", () => {
     expect(transferActions(shipper, { status: "in_transit" })).toEqual({ ship: false, receive: false });
     expect(transferActions(receiver, { status: "in_transit" })).toEqual({ ship: false, receive: true });
     expect(transferActions(receiver, { status: "received" })).toEqual({ ship: false, receive: false });
+  });
+
+  it("D-13: leaving quarantine (except into another quarantine) is a release", () => {
+    expect(isQuarantineRelease("quarantine", "main")).toBe(true);
+    expect(isQuarantineRelease("quarantine", "branch")).toBe(true);
+    expect(isQuarantineRelease("quarantine", "rep_stock")).toBe(true);
+    // Through transit it would become sellable one step later.
+    expect(isQuarantineRelease("quarantine", "transit")).toBe(true);
+    expect(isQuarantineRelease("quarantine", "quarantine")).toBe(false);
+    expect(isQuarantineRelease("main", "quarantine")).toBe(false);
+    expect(isQuarantineRelease("transit", "main")).toBe(false);
+    expect(isQuarantineRelease(undefined, "main")).toBe(false);
+  });
+
+  it("only inventory.quarantine.release may release (UX; the database enforces it)", () => {
+    const clerk = ctx({ "inventory.transfer.create": { scope: "all" }, "inventory.transfer.receive": { scope: "all" } });
+    const manager = ctx({
+      "inventory.transfer.create": { scope: "all" },
+      "inventory.transfer.receive": { scope: "all" },
+      "inventory.quarantine.release": { scope: "all" },
+    });
+    expect(canReleaseQuarantine(clerk)).toBe(false);
+    expect(canReleaseQuarantine(manager)).toBe(true);
+    expect(releaseBlocked(clerk, "quarantine", "main")).toBe(true);
+    expect(releaseBlocked(clerk, "quarantine", "quarantine")).toBe(false);
+    expect(releaseBlocked(manager, "quarantine", "main")).toBe(false);
+    const inTransit = { status: "in_transit" as const };
+    expect(transferActions(clerk, inTransit, { from: "quarantine", to: "main" })).toEqual({ ship: false, receive: false });
+    expect(transferActions(clerk, inTransit, { from: "main", to: "branch" })).toEqual({ ship: false, receive: true });
+    expect(transferActions(manager, inTransit, { from: "quarantine", to: "main" })).toEqual({ ship: false, receive: true });
+    // Shipping is not a release by itself (the stock stays unsellable in transit).
+    expect(transferActions(clerk, { status: "draft" }, { from: "quarantine", to: "main" })).toEqual({ ship: true, receive: false });
   });
 
   it("list pages open for any related permission", () => {

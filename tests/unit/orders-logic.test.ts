@@ -314,6 +314,10 @@ describe("orderErrorCode", () => {
     expect(orderErrorCode(err("NOT_FOUND", "NOT_FOUND", "P0002 | NOT_FOUND: customer"))).toBe("NOT_FOUND");
   });
 
+  it("maps NOT_SELLABLE (discontinued after the draft was saved) to the unsellable-variant message", () => {
+    expect(orderErrorCode(err("NOT_SELLABLE", "UNKNOWN", "P0001 | NOT_SELLABLE: BIO-TOP-4110 is no longer sold"))).toBe("VARIANT_NOT_SELLABLE");
+  });
+
   it("falls back to the generic message key, then UNKNOWN", () => {
     expect(orderErrorCode(err("LIMIT_EXCEEDED", "PERMISSION_DENIED"))).toBe("PERMISSION_DENIED");
     expect(orderErrorCode(err("SOMETHING_NEW"))).toBe("UNKNOWN");

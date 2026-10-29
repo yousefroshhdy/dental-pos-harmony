@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { callCommand } from "@/lib/command";
-import { customerChanges, locationFixProblem, toActionFailure } from "./logic";
+import { customerChanges, duplicateOutcome, locationFixProblem, toActionFailure } from "./logic";
 import { getCustomer } from "./queries";
 import {
   createCustomerSchema,
@@ -96,18 +96,23 @@ export async function createCustomer(_prev: CreateCustomerState, form: FormData)
       p_display_name: input.display_name ?? null,
     });
     if (!check.ok) return { ...toActionFailure(check.error), values: echo(raw) };
-    if (check.data.phone_duplicate_customer_no) {
+    const outcome = duplicateOutcome(check.data);
+    if (outcome.kind === "phone") {
       return {
         ok: false,
         messageKey: "DUPLICATE",
         crmCode: "DUPLICATE_CUSTOMER",
-        params: { customerNo: check.data.phone_duplicate_customer_no },
+        params: { customerNo: outcome.customerNo },
         invalidFields: ["phone_primary"],
         values: echo(raw),
       };
     }
-    if (check.data.similar_count > 0) {
-      return { ok: "confirm", similar: check.data.similar_customer_nos, similarCount: check.data.similar_count, values: echo(raw) };
+    if (outcome.kind === "phoneOutsideScope") {
+      // The customer is outside the caller's scope: no number, only "ask your manager".
+      return { ok: false, messageKey: "DUPLICATE", crmCode: "DUPLICATE_CUSTOMER_HIDDEN", invalidFields: ["phone_primary"], values: echo(raw) };
+    }
+    if (outcome.kind === "similar") {
+      return { ok: "confirm", similar: outcome.similar, similarCount: outcome.similarCount, outsideScope: outcome.outsideScope, values: echo(raw) };
     }
   }
 

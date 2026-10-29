@@ -143,13 +143,12 @@ export function subjectLink(row: Pick<ApprovalRequestRow, "entity_type" | "entit
     case "field.visit":
       return isUuid(row.entity_id) ? { href: `/visits/${row.entity_id}`, labelKey: "openVisit" } : null;
     case "inventory.adjustment": {
-      // The entity id is a synthetic key (md5 of the idempotency key); link to the stock it changes.
+      // The entity id is a synthetic key (md5 of the idempotency key); link to the stock it changes:
+      // the SKU's lot drill-down /inventory/stock/[variantId]?warehouse=…, else the stock overview /inventory.
       const warehouse = payload.warehouse_id;
       const variant = payload.variant_id;
-      const query = [isUuid(warehouse) ? `warehouse=${warehouse}` : null, isUuid(variant) ? `variant=${variant}` : null]
-        .filter(Boolean)
-        .join("&");
-      return { href: query ? `/inventory/stock?${query}` : "/inventory/stock", labelKey: "openStock" };
+      const query = isUuid(warehouse) ? `?warehouse=${warehouse}` : "";
+      return { href: isUuid(variant) ? `/inventory/stock/${variant}${query}` : `/inventory${query}`, labelKey: "openStock" };
     }
     default:
       if (isUuid(payload.order_id)) return { href: `/orders/${payload.order_id}`, labelKey: "openOrder" };

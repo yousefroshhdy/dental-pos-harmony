@@ -220,7 +220,8 @@
     "receive": "Receive",
     "receiveConfirm": "Confirm: received in full",
     "receiveHint": "{units} units are added to {to}.",
-    "receivedOk": "Received. Destination stock updated."
+    "receivedOk": "Received. Destination stock updated.",
+    "releaseNeeded": "Receiving this transfer releases quarantined stock and needs the quarantine release permission. Ask your inventory manager."
   },
   "transferStatus": {
     "draft": "Draft",
@@ -252,7 +253,10 @@
     "availableN": "Available: {n}",
     "addLine": "Add line",
     "submit": "Save draft transfer",
-    "submitHint": "Saving creates a draft. Stock moves when the transfer is shipped."
+    "submitHint": "Saving creates a draft. Stock moves when the transfer is shipped.",
+    "releaseNeededShort": "needs quarantine release",
+    "quarantineOnly": "This is a quarantine warehouse. Its stock can only go to another quarantine warehouse; releasing it needs the quarantine release permission. Ask your inventory manager.",
+    "releaseWarning": "This releases quarantined stock: once received at {warehouse} it can be sold. Only release stock that has passed its quality check."
   },
   "adjustmentForm": {
     "title": "Adjust stock",

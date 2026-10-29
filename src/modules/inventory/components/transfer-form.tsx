@@ -5,7 +5,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, Input, Label, Select } from "@/components/ui/primitives";
 import { createTransfer } from "../actions";
+import { isQuarantineRelease } from "../logic";
 import { MAX_LINES } from "../schemas";
+import type { WarehouseKind } from "../types";
 import { InventoryActionMessage, useKeepValuesAction } from "./inventory-error";
 import type { WarehouseChoice } from "./receipt-form";
 
@@ -26,15 +28,24 @@ interface Line {
  * New transfer from one (already chosen) source warehouse. Lines pick a lot
  * that has available stock there. Creates a DRAFT; shipping it later moves the
  * stock out of the source and into transit.
+ *
+ * From a quarantine warehouse, any destination but another quarantine one is a release (D-13):
+ * without inventory.quarantine.release those destinations are disabled; with it, a warning says
+ * the stock becomes sellable. The database enforces the same rule.
  */
 export function TransferForm({
   locale,
   fromWarehouseId,
+  sourceKind,
+  mayRelease,
   destinations,
   stockLines,
 }: {
   locale: string;
   fromWarehouseId: string;
+  sourceKind: WarehouseKind;
+  /** UX only: the user holds inventory.quarantine.release. */
+  mayRelease: boolean;
   destinations: WarehouseChoice[];
   stockLines: StockLineChoice[];
 }) {
@@ -46,6 +57,8 @@ export function TransferForm({
   const [nextKey, setNextKey] = useState(2);
 
   const destination = destinations.find((w) => w.id === toId);
+  const fromQuarantine = sourceKind === "quarantine";
+  const releasing = destination !== undefined && isQuarantineRelease(sourceKind, destination.kind);
   const byValue = new Map(stockLines.map((s) => [s.value, s]));
   const update = (key: number, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
@@ -60,13 +73,27 @@ export function TransferForm({
           <option value="" disabled>
             {t("selectDestination")}
           </option>
-          {destinations.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.label} — {tKinds(w.kind)}
-              {w.sellable ? "" : ` (${t("notSellableShort")})`}
-            </option>
-          ))}
+          {destinations.map((w) => {
+            const blocked = !mayRelease && isQuarantineRelease(sourceKind, w.kind);
+            return (
+              <option key={w.id} value={w.id} disabled={blocked}>
+                {w.label} — {tKinds(w.kind)}
+                {w.sellable ? "" : ` (${t("notSellableShort")})`}
+                {blocked ? ` (${t("releaseNeededShort")})` : ""}
+              </option>
+            );
+          })}
         </Select>
+        {fromQuarantine && !mayRelease ? (
+          <Alert tone="info" role="status">
+            {t("quarantineOnly")}
+          </Alert>
+        ) : null}
+        {releasing && mayRelease ? (
+          <Alert tone="danger" role="status">
+            {t("releaseWarning", { warehouse: destination.label })}
+          </Alert>
+        ) : null}
         {destination && !destination.sellable ? (
           <Alert tone="info" role="status">
             {t("notSellableDestination", { kind: tKinds(destination.kind) })}

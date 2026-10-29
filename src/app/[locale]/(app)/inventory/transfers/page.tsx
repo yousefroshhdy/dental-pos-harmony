@@ -17,6 +17,7 @@ import {
   canReadTransfers,
   isTransferStatus,
   parseStockFilters,
+  releaseBlocked,
   shortId,
   toQuery,
   transferActions,
@@ -110,11 +111,14 @@ export default async function TransfersPage({ params, searchParams }: { params: 
       ) : (
         <ul className="space-y-3">
           {transfers.data.map((x) => {
-            const actions = transferActions(ctx, x);
-            const items = linesByTransfer.get(x.id) ?? [];
-            const units = x.items.reduce((n, i) => n + i.quantity, 0);
             const from = whById.get(x.from_warehouse_id);
             const to = whById.get(x.to_warehouse_id);
+            const actions = transferActions(ctx, x, { from: from?.kind, to: to?.kind });
+            // D-13: receiving released quarantine stock needs inventory.quarantine.release.
+            const receiveNeedsRelease =
+              x.status === "in_transit" && can(ctx, "inventory.transfer.receive") && releaseBlocked(ctx, from?.kind, to?.kind);
+            const items = linesByTransfer.get(x.id) ?? [];
+            const units = x.items.reduce((n, i) => n + i.quantity, 0);
             return (
               <li
                 key={x.id}
@@ -145,6 +149,7 @@ export default async function TransfersPage({ params, searchParams }: { params: 
                   </span>
                 </div>
                 {x.status === "in_transit" ? <p className="text-sm text-primary">{t("inTransitNote")}</p> : null}
+                {receiveNeedsRelease ? <p className="text-sm text-muted-foreground">{t("releaseNeeded")}</p> : null}
                 <ul className="space-y-1 text-sm">
                   {items.length === 0
                     ? x.items.map((i) => (

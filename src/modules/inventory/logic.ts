@@ -35,6 +35,25 @@ export function isSellableKind(kind: WarehouseKind | null | undefined): boolean 
   return kind !== "quarantine" && kind !== "transit" && kind !== null && kind !== undefined;
 }
 
+/**
+ * Working decision D-13: stock that leaves a quarantine warehouse for any warehouse other than
+ * another quarantine one is a release (it becomes sellable, directly or after transit). Creating
+ * and receiving such a transfer needs inventory.quarantine.release (enforced in the database).
+ */
+export function isQuarantineRelease(fromKind: WarehouseKind | null | undefined, toKind: WarehouseKind | null | undefined): boolean {
+  return fromKind === "quarantine" && toKind !== "quarantine";
+}
+
+/** UX only: may the user move stock out of quarantine (the database re-checks the warehouse scope)? */
+export function canReleaseQuarantine(ctx: UserContext): boolean {
+  return can(ctx, "inventory.quarantine.release");
+}
+
+/** True when this move is a quarantine release the user may not make. */
+export function releaseBlocked(ctx: UserContext, fromKind: WarehouseKind | null | undefined, toKind: WarehouseKind | null | undefined): boolean {
+  return isQuarantineRelease(fromKind, toKind) && !canReleaseQuarantine(ctx);
+}
+
 export function warehouseKindTone(kind: WarehouseKind | null | undefined): BadgeTone {
   if (kind === "quarantine") return "danger";
   if (kind === "transit") return "warning";
@@ -446,11 +465,18 @@ export function canReadTransfers(ctx: UserContext): boolean {
   return canAny(ctx, ["inventory.transfer.create", "inventory.transfer.receive", "inventory.movement.read"]);
 }
 
-/** Which actions to offer on a transfer (the DB re-checks the warehouse scope). */
-export function transferActions(ctx: UserContext, t: Pick<TransferRow, "status">): { ship: boolean; receive: boolean } {
+/**
+ * Which actions to offer on a transfer (the DB re-checks the warehouse scope). Receiving a
+ * quarantine release also needs inventory.quarantine.release (D-13); pass the warehouse kinds.
+ */
+export function transferActions(
+  ctx: UserContext,
+  t: Pick<TransferRow, "status">,
+  kinds: { from?: WarehouseKind | null; to?: WarehouseKind | null } = {},
+): { ship: boolean; receive: boolean } {
   return {
     ship: can(ctx, "inventory.transfer.create") && (t.status === "draft" || t.status === "approved"),
-    receive: can(ctx, "inventory.transfer.receive") && t.status === "in_transit",
+    receive: can(ctx, "inventory.transfer.receive") && t.status === "in_transit" && !releaseBlocked(ctx, kinds.from, kinds.to),
   };
 }
 

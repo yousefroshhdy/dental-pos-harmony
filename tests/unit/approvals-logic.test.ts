@@ -140,14 +140,19 @@ describe("subject links", () => {
     expect(subjectLink(requestRow({ entity_type: "field.visit", entity_id: ID }))?.href).toBe(`/visits/${ID}`);
   });
   it("links an adjustment to the stock it changes", () => {
-    const row = requestRow({ entity_type: "inventory.adjustment", payload: { warehouse_id: ID, variant_id: ID } });
-    expect(subjectLink(row)).toEqual({ href: `/inventory/stock?warehouse=${ID}&variant=${ID}`, labelKey: "openStock" });
-    expect(subjectLink(requestRow({ entity_type: "inventory.adjustment", payload: {} }))?.href).toBe("/inventory/stock");
+    // The lot drill-down route is src/app/[locale]/(app)/inventory/stock/[variantId] (filter: ?warehouse=).
+    const W = "60000000-0000-0000-0000-000000000001";
+    const row = requestRow({ entity_type: "inventory.adjustment", payload: { warehouse_id: W, variant_id: ID } });
+    expect(subjectLink(row)).toEqual({ href: `/inventory/stock/${ID}?warehouse=${W}`, labelKey: "openStock" });
+    expect(subjectLink(requestRow({ entity_type: "inventory.adjustment", payload: { variant_id: ID } }))?.href).toBe(`/inventory/stock/${ID}`);
+    // Without a variant there is no drill-down: the stock overview (/inventory/stock alone is not a route).
+    expect(subjectLink(requestRow({ entity_type: "inventory.adjustment", payload: { warehouse_id: W } }))?.href).toBe(`/inventory?warehouse=${W}`);
+    expect(subjectLink(requestRow({ entity_type: "inventory.adjustment", payload: {} }))?.href).toBe("/inventory");
   });
   it("never puts a malformed id into a URL", () => {
     expect(subjectLink(requestRow({ entity_type: "sales.order", entity_id: "../admin" }))).toBeNull();
-    const row = requestRow({ entity_type: "inventory.adjustment", payload: { warehouse_id: "x?y=1" } });
-    expect(subjectLink(row)?.href).toBe("/inventory/stock");
+    const row = requestRow({ entity_type: "inventory.adjustment", payload: { warehouse_id: "x?y=1", variant_id: "../x" } });
+    expect(subjectLink(row)?.href).toBe("/inventory");
   });
   it("falls back to an order or customer in the payload, else no link", () => {
     expect(subjectLink(requestRow({ entity_type: "sales.return", payload: { order_id: ID } }))?.href).toBe(`/orders/${ID}`);
