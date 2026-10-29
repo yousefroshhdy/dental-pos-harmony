@@ -3,7 +3,7 @@
 > Status: **In use** · Last updated: 2026-10-28
 >
 > **Current suite (all passing locally):**
-> - Database: 869 assertions in 25 pgTAP-format suites (`pnpm test:db`). The 577 assertions of suites 01–17 also pass on the real Supabase staging project with pgTAP 1.3.3 (2026-10-29)
+> - Database: 869 assertions in 25 pgTAP-format suites (`pnpm test:db`). All of them also pass on the real Supabase staging project with pgTAP 1.3.3, run inside a rolled-back transaction (2026-10-30)
 > - Unit: 600 Vitest tests in 41 files (`pnpm test`)
 > - End-to-end: 81 Playwright specs × 2 Chromium projects = 162 tests (`pnpm e2e:chromium`; set `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). The WebKit project has not been run yet.
 > - CI (`.github/workflows/ci.yml`) has not run on GitHub yet.
