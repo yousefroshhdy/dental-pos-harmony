@@ -1,1 +1,105 @@
-{}
+{
+  "nav": {
+    "sync": "Sync"
+  },
+  "indicator": {
+    "online": "Online",
+    "offline": "Offline",
+    "syncing": "Syncing",
+    "label": "{status}. {count, plural, =0 {Nothing waiting to sync} one {# item waiting to sync} other {# items waiting to sync}}. Show pending sync.",
+    "attentionLabel": "{status}. {count, plural, one {# item needs your attention} other {# items need your attention}}. Show pending sync.",
+    "panel": "Pending sync",
+    "openPage": "Open the full sync screen",
+    "close": "Close"
+  },
+  "page": {
+    "title": "Pending sync",
+    "description": "Work saved on this device that the server has not confirmed yet. It is sent in the order you did it.",
+    "offlineNotice": "You're offline. Saved work will be sent automatically when the connection returns.",
+    "memoryOnly": "This browser can't keep offline work after a reload. Stay online until everything is synced.",
+    "loading": "Loading saved work…",
+    "loadError": "This device couldn't open its offline storage. Keep the app online and reload the page.",
+    "empty": "Nothing is waiting. Everything saved on this device is synced.",
+    "unsynced": "{count, plural, =0 {Nothing waiting} one {# item not synced yet} other {# items not synced yet}}"
+  },
+  "sections": {
+    "attention": "Needs your attention",
+    "waiting": "Waiting to sync",
+    "done": "Synced in the last 24 hours"
+  },
+  "status": {
+    "pending": "Waiting",
+    "syncing": "Sending",
+    "failed": "Failed",
+    "conflict": "Conflict",
+    "done": "Synced",
+    "stale": "Older than 7 days"
+  },
+  "item": {
+    "savedAt": "Saved {time}",
+    "attempts": "{count, plural, =0 {Not sent yet} one {# attempt} other {# attempts}}",
+    "reference": "Reference: {requestId}",
+    "staleHelp": "This was saved more than 7 days ago, so it is not sent automatically. Check it is still correct, then send it or discard it.",
+    "lastError": "Last attempt: {reason}",
+    "replayed": "The server already had this; nothing was applied twice."
+  },
+  "actions": {
+    "syncNow": "Sync now",
+    "syncing": "Syncing…",
+    "retry": "Retry",
+    "sendAnyway": "Send anyway",
+    "discard": "Discard",
+    "confirmDiscard": "Discard this item? It will not be sent and can't be recovered.",
+    "confirm": "Yes, discard",
+    "cancel": "Cancel",
+    "keepMine": "Send mine over the server's",
+    "discardMine": "Discard mine"
+  },
+  "report": {
+    "result": "{done, plural, =0 {Nothing new was sent.} one {# item synced.} other {# items synced.}}",
+    "attention": "{count, plural, one {# item needs your attention.} other {# items need your attention.}}",
+    "interrupted": "The connection dropped. The rest will be sent automatically.",
+    "offline": "You're offline. Try again when you're connected.",
+    "busy": "Another tab is syncing. This list updates when it finishes.",
+    "error": "Sync couldn't run on this device. Reload the page and try again."
+  },
+  "conflict": {
+    "title": "Someone else changed this record",
+    "help": "Compare the server's values with yours. Send yours to overwrite the server, or discard yours.",
+    "caption": "Server values compared with yours",
+    "field": "Field",
+    "server": "Server",
+    "yours": "Yours",
+    "differs": "Different",
+    "noDetails": "The server didn't send details. Reload the record to see its latest values, then retry or discard."
+  },
+  "codes": {
+    "NO_SENDER": "This version of the app can't send this item. Reload the app while online.",
+    "STALE": "Saved more than 7 days ago; review it before sending.",
+    "NO_EMPLOYEE_PROFILE": "Your account isn't linked to an employee profile. Ask an admin.",
+    "DUPLICATE_CUSTOMER": "A customer with this phone number already exists.",
+    "IDEMPOTENCY_CONFLICT": "This item's reference was already used for a different record.",
+    "INSUFFICIENT_STOCK": "There isn't enough stock.",
+    "WORKFLOW_MISSING": "No approval workflow is set up for this. Ask an admin."
+  },
+  "commands": {
+    "unknown": "Saved action",
+    "field": {
+      "visit_check_in": "Visit check-in",
+      "visit_check_out": "Visit check-out",
+      "request_visit_exception": "Visit exception request"
+    },
+    "crm": {
+      "create_customer": "New customer",
+      "update_customer": "Customer details edit",
+      "log_activity": "Customer note"
+    },
+    "work": {
+      "create_task": "Follow-up task",
+      "complete_task": "Task completed"
+    },
+    "orders": {
+      "save_order_draft": "Order draft"
+    }
+  }
+}
