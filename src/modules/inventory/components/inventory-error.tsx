@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useActionState, useTransition, type FormEvent } from "react";
 import { Alert } from "@/components/ui/primitives";
+import { StepUpLink } from "@/modules/security/components/step-up-link";
 import { errorMessageRef } from "../logic";
 
 /**
@@ -25,7 +26,7 @@ export function InventoryError({
   const tErrors = useTranslations("errors");
   const ref = errorMessageRef(code, messageKey);
   const t = ref.namespace === "inventory.errors" ? tInventory : tErrors;
-  return <Alert className={className}>{t(ref.key, { requestId: requestId ?? "—" })}</Alert>;
+  return <Alert className={className}>{t(ref.key, { requestId: requestId ?? "—" })} <StepUpLink code={ref.key} /></Alert>;
 }
 
 /** Error or success line for an inventory action result; nothing before the first submit. */

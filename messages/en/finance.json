@@ -31,6 +31,7 @@
     "DUPLICATE": "This already exists.",
     "CONFLICT": "Someone else changed this record. Reload and try again.",
     "UNAVAILABLE": "The server could not be reached. Nothing was saved twice; you can safely try again.",
+    "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again.",
     "UNKNOWN": "Something went wrong (reference {requestId})."
   },
   "messages": {

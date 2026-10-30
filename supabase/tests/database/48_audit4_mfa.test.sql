@@ -98,9 +98,9 @@ select is((select count(*)::int from authz.permissions p join gated g using (cod
 select is((select array_agg(code order by code) from authz.permissions where requires_mfa and code <> 'admin.import.run'),
           array['admin.override.manage','admin.role.assign','admin.role.manage','admin.settings.manage',
                 'admin.user.suspend','admin.workflow.manage','audit.row_image.unmask','catalog.price.manage',
-                'finance.credit_limit.change','finance.payment.reverse','inventory.quarantine.release',
-                'perf.commission.calculate','sales.return.credit','wf.decide.write_off'],
-          'the full gated set (admin.import.run too, once it exists)');
+                'crm.customer.export','finance.credit_limit.change','finance.payment.reverse','inventory.quarantine.release',
+                'perf.commission.calculate','sales.order.export','sales.return.credit','wf.decide.write_off'],
+          'the full gated set (admin.import.run too, once it exists; exports gated by 20261104000710)');
 select ok((select bool_and(p.is_sensitive) from authz.permissions p where p.requires_mfa),
           'every gated permission is also marked sensitive');
 select is((select requires_mfa from api.v_permissions where code = 'perf.commission.calculate'), true,

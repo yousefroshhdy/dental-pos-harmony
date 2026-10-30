@@ -163,6 +163,7 @@
     "DUPLICATE": "This already exists.",
     "CONFLICT": "Someone changed this at the same time. Reload the page.",
     "UNAVAILABLE": "The service is unavailable. Try again. (ref {requestId})",
+    "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again.",
     "UNKNOWN": "Something went wrong. (ref {requestId})"
   }
 }

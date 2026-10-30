@@ -45,6 +45,7 @@ export const FINANCE_ERROR_CODES = [
   "DUPLICATE",
   "CONFLICT",
   "UNAVAILABLE",
+  "MFA_REQUIRED",
   "UNKNOWN",
 ] as const;
 export type FinanceErrorCode = (typeof FINANCE_ERROR_CODES)[number];

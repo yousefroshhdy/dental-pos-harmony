@@ -206,6 +206,7 @@ export const COMMISSION_ERROR_CODES = [
   "IDEMPOTENCY_CONFLICT",
   "CONFLICT",
   "UNAVAILABLE",
+  "MFA_REQUIRED",
   "UNKNOWN",
 ] as const;
 export type CommissionErrorCode = (typeof COMMISSION_ERROR_CODES)[number];

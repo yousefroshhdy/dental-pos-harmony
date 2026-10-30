@@ -56,6 +56,7 @@ export const RETURN_ERROR_CODES = [
   "DUPLICATE",
   "CONFLICT",
   "UNAVAILABLE",
+  "MFA_REQUIRED",
   "UNKNOWN",
 ] as const;
 export type ReturnErrorCode = (typeof RETURN_ERROR_CODES)[number];

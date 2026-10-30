@@ -38,6 +38,7 @@
     "DUPLICATE": "That already exists (same priority, or an overlapping delegation to the same person). (ref {requestId})",
     "REASON_REQUIRED": "Please give a reason (at least 3 characters). (ref {requestId})",
     "UNAVAILABLE": "The service is not reachable. Try again in a moment. (ref {requestId})",
+    "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again. (ref {requestId})",
     "UNKNOWN": "Something went wrong. (ref {requestId})"
   },
   "approverType": {

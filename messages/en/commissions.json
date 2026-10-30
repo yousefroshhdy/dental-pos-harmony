@@ -133,6 +133,7 @@
     "IDEMPOTENCY_CONFLICT": "This form was already used for another request. Reload the page.",
     "CONFLICT": "Someone changed this at the same time. Reload and try again.",
     "UNAVAILABLE": "The service is not reachable. Check the connection and try again.",
+    "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again.",
     "UNKNOWN": "Something went wrong. Reference: {requestId}"
   }
 }

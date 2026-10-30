@@ -10,7 +10,7 @@ import { MASK_CATEGORIES, type AuditAction, type AuditEntry, type AuditFilters, 
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
-export const AUDIT_ERROR_CODES = ["PERMISSION_DENIED", "VALIDATION", "NOT_FOUND", "UNAVAILABLE", "UNKNOWN"] as const;
+export const AUDIT_ERROR_CODES = ["PERMISSION_DENIED", "VALIDATION", "NOT_FOUND", "UNAVAILABLE", "MFA_REQUIRED", "UNKNOWN"] as const;
 export type AuditErrorCode = (typeof AUDIT_ERROR_CODES)[number];
 
 export function auditErrorCode(error: Pick<AppError, "code" | "messageKey">): AuditErrorCode {

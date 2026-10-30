@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/primitives";
+import { StepUpLink } from "@/modules/security/components/step-up-link";
 import type { ActionFailure } from "../types";
 
 /**
@@ -14,7 +15,7 @@ export function CrmErrorMessage({ failure, className }: { failure: ActionFailure
   const text = failure.crmCode
     ? tCrm(failure.crmCode, { customerNo: "—", ...failure.params })
     : t(failure.messageKey, { requestId: failure.requestId ?? "—" });
-  return <Alert className={className}>{text}</Alert>;
+  return <Alert className={className}>{text} <StepUpLink code={failure.crmCode ? null : failure.messageKey} /></Alert>;
 }
 
 /** Error or success line for a Server Action result; nothing before the first submit. */

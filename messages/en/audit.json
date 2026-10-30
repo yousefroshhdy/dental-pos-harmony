@@ -95,6 +95,7 @@
     "VALIDATION": "Some filters are not valid. Check them and search again.",
     "NOT_FOUND": "Not found.",
     "UNAVAILABLE": "The server could not be reached. Try again.",
+    "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again.",
     "UNKNOWN": "Something went wrong. Reference: {requestId}"
   },
   "tables": {

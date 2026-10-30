@@ -2,12 +2,13 @@
 
 import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/primitives";
+import { StepUpLink } from "@/modules/security/components/step-up-link";
 import type { ActionState, ApprovalErrorKey } from "../types";
 
 /** Translated error line (approvals.errors.*). The request id is the only detail shown. */
 export function ApprovalErrorMessage({ messageKey, requestId, className }: { messageKey: ApprovalErrorKey; requestId?: string; className?: string }) {
   const t = useTranslations("approvals.errors");
-  return <Alert className={className}>{t(messageKey, { requestId: requestId ?? "—" })}</Alert>;
+  return <Alert className={className}>{t(messageKey, { requestId: requestId ?? "—" })} <StepUpLink code={messageKey} /></Alert>;
 }
 
 /** Error or success line for a Server Action result; nothing before the first submit. */

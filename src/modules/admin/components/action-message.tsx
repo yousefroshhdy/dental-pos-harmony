@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/primitives";
+import { StepUpLink } from "@/modules/security/components/step-up-link";
 import type { TranslatedCode } from "@/lib/errors";
 import type { AdminErrorCode } from "../types";
 
@@ -22,7 +23,7 @@ export function ErrorMessage({
 }) {
   const t = useTranslations("errors");
   const tAdmin = useTranslations("admin.errors");
-  return <Alert className={className}>{adminCode ? tAdmin(adminCode) : t(messageKey, { requestId: requestId ?? "—" })}</Alert>;
+  return <Alert className={className}>{adminCode ? tAdmin(adminCode) : t(messageKey, { requestId: requestId ?? "—" })} <StepUpLink code={adminCode ? null : messageKey} /></Alert>;
 }
 
 /** Error or success line for a Server Action result; nothing before the first submit. */

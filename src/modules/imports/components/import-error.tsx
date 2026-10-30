@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/primitives";
+import { StepUpLink } from "@/modules/security/components/step-up-link";
 import type { TranslatedCode } from "@/lib/errors";
 import type { ActionState, UploadProblem } from "../types";
 
@@ -47,7 +48,8 @@ export function ImportErrorMessage({
   const tImports = useTranslations("imports.errors");
   return (
     <Alert className={className}>
-      {problem ? <ProblemText problem={problem} /> : isSpecific(code) ? tImports(code) : tErrors(messageKey, { requestId: requestId ?? "—" })}
+      {problem ? <ProblemText problem={problem} /> : isSpecific(code) ? tImports(code) : tErrors(messageKey, { requestId: requestId ?? "—" })}{" "}
+      <StepUpLink code={problem || isSpecific(code) ? null : messageKey} />
     </Alert>
   );
 }

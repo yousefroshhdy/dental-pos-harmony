@@ -24,6 +24,8 @@ const day = z.string().refine((v) => parseDay(v) !== null, { message: "not a cal
 
 /** Most visits per api.plan_visits call (the command refuses more). */
 export const MAX_VISITS_PER_PLAN = 200;
+/** api.generate_plan considers at most this many customers per call, most due first (audit 4 F2). */
+export const GENERATE_MAX_CUSTOMERS = 1000;
 
 export const addVisitSchema = z
   .object({

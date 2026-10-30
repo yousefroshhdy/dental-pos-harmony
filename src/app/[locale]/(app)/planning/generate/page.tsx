@@ -11,6 +11,7 @@ import { PlanReviewForm, type ReviewDay } from "@/modules/planning/components/pl
 import { DAY_MEDIUM, DAY_SHORT, MONTH_LONG, dayAsDate } from "@/modules/planning/format";
 import { canPlan, groupProposals, monthOf, parseMonth, pickEmployee, planningErrorCode, proposalValue, sortEmployees } from "@/modules/planning/logic";
 import { generatePlan, getPlanningSettings, listPlanningEmployees } from "@/modules/planning/queries";
+import { GENERATE_MAX_CUSTOMERS } from "@/modules/planning/schemas";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -138,6 +139,11 @@ export default async function GeneratePlanPage({ params, searchParams }: { param
               to: day(result.data.to),
             })}
           </p>
+          {(result.data.customers_skipped ?? 0) > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("generate.skipped", { skipped: result.data.customers_skipped, max: GENERATE_MAX_CUSTOMERS })}
+            </p>
+          ) : null}
           {review.length === 0 ? (
             <Empty>{t("generate.empty")}</Empty>
           ) : (

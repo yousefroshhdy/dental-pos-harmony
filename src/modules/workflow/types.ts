@@ -147,6 +147,7 @@ export const WORKFLOW_ERROR_KEYS = [
   "DUPLICATE",
   "REASON_REQUIRED",
   "UNAVAILABLE",
+  "MFA_REQUIRED",
   "UNKNOWN",
 ] as const;
 export type WorkflowErrorKey = (typeof WORKFLOW_ERROR_KEYS)[number];

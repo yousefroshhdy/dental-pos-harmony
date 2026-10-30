@@ -93,6 +93,7 @@ export const APPROVAL_ERROR_KEYS = [
   "COMMENT_REQUIRED",
   "VALIDATION",
   "UNAVAILABLE",
+  "MFA_REQUIRED",
   "UNKNOWN",
 ] as const;
 export type ApprovalErrorKey = (typeof APPROVAL_ERROR_KEYS)[number];

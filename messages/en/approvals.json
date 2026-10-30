@@ -166,6 +166,7 @@
     "COMMENT_REQUIRED": "Please write a comment (at least 3 characters) when rejecting.",
     "VALIDATION": "Please check the values you entered.",
     "UNAVAILABLE": "The service is temporarily unavailable. Please try again.",
+    "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again.",
     "UNKNOWN": "Something went wrong. Reference: {requestId}"
   },
   "notifications": {

@@ -2,13 +2,14 @@
 
 import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/primitives";
+import { StepUpLink } from "@/modules/security/components/step-up-link";
 import type { ReturnErrorCode } from "../logic";
 import type { ReturnActionState } from "../types";
 
 /** Translated error line (returns.errors.*). The request id is the only detail shown. */
 export function ReturnsError({ code, requestId, className }: { code: ReturnErrorCode; requestId?: string; className?: string }) {
   const t = useTranslations("returns.errors");
-  return <Alert className={className}>{t(code, { requestId: requestId ?? "—" })}</Alert>;
+  return <Alert className={className}>{t(code, { requestId: requestId ?? "—" })} <StepUpLink code={code} /></Alert>;
 }
 
 /** Error or success line for a Server Action result; nothing before the first submit. */

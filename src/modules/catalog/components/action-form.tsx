@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { createContext, useActionState, useContext, useRef, useState, useTransition, type ReactNode } from "react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Alert } from "@/components/ui/primitives";
+import { StepUpLink } from "@/modules/security/components/step-up-link";
 import type { TranslatedCode } from "@/lib/errors";
 import { catalogErrorCode } from "../logic";
 import type { ActionResult, ActionState } from "../types";
@@ -99,7 +100,7 @@ export function CatalogErrorMessage({
   const tErrors = useTranslations("errors");
   const tCatalog = useTranslations("catalog.errors");
   const specific = code ? catalogErrorCode(code) : null;
-  return <Alert className={className}>{specific ? tCatalog(specific) : tErrors(messageKey, { requestId: requestId ?? "—" })}</Alert>;
+  return <Alert className={className}>{specific ? tCatalog(specific) : tErrors(messageKey, { requestId: requestId ?? "—" })} <StepUpLink code={specific ? null : messageKey} /></Alert>;
 }
 
 export function ActionMessage({ state, success, className }: { state: ActionState; success?: string; className?: string }) {
