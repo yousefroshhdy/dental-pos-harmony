@@ -9,7 +9,7 @@ next-env.d.ts
 *.tsbuildinfo
 
 # testing
-coverage/
+/coverage/
 playwright-report/
 test-results/
 

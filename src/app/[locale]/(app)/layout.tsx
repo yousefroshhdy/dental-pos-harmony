@@ -17,6 +17,7 @@ import { workflowNav } from "@/modules/workflow/nav";
 import { auditNav } from "@/modules/audit/nav";
 import { reportsNav } from "@/modules/reports/nav";
 import { securityNav } from "@/modules/security/nav";
+import { adminNav } from "@/modules/admin/nav";
 import { approvalsNav } from "@/modules/approvals/nav";
 import { catalogNav } from "@/modules/catalog/nav";
 import { crmNav } from "@/modules/crm/nav";
@@ -51,9 +52,7 @@ const NAV: NavItem[] = [
   ...workflowNav,
   ...auditNav,
   ...securityNav,
-  { href: "/admin/users", labelKey: "nav.users", permission: "admin.user.read" },
-  { href: "/admin/roles", labelKey: "nav.roles", permission: "admin.role.read" },
-  { href: "/admin/security", labelKey: "nav.security", permission: "audit.security.read" },
+  ...adminNav,
 ];
 
 export default async function AppLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
