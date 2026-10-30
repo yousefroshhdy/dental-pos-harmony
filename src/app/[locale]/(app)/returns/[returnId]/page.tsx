@@ -6,10 +6,11 @@ import { Alert, Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/pr
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { BackLink, Field } from "@/modules/returns/components/bits";
-import { CreditReturnForm, ReceiveReturnForm } from "@/modules/returns/components/return-forms";
+import { CancelReturnForm, CreditReturnForm, ReceiveReturnForm } from "@/modules/returns/components/return-forms";
 import { ReturnsError } from "@/modules/returns/components/returns-error";
 import { CAIRO_DATE, CAIRO_DATE_TIME, dateOnly, QUANTITY } from "@/modules/returns/format";
 import {
+  canCancel,
   canCredit,
   canReceive,
   canSeeReturns,
@@ -50,6 +51,8 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
   const requested = Boolean((await searchParams).requested);
   const showReceive = canReceive(ctx, r);
   const showCredit = canCredit(ctx, r);
+  const showCancel = canCancel(ctx, r);
+  const customerCredit = toNumber(r.customer_credit);
   const warehouses = showReceive ? await listQuarantineWarehouses() : null;
   const next = nextStepKey(r.status);
 
@@ -103,6 +106,12 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
         <Field label={t("detail.warehouse")} value={r.warehouse_code ? `${r.warehouse_code} — ${r.warehouse_name ?? ""}` : "—"} />
         <Field label={t("detail.receivedAt")} value={at(r.received_at)} />
         <Field label={t("detail.creditedAt")} value={at(r.credited_at)} />
+        {r.cancelled_at ? <Field label={t("detail.cancelledAt")} value={at(r.cancelled_at)} /> : null}
+        {r.cancel_reason ? (
+          <div className="sm:col-span-3">
+            <Field label={t("detail.cancelReason")} value={r.cancel_reason} />
+          </div>
+        ) : null}
         {r.notes ? (
           <div className="sm:col-span-3">
             <Field label={t("detail.notes")} value={r.notes} />
@@ -181,6 +190,11 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
             ))}
           </ul>
         )}
+        {customerCredit > 0 ? (
+          <Alert tone="info" role="status">
+            {t("detail.customerCredit", { amount: money(customerCredit) })}
+          </Alert>
+        ) : null}
       </section>
 
       {showReceive ? (
@@ -200,6 +214,14 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
           <CardTitle>{t("credit.title")}</CardTitle>
           <p className="text-sm text-muted-foreground">{t("credit.intro", { amount: money(r.estimated_total) })}</p>
           <CreditReturnForm returnId={r.id} />
+        </Card>
+      ) : null}
+
+      {showCancel ? (
+        <Card className="space-y-3">
+          <CardTitle>{t("cancel.title")}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t(r.status === "approved" ? "cancel.introApproved" : "cancel.introPending")}</p>
+          <CancelReturnForm returnId={r.id} />
         </Card>
       ) : null}
     </div>

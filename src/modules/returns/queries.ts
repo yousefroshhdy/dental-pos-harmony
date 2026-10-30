@@ -34,7 +34,8 @@ const RETURN_COLUMNS =
   "id, return_no, order_id, order_no, order_status, customer_id, customer_no, customer_name, rep_employee_id, rep_name_en, " +
   "rep_name_ar, territory_id, status, reason, notes, warehouse_id, warehouse_code, warehouse_name, approval_request_id, " +
   "approval_status, created_by, requested_by_name_en, requested_by_name_ar, is_mine, created_at, decided_at, received_at, " +
-  "credited_at, updated_at, lines, total_qty, credited_qty, estimated_total, credit_notes, credited_total";
+  "credited_at, updated_at, lines, total_qty, credited_qty, estimated_total, credit_notes, credited_total, cancelled_at, " +
+  "cancelled_by, cancel_reason, customer_credit";
 const LINE_COLUMNS =
   "return_item_id, return_id, order_item_id, line_no, variant_id, sku, variant_name, lot_id, lot_no, expiry_date, quantity, " +
   "credited_qty, reason_code, condition, list_price, applied_discount_pct, tax_rate_pct, estimated_total";

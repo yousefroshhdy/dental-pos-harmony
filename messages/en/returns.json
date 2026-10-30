@@ -23,7 +23,8 @@
     "approved": "To receive",
     "received": "To credit",
     "credited": "Credited",
-    "rejected": "Rejected"
+    "rejected": "Rejected",
+    "cancelled": "Cancelled"
   },
   "status": {
     "requested": "Requested",
@@ -31,7 +32,8 @@
     "approved": "Approved",
     "received": "Received",
     "credited": "Credited",
-    "rejected": "Rejected"
+    "rejected": "Rejected",
+    "cancelled": "Cancelled"
   },
   "approvalStatus": {
     "pending": "Pending",
@@ -60,7 +62,8 @@
     "receive": "Next: the warehouse receives the goods into quarantine.",
     "credit": "Next: finance issues the credit note.",
     "done": "Done: the goods are in quarantine and the customer was credited.",
-    "closed": "This return was rejected; nothing was received or credited."
+    "closed": "This return was rejected; nothing was received or credited.",
+    "cancelled": "This return was cancelled; nothing was received or credited, and its quantity is free again."
   },
   "request": {
     "title": "Request a return",
@@ -117,7 +120,10 @@
     "creditNotes": "Credit notes",
     "noCredits": "No credit note yet.",
     "openInvoice": "Open the invoice",
-    "creditSplit": "{amount} + VAT {vat}"
+    "creditSplit": "{amount} + VAT {vat}",
+    "cancelledAt": "Cancelled",
+    "cancelReason": "Why it was cancelled",
+    "customerCredit": "The invoice was already paid: {amount} of this credit is kept as customer credit and offsets the customer’s next invoices. It is never paid out in cash."
   },
   "lines": {
     "sku": "Item",
@@ -139,20 +145,31 @@
   },
   "credit": {
     "title": "Credit the customer",
-    "intro": "Issues the credit note for the returned lines at their invoiced prices, with VAT. Estimate: {amount}.",
+    "intro": "Issues the credit note for the returned lines at their invoiced prices, with VAT. Estimate: {amount}. If the invoice is already paid, the part above what is still open becomes customer credit for later invoices (never cash).",
     "submit": "Issue the credit note",
     "submitting": "Issuing…"
+  },
+  "cancel": {
+    "title": "Cancel this return",
+    "introPending": "Withdraw your request before it is decided. The quantity becomes returnable again.",
+    "introApproved": "Cancel an approved return whose goods never arrived. Nothing is received or credited, and the quantity becomes returnable again.",
+    "reason": "Reason",
+    "reasonPlaceholder": "Example: the clinic decided to keep the goods",
+    "help": "At least 3 characters. No patient data.",
+    "submit": "Cancel the return",
+    "submitting": "Cancelling…"
   },
   "messages": {
     "requested": "Return requested.",
     "received": "Goods received into quarantine.",
-    "credited": "Credit note issued."
+    "credited": "Credit note issued.",
+    "cancelled": "Return cancelled."
   },
   "errors": {
     "QTY_EXCEEDS_RETURNABLE": "A quantity is more than was delivered and invoiced, minus earlier returns. Reload and check the lines.",
     "WAREHOUSE_NOT_QUARANTINE": "Returned goods can only be received into a quarantine warehouse.",
     "CREDIT_QTY_EXCEEDED": "Part of this return is already credited on the invoice by another credit note.",
-    "EXCEEDS_INVOICE_OPEN_AMOUNT": "The credit is more than what is still open on the invoice. Finance must reverse a payment allocation first.",
+    "EXCEEDS_INVOICE_OPEN_AMOUNT": "Earlier credit notes or a write-off already cover these lines on the invoice. Ask finance to check the invoice.",
     "IDEMPOTENCY_CONFLICT": "This request was already used for another record. Reload the page and try again.",
     "SELF_APPROVAL": "You cannot decide your own request.",
     "REASON_REQUIRED": "Explain the reason in the notes.",

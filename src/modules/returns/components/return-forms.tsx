@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, Input, Label, Select } from "@/components/ui/primitives";
-import { creditReturn, receiveReturn, requestReturn } from "../actions";
+import { cancelReturn, creditReturn, receiveReturn, requestReturn } from "../actions";
 import { checkRequestLines, lineKey } from "../logic";
 import { REASON_CODES, type WarehouseOption } from "../types";
 import { ReturnsActionMessage } from "./returns-error";
@@ -149,6 +149,43 @@ export function ReceiveReturnForm({ returnId, warehouses }: { returnId: string; 
         <p className="text-xs text-muted-foreground">{t("help")}</p>
       </div>
       <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto">
+        {pending ? t("submitting") : t("submit")}
+      </Button>
+      <ReturnsActionMessage state={state} />
+    </form>
+  );
+}
+
+/**
+ * Withdraw a pending return or cancel an approved one that never arrived. It releases the
+ * held quantity; the server decides who may cancel in which state.
+ */
+export function CancelReturnForm({ returnId }: { returnId: string }) {
+  const t = useTranslations("returns.cancel");
+  const { state, submit, pending } = useIdempotentAction(cancelReturn);
+  const reasonId = useId();
+  const helpId = useId();
+  return (
+    <form action={submit} className="flex flex-col gap-3">
+      <input type="hidden" name="return_id" value={returnId} />
+      <div className="flex flex-col gap-1">
+        <Label htmlFor={reasonId}>{t("reason")}</Label>
+        <textarea
+          id={reasonId}
+          name="reason"
+          rows={2}
+          required
+          minLength={3}
+          maxLength={500}
+          aria-describedby={helpId}
+          placeholder={t("reasonPlaceholder")}
+          className="w-full rounded-md border bg-card px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
+        />
+        <p id={helpId} className="text-xs text-muted-foreground">
+          {t("help")}
+        </p>
+      </div>
+      <Button type="submit" variant="destructive" size="lg" disabled={pending} className="w-full sm:w-auto">
         {pending ? t("submitting") : t("submit")}
       </Button>
       <ReturnsActionMessage state={state} />

@@ -60,3 +60,10 @@ export const creditReturnSchema = z.object({
   return_id: id,
   idempotency_key: idempotencyKey,
 });
+
+/** api.cancel_return: who may cancel, and in which state, is decided in Postgres. */
+export const cancelReturnSchema = z.object({
+  return_id: id,
+  reason: z.string().trim().min(3).max(500),
+  idempotency_key: idempotencyKey,
+});

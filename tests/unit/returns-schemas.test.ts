@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { creditReturnSchema, formToObject, receiveReturnSchema, requestLineSchema, requestReturnSchema } from "@/modules/returns/schemas";
+import { cancelReturnSchema, creditReturnSchema, formToObject, receiveReturnSchema, requestLineSchema, requestReturnSchema } from "@/modules/returns/schemas";
 
 const ORDER = "f3500000-0000-0000-0000-00000000000a";
 const ITEM = "a0000000-0000-0000-0000-000000000001";
@@ -45,5 +45,14 @@ describe("returns schemas", () => {
     expect(creditReturnSchema.safeParse({ return_id: ITEM, idempotency_key: key }).success).toBe(true);
     expect(creditReturnSchema.safeParse({ return_id: ITEM, idempotency_key: "short" }).success).toBe(false);
     expect(creditReturnSchema.safeParse({ return_id: "x", idempotency_key: key }).success).toBe(false);
+  });
+
+  it("cancel needs the return, a reason and a device idempotency key", () => {
+    const key = "3f1c0a52-4b8e-4d7a-9a51-0c2f5e6d7b8a";
+    expect(cancelReturnSchema.safeParse({ return_id: ITEM, reason: "clinic kept the goods", idempotency_key: key }).success).toBe(true);
+    expect(cancelReturnSchema.safeParse({ return_id: ITEM, reason: "  x ", idempotency_key: key }).success).toBe(false);
+    expect(cancelReturnSchema.safeParse({ return_id: ITEM, reason: "y".repeat(501), idempotency_key: key }).success).toBe(false);
+    expect(cancelReturnSchema.safeParse({ return_id: ITEM, reason: "clinic kept the goods" }).success).toBe(false);
+    expect(cancelReturnSchema.safeParse({ return_id: "x", reason: "clinic kept the goods", idempotency_key: key }).success).toBe(false);
   });
 });
