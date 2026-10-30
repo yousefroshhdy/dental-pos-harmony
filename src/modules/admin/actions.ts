@@ -10,7 +10,7 @@ import type { AppError } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { getRequestId } from "@/lib/request-id";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { adminErrorCode, canInvite } from "./logic";
+import { canInvite, failedResult } from "./logic";
 import {
   assignTerritorySchema,
   coverageSchema,
@@ -64,10 +64,7 @@ function refresh(...pages: (keyof typeof PAGES)[]) {
   for (const page of new Set([...pages, "security" as const])) revalidatePath(PAGES[page], "page");
 }
 
-const failed = (error: AppError): ActionResult => {
-  const adminCode = adminErrorCode(error.code);
-  return { ok: false, messageKey: error.messageKey, requestId: error.requestId, ...(adminCode ? { adminCode } : {}) };
-};
+const failed = (error: AppError): ActionResult => failedResult(error);
 
 function invalid(error: z.ZodError): ActionResult {
   return { ok: false, messageKey: validationMessageKey(error) };

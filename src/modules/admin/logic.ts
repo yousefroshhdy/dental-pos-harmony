@@ -1,5 +1,7 @@
 import { can, SCOPES, type Scope, type UserContext } from "@/lib/authz/can";
+import type { AppError } from "@/lib/errors";
 import type {
+  ActionResult,
   AdminEmployeeRow,
   AdminErrorCode,
   EmploymentStatus,
@@ -188,6 +190,12 @@ export const ADMIN_ERROR_CODES = [
 /** The admin.errors.* key for a business code, if the admin module translates it. */
 export function adminErrorCode(code: string): AdminErrorCode | undefined {
   return (ADMIN_ERROR_CODES as readonly string[]).includes(code) ? (code as AdminErrorCode) : undefined;
+}
+
+/** The browser-safe result of a failed admin command: a translatable key, never the raw message. */
+export function failedResult(error: Pick<AppError, "code" | "messageKey" | "requestId">): ActionResult {
+  const adminCode = adminErrorCode(error.code);
+  return { ok: false, messageKey: error.messageKey, requestId: error.requestId, ...(adminCode ? { adminCode } : {}) };
 }
 
 // ---------------------------------------------------------------------------
