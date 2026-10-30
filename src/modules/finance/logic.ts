@@ -36,6 +36,7 @@ export const FINANCE_ERROR_CODES = [
   "WORKFLOW_MISSING",
   "INVOICE_IMMUTABLE",
   "INVOICE_STILL_OPEN",
+  "WRITE_OFF_PENDING",
   "REASON_REQUIRED",
   "INVALID_STATE",
   "PERMISSION_DENIED",
@@ -239,6 +240,28 @@ export const isInvoiceOpen = (invoice: Pick<InvoiceRow, "status" | "open_amount"
 
 export function canCreditInvoice(ctx: UserContext, invoice: Pick<InvoiceRow, "status" | "open_amount">): boolean {
   return invoice.status !== "written_off" && toCents(invoice.open_amount) > 0 && can(ctx, "finance.credit_note.issue");
+}
+
+/**
+ * Request a write-off (api.request_invoice_write_off): finance.collection.manage, an open
+ * invoice, and no write-off of it already waiting for a decision. UX only; Postgres decides.
+ */
+export function canWriteOffInvoice(
+  ctx: UserContext,
+  invoice: Pick<InvoiceRow, "status" | "open_amount">,
+  pendingRequests: number,
+): boolean {
+  return isInvoiceOpen(invoice) && pendingRequests === 0 && can(ctx, "finance.collection.manage");
+}
+
+export type WriteOffCheck = { ok: true; amount: number } | { ok: false; reason: "invalidAmount" | "exceedsOpen" };
+
+/** Client-side check of a typed write-off amount against the invoice's open amount (the server re-checks). */
+export function checkWriteOffAmount(raw: string, openAmount: Numeric): WriteOffCheck {
+  const amount = parseAmount(raw);
+  if (amount === null) return { ok: false, reason: "invalidAmount" };
+  if (Math.round(amount * 100) > toCents(openAmount)) return { ok: false, reason: "exceedsOpen" };
+  return { ok: true, amount };
 }
 
 /** Actions api.update_collection_task accepts from a status. */

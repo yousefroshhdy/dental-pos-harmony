@@ -6,6 +6,9 @@ import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { hasReceipt } from "@/modules/finance/print";
 import { BackLink, Field } from "@/modules/finance/components/bits";
 import { FinanceError } from "@/modules/finance/components/finance-error";
 import {
@@ -64,6 +67,11 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
             <span dir="ltr">{p.payment_no}</span>
           </h1>
           <Badge tone={paymentStatusTone(p.status)}>{t(`paymentStatus.${p.status}`)}</Badge>
+          {hasReceipt(p) ? (
+            <Link href={`/finance/payments/${p.id}/print`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "ms-auto min-h-11")}>
+              {t("print.printReceipt")}
+            </Link>
+          ) : null}
         </div>
         <p className="text-sm text-muted-foreground">{p.customer_name ?? "—"}</p>
       </div>
