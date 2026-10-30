@@ -44,8 +44,8 @@ select is((select is_nullable || ' ' || column_default from information_schema.c
           'NO false', 'authz.permissions.requires_mfa is NOT NULL DEFAULT false');
 select is((select array_agg(code order by code) from authz.permissions where requires_mfa and code <> 'admin.import.run'),
           array['admin.override.manage','admin.role.assign','admin.role.manage','admin.user.suspend',
-                'catalog.price.manage','finance.credit_limit.change','finance.payment.reverse',
-                'inventory.quarantine.release'],
+                'catalog.price.manage','crm.customer.export','finance.credit_limit.change','finance.payment.reverse',
+                'inventory.quarantine.release','sales.order.export'],
           'the sensitive set requires MFA (admin.import.run too, once it exists)');
 select is((select count(*)::int from authz.permissions where requires_mfa = false and code in
             ('crm.customer.read','sales.order.create','finance.payment.record','finance.payment.read','admin.user.create')),
