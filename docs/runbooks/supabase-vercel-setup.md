@@ -8,7 +8,7 @@
 | Item | Value |
 |------|-------|
 | Supabase project | `honest-os-staging`, ref `hhdctubhbdqriyqwjgfk`, eu-central-1, Free plan |
-| Database | All 29 migrations applied; 869 pgTAP assertions pass there (run in a rolled-back transaction, nothing persisted) |
+| Database | All 35 migrations applied; all 1346 pgTAP assertions pass there (run in a rolled-back transaction, nothing persisted) |
 | Vercel project | `honest-os-staging` (Hobby), linked to `yousefroshhdy/dental-pos-harmony`, region fra1, Node 22 |
 | URL | https://honest-os-staging.vercel.app (behind Vercel Authentication: you must be signed in to Vercel) |
 | Deployed branch | `ccr-cd8ec6c2-y28xig` (Vercel serves it as production for this project) |

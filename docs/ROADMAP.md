@@ -28,7 +28,7 @@ Definitions are in `docs/TESTING.md` §4.
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Migrations (35 files) + reference data | Implemented, Tested; the first 29 applied to Supabase staging | `pnpm test:db`: 1346 assertions in 31 suites; suites 01–26 also pass on staging with real pgTAP |
+| Migrations (35 files) + reference data | Implemented, Tested; **all 35 applied to Supabase staging** | `pnpm test:db`: 1346 assertions in 31 suites, all also passing on staging with real pgTAP (rolled back) |
 | Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
 | Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
 | Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
