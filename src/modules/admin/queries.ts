@@ -2,7 +2,23 @@ import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
-import type { PermissionRow, RolePermissionRow, RoleRow, SecurityEventRow, TerritoryRow, UserRoleRow, UserRow } from "./types";
+import type {
+  AdminEmployeeRow,
+  CoverageRow,
+  EmployeeTerritoryRow,
+  GovernorateRow,
+  HeldCustomerRow,
+  OrgUnitRow,
+  PermissionRow,
+  RolePermissionRow,
+  RoleRow,
+  SecurityEventRow,
+  SettingRow,
+  TerritoryCountRow,
+  TerritoryRow,
+  UserRoleRow,
+  UserRow,
+} from "./types";
 
 /**
  * Admin console reads. All go through the user's session against api.v_*
@@ -100,4 +116,87 @@ export async function listSecurityEvents(limit = 200): Promise<Result<SecurityEv
       ,
     [],
   );
+}
+
+// ---------------------------------------------------------------------------
+// Admin console v2 (migrations 20261103000800–0820)
+// ---------------------------------------------------------------------------
+
+const SETTING_COLUMNS =
+  "key, group_code, value_type, min_value, max_value, allowed_values, default_value, unit, owner_only, is_editable, is_whitelisted, label_en, label_ar, description_en, description_ar, value, is_default, updated_at, updated_by, sort_order";
+
+export async function listSettings(): Promise<Result<SettingRow[]>> {
+  const db = await createClient();
+  return run("v_settings", db.from("v_settings").select(SETTING_COLUMNS).order("group_code").order("sort_order"), []);
+}
+
+const EMPLOYEE_COLUMNS =
+  "id, employee_no, user_id, full_name_en, full_name_ar, job_title, phone, email, department_id, department_code, department_name_en, department_name_ar, office_id, office_code, office_name_en, office_name_ar, manager_id, manager_no, manager_name_en, manager_name_ar, employment_status, hired_on, terminated_on, created_at, updated_at, direct_reports";
+
+export async function listEmployees(): Promise<Result<AdminEmployeeRow[]>> {
+  const db = await createClient();
+  return run("v_admin_employees", db.from("v_admin_employees").select(EMPLOYEE_COLUMNS).order("employee_no"), []);
+}
+
+export async function getEmployee(employeeId: string): Promise<Result<AdminEmployeeRow | null>> {
+  const db = await createClient();
+  return run("v_admin_employees", db.from("v_admin_employees").select(EMPLOYEE_COLUMNS).eq("id", employeeId).maybeSingle(), null);
+}
+
+const EMPLOYEE_TERRITORY_COLUMNS =
+  "id, employee_id, territory_id, territory_code, territory_name_en, territory_name_ar, territory_active, assignment, valid_from, valid_to";
+
+/** Open (current) territory assignments, optionally for one employee. */
+export async function listOpenEmployeeTerritories(employeeId?: string): Promise<Result<EmployeeTerritoryRow[]>> {
+  const db = await createClient();
+  let query = db.from("v_employee_territories").select(EMPLOYEE_TERRITORY_COLUMNS).is("valid_to", null);
+  if (employeeId) query = query.eq("employee_id", employeeId);
+  return run("v_employee_territories", query.order("territory_code"), []);
+}
+
+export async function listDepartments(): Promise<Result<OrgUnitRow[]>> {
+  const db = await createClient();
+  return run("v_departments", db.from("v_departments").select("id, code, name_en, name_ar, is_active").order("code"), []);
+}
+
+export async function listOffices(): Promise<Result<OrgUnitRow[]>> {
+  const db = await createClient();
+  return run("v_offices", db.from("v_offices").select("id, code, name_en, name_ar, is_active").order("code"), []);
+}
+
+/** Customers the employee holds (a definer read: works without CRM access, minimal columns). */
+export async function listHeldCustomers(employeeId: string): Promise<Result<HeldCustomerRow[]>> {
+  const db = await createClient();
+  return run("employee_customer_holdings", db.rpc("employee_customer_holdings", { p_employee_id: employeeId }), []);
+}
+
+/** Every territory, active or not (the admin tree shows both). */
+export async function listAllTerritories(): Promise<Result<TerritoryRow[]>> {
+  const db = await createClient();
+  return run("v_territories", db.from("v_territories").select("id, code, name_en, name_ar, parent_id, level, is_active").order("code"), []);
+}
+
+export async function listTerritoryCounts(): Promise<Result<TerritoryCountRow[]>> {
+  const db = await createClient();
+  return run("territory_customer_counts", db.rpc("territory_customer_counts"), []);
+}
+
+export async function listCoverage(): Promise<Result<CoverageRow[]>> {
+  const db = await createClient();
+  return run(
+    "v_territory_coverage",
+    db
+      .from("v_territory_coverage")
+      .select(
+        "territory_id, territory_code, territory_name_en, territory_name_ar, territory_active, governorate_code, governorate_name_en, governorate_name_ar, city",
+      )
+      .order("governorate_code")
+      .order("city"),
+    [],
+  );
+}
+
+export async function listGovernorates(): Promise<Result<GovernorateRow[]>> {
+  const db = await createClient();
+  return run("v_governorates", db.from("v_governorates").select("code, name_en, name_ar").order("code"), []);
 }
