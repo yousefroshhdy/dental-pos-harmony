@@ -1,1 +1,138 @@
-{}
+{
+  "nav": {
+    "statement": "My commission",
+    "periods": "Commission periods",
+    "adjustments": "Commission adjustments"
+  },
+  "loading": "Loading commissions…",
+  "retry": "Try again",
+  "period": {
+    "label": "Month",
+    "previous": "Previous month",
+    "next": "Next month",
+    "choose": "Month",
+    "apply": "Show",
+    "status": {
+      "open": "Open",
+      "calculated": "Provisional",
+      "closed": "Closed"
+    },
+    "closesAt": "Closes {at}",
+    "closedAt": "Closed {at}",
+    "calculatedAt": "calculated {at}",
+    "notCalculated": "Not calculated yet. Figures appear after the next calculation."
+  },
+  "statement": {
+    "title": "Commission statement",
+    "intro": "Commission is earned when an invoice is paid, on the amount excluding VAT, at the rate in force that day.",
+    "monthTitle": "{month}",
+    "otherTitle": "{name} · {month}",
+    "teamLink": "Team summary",
+    "noEmployee": "Your account is not linked to an employee record, so you have no statement. Open the team summary instead.",
+    "lines": "Lines",
+    "empty": "No commission lines in this month.",
+    "limited": "Showing the latest {count} lines.",
+    "payment": "Payment",
+    "creditNote": "Credit note",
+    "baseTimesRate": "{base} × {rate}",
+    "rules": "Returns within 90 days of collection, reversed allocations and bounced payments reduce the month they happen in. A closed month never changes.",
+    "totals": {
+      "earned": "Earned",
+      "clawedBack": "Clawed back",
+      "adjustments": "Adjustments",
+      "total": "Total"
+    }
+  },
+  "kind": {
+    "collection": "Collected",
+    "reversal": "Allocation reversed",
+    "bounce": "Payment bounced",
+    "credit_clawback": "Return clawback",
+    "credit_reattribution": "Return re-allocation",
+    "bonus": "Bonus",
+    "clawback": "Clawback",
+    "correction": "Correction"
+  },
+  "team": {
+    "title": "Team commission",
+    "intro": "Commission per employee for the month. Open a name to see the statement.",
+    "back": "Back to my statement",
+    "employee": "Employee",
+    "empty": "No commission in this month for the employees you can see.",
+    "totalRow": "Total"
+  },
+  "periods": {
+    "title": "Commission periods",
+    "intro": "Each month is recalculated every night and closes on day 6 of the next month. A closed month is final.",
+    "list": "Months",
+    "entries": "Commission",
+    "employees": "Employees",
+    "recalculate": "Recalculate",
+    "recalculateMonth": "Recalculate {month}",
+    "recalculating": "Recalculating…",
+    "closeTitle": "Close {month}",
+    "closeHint": "Closing runs the final calculation and freezes the month. Later returns and bounced payments go to the month they happen in.",
+    "confirmClose": "I checked the {month} statements and want to close the month.",
+    "close": "Close {month}",
+    "closing": "Closing…",
+    "limited": "Showing the latest {count} months."
+  },
+  "adjust": {
+    "title": "Commission adjustments",
+    "intro": "A bonus, clawback or correction for one employee and month. Each one needs approval before it counts.",
+    "new": "New adjustment",
+    "employee": "Employee",
+    "chooseEmployee": "Choose an employee",
+    "period": "Month",
+    "kind": "Type",
+    "amount": "Amount (EGP)",
+    "amountHint": {
+      "bonus": "A positive amount, for example 250.00",
+      "clawback": "A negative amount, for example -250.00",
+      "correction": "Positive or negative, not zero"
+    },
+    "amountPositive": "A bonus must be a positive amount with at most 2 decimals.",
+    "amountNegative": "A clawback must be a negative amount with at most 2 decimals.",
+    "amountInvalid": "Enter a non-zero amount with at most 2 decimals.",
+    "reason": "Reason",
+    "reasonHint": "Shown on the employee's statement and to the approver.",
+    "submit": "Send for approval",
+    "submitting": "Sending…",
+    "noEmployees": "There is no employee you can adjust.",
+    "noOpenMonth": "There is no open month to adjust.",
+    "requests": "Adjustment requests",
+    "requestsEmpty": "No adjustment requests yet.",
+    "requestedOn": "Requested {at}",
+    "mine": "requested by you",
+    "openApproval": "Open the approval",
+    "limited": "Showing the latest {count} requests.",
+    "status": {
+      "pending": "Waiting for approval",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
+    }
+  },
+  "messages": {
+    "recalculated": "The month was recalculated.",
+    "closed": "The month is closed.",
+    "pending": "Sent for approval. It counts once approved.",
+    "posted": "The adjustment is on the statement."
+  },
+  "errors": {
+    "PERMISSION_DENIED": "You are not allowed to do this.",
+    "VALIDATION": "Some values are not valid. Check the form and try again.",
+    "NOT_FOUND": "This record no longer exists.",
+    "INVALID_STATE": "This month cannot be changed in its current state.",
+    "PERIOD_CLOSED": "This month is closed. Use an open month.",
+    "PERIOD_NOT_ENDED": "A month can be closed only after it has ended.",
+    "PREVIOUS_PERIOD_OPEN": "Close the earlier open month first.",
+    "SELF_ADJUSTMENT": "You cannot adjust your own commission.",
+    "REASON_REQUIRED": "Give a reason (at least 3 characters).",
+    "IDEMPOTENCY_CONFLICT": "This form was already used for another request. Reload the page.",
+    "CONFLICT": "Someone changed this at the same time. Reload and try again.",
+    "UNAVAILABLE": "The service is not reachable. Check the connection and try again.",
+    "UNKNOWN": "Something went wrong. Reference: {requestId}"
+  }
+}
