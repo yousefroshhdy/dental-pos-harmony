@@ -34,7 +34,13 @@
     "magicLinkSent": "If this email is registered, a sign-in link is on its way.",
     "invalid": "Email or password is incorrect.",
     "inactiveTitle": "Your account is not active",
-    "inactiveBody": "Your login exists but is not linked to an active employee, or it has been suspended. Contact your administrator."
+    "inactiveBody": "Your login exists but is not linked to an active employee, or it has been suspended. Contact your administrator.",
+    "otpSend": "Email me a 6-digit code",
+    "otpSent": "If this email is registered, a 6-digit sign-in code is on its way. Enter it below.",
+    "otpCode": "Sign-in code",
+    "otpHint": "The 6-digit code from the email. Use it in this app; the link in the same email opens the phone's browser instead.",
+    "otpVerify": "Sign in with the code",
+    "otpInvalid": "The code is wrong or has expired. Check it, or ask for a new one."
   },
   "home": {
     "greeting": "Hello, {name}",

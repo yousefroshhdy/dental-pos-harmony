@@ -1,0 +1,86 @@
+# Honest OS Android shell (D-14 phase 2, mobile/README.md): builds the debug APK of the
+# Capacitor remote-URL app. No signing secrets: debug builds use the SDK's debug key.
+# Release signing (a keystore in GitHub secrets) is documented in mobile/README.md and
+# not built yet.
+name: Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ccr-cd8ec6c2-y28xig]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/android.yml"
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+    working-directory: mobile
+
+jobs:
+  debug-apk:
+    name: Debug APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # The deployment the WebView opens: repository variable CAP_SERVER_URL (Settings ›
+      # Secrets and variables › Actions › Variables), else staging. https only.
+      CAP_SERVER_URL: ${{ vars.CAP_SERVER_URL || 'https://honest-os-staging.vercel.app' }}
+    steps:
+      - uses: actions/checkout@v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4.9.1
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3.2.2
+
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install (mobile/package-lock.json)
+        run: npm ci --no-audit --no-fund
+
+      - name: Capacitor sync
+        run: |
+          echo "WebView URL: $CAP_SERVER_URL"
+          npx cap sync android
+
+      # Validates the committed gradle-wrapper.jar against Gradle's published checksums
+      # and caches Gradle downloads.
+      - uses: gradle/actions/setup-gradle@v4.4.4
+
+      - name: Build the debug APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Show the merged manifest permissions
+        working-directory: mobile/android
+        run: |
+          manifest=$(find app/build/intermediates -path '*merged_manifest*' -name AndroidManifest.xml | head -n 1)
+          echo "Merged manifest: $manifest"
+          grep -E 'uses-permission|foregroundServiceType|<service' "$manifest" || true
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: honest-os-android-debug
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:" />
+    <title>Honest OS</title>
+    <style>
+      :root { color-scheme: light dark; --bg: #f7f8fb; --fg: #1f2433; --muted: #5b6275; --primary: #1f4fd1; --on-primary: #ffffff; --card: #ffffff; --border: #dfe3ec; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #1b1e2a; --fg: #eef0f5; --muted: #a9afbf; --primary: #7ea2ff; --on-primary: #10131c; --card: #232736; --border: #343a4d; } }
+      * { box-sizing: border-box; }
+      body { font-family: "Segoe UI", Tahoma, system-ui, sans-serif; margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 16px; background: var(--bg); color: var(--fg); }
+      main { width: 100%; max-width: 22rem; padding: 1.5rem; text-align: center; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+      h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+      p { color: var(--muted); line-height: 1.6; margin: 0.25rem 0; }
+      section + section { margin-block-start: 1.25rem; padding-block-start: 1.25rem; border-block-start: 1px solid var(--border); }
+      button { margin-block-start: 1.25rem; min-height: 44px; width: 100%; border: 0; border-radius: 8px; font: inherit; font-weight: 600; background: var(--primary); color: var(--on-primary); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>تعذّر فتح Honest OS</h1>
+        <p>لا يوجد اتصال بالإنترنت، أو الخادم غير متاح الآن. تحقق من الاتصال ثم أعد المحاولة.</p>
+        <p>إذا كان يومك مفتوحًا: لا يُسجَّل الموقع ما دامت هذه الصفحة ظاهرة، والنقاط المسجّلة من قبل محفوظة على الجهاز وتُرسل عند فتح التطبيق مع وجود اتصال.</p>
+      </section>
+      <section dir="ltr" lang="en">
+        <h1>Honest OS could not be opened</h1>
+        <p>There is no internet connection, or the server is not available right now. Check your connection and try again.</p>
+        <p>If your day is open: no location is recorded while this page is shown. Points recorded before are kept on the device and sent once the app is open with a connection.</p>
+      </section>
+      <button type="button" id="retry">إعادة المحاولة · Try again</button>
+    </main>
+    <script src="config.js"></script>
+    <script src="offline.js"></script>
+  </body>
+</html>

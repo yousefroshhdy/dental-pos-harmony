@@ -6,7 +6,8 @@
     "on": "Tracking on",
     "label": "Tracking is on. Your location is recorded about every {minutes} minutes while this app is open. Open my day.",
     "problem": "Tracking is on, but your location is unavailable. Open my day.",
-    "pending": "Tracking is on; your day start is waiting to sync. Open my day."
+    "pending": "Tracking is on; your day start is waiting to sync. Open my day.",
+    "labelNative": "Tracking is on. Your location is recorded about every {minutes} minutes, also in the background, while the Honest OS notification is shown. Open my day."
   },
   "notice": {
     "title": "Location tracking during working hours",
@@ -39,7 +40,7 @@
     "noPoint": "No point recorded yet",
     "lastSent": "Last points sent at {time}",
     "waiting": "{count, plural, =0 {All points sent} one {One point waiting to send} other {# points waiting to send}}",
-    "browserLimit": "Points are only collected while this app is open with the screen on. Keep it open during your working day. A company app that also works in the background will follow.",
+    "browserLimit": "Points are only collected while this app is open with the screen on. Keep it open during your working day, or use the Honest OS Android app on the company phone, which also records in the background.",
     "offHours": "Your location is not collected now. It is collected only between Start my day and End my day.",
     "overdue": "Your day passed the {hours}-hour maximum. It will be closed automatically and tracking has stopped.",
     "queuedStart": "No connection: your day start is saved on this device and will be sent when you are back online.",
@@ -171,5 +172,29 @@
     "title": "This page could not be loaded",
     "body": "Please try again. If it keeps happening, tell your administrator.",
     "retry": "Try again"
+  },
+  "native": {
+    "notificationTitle": "Honest OS: working day",
+    "notificationMessage": "Honest OS is recording your location for your working day.",
+    "background": "Your location is recorded in the background, also with the screen off, while the Honest OS notification is shown. Do not swipe Honest OS away from recent apps until you end your day.",
+    "batteryWarning": "Battery saving can stop Honest OS in the background, and your day will then show gaps. Exempt Honest OS from battery optimisation (see Phone settings for tracking).",
+    "openSettings": "Open app settings",
+    "settingsFallback": "Open Settings › Apps › Honest OS on the phone.",
+    "problem": {
+      "denied": "Honest OS may not use your location. Open the app settings › Permissions › Location and choose \"Allow all the time\" or \"Allow only while using the app\", with \"Use precise location\" on. Also allow Notifications. Then come back to this app.",
+      "services_off": "The phone's location is switched off. Turn on Location in the quick settings, then come back to this app.",
+      "unavailable": "Your location is unavailable right now. Honest OS keeps trying."
+    },
+    "help": {
+      "title": "Phone settings for tracking",
+      "permissionsTitle": "Permissions",
+      "location": "Location: \"Allow all the time\" or \"Allow only while using the app\", with \"Use precise location\" on.",
+      "notifications": "Notifications: allow. The permanent Honest OS notification is what keeps tracking running in the background.",
+      "batteryTitle": "Battery",
+      "batteryAndroid": "Settings › Apps › Honest OS › Battery: choose \"Unrestricted\" (or turn off \"Optimise battery usage\").",
+      "batterySamsung": "Samsung: also remove Honest OS from \"Sleeping apps\" and \"Deep sleeping apps\" (Battery › Background usage limits).",
+      "batteryOthers": "Xiaomi, Redmi, Poco, Oppo, Realme, Vivo: allow \"Autostart\" and set the battery saver for Honest OS to \"No restrictions\". Lock the app in recent apps if the phone offers it.",
+      "batteryMdm": "Company phones managed by MDM: IT can allow-list Honest OS from battery optimisation for every device at once."
+    }
   }
 }

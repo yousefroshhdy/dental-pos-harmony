@@ -18,12 +18,13 @@ describe("tracking payloads", () => {
     expect(endShiftSchema.safeParse({ client_ref: REF, shift_ref: REF, lat: null, lng: null, accuracy_m: null, captured_at: at }).success).toBe(true);
     expect(endShiftSchema.safeParse({ client_ref: REF, shift_ref: null, lat: null, lng: null, accuracy_m: null, captured_at: "yesterday" }).success).toBe(false);
   });
-  it("points: 1 to 500, each with an id, a position, a device time and source pwa", () => {
+  it("points: 1 to 500, each with an id, a position, a device time and source pwa or native (advisory)", () => {
     const ping = { id: REF, lat: 30.04, lng: 31.23, accuracy_m: null, captured_at: at, source: "pwa" };
     expect(recordPingsSchema.safeParse({ pings: [ping] }).success).toBe(true);
     expect(recordPingsSchema.safeParse({ pings: [] }).success).toBe(false);
     expect(recordPingsSchema.safeParse({ pings: Array.from({ length: 501 }, () => ping) }).success).toBe(false);
-    expect(recordPingsSchema.safeParse({ pings: [{ ...ping, source: "native" }] }).success).toBe(false);
+    expect(recordPingsSchema.safeParse({ pings: [{ ...ping, source: "native" }] }).success).toBe(true);
+    expect(recordPingsSchema.safeParse({ pings: [{ ...ping, source: "gps" }] }).success).toBe(false);
     expect(recordPingsSchema.safeParse({ pings: [{ ...ping, extra: 1 }] }).success).toBe(false);
   });
   it("notice versions and route params", () => {
