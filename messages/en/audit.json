@@ -1,1 +1,168 @@
-{}
+{
+  "nav": {
+    "log": "Audit log"
+  },
+  "title": "Audit log",
+  "subtitle": "Who changed what, with old and new values. Sensitive values stay hidden unless you reveal them.",
+  "accessNotice": "Every search and every record you open here is recorded in the security log.",
+  "securityLink": "Open the security log",
+  "search": {
+    "legend": "Search",
+    "table": "Table",
+    "anyTable": "All tables",
+    "record": "Record id",
+    "recordHint": "The exact id of the record, as shown in its page address.",
+    "actor": "Changed by",
+    "anyActor": "Anyone",
+    "actorId": "User id",
+    "from": "From",
+    "to": "To",
+    "action": "Change",
+    "anyAction": "Any change",
+    "datesHint": "Dates are Cairo calendar days and include both ends.",
+    "submit": "Search",
+    "reset": "Clear"
+  },
+  "invalid": {
+    "intro": "Some filters were ignored because they are not valid:",
+    "table": "table",
+    "record": "record id",
+    "actor": "changed by",
+    "from": "from date",
+    "to": "to date",
+    "action": "change",
+    "before": "page",
+    "range": "the start date is after the end date"
+  },
+  "actions": {
+    "INSERT": "Created",
+    "UPDATE": "Changed",
+    "DELETE": "Deleted"
+  },
+  "kinds": {
+    "added": "set",
+    "removed": "cleared",
+    "changed": "changed"
+  },
+  "categories": {
+    "cost": "cost",
+    "balance": "balance",
+    "credit_limit": "credit limit",
+    "phone": "phone",
+    "email": "email",
+    "gps": "location",
+    "other": "sensitive value"
+  },
+  "entry": {
+    "by": "by {name}",
+    "system": "by the system",
+    "record": "Record:",
+    "noRecordId": "no id (this table has a composite key)",
+    "openRecord": "Open the record",
+    "history": "Record history",
+    "changes": "{count, plural, =1 {1 field} other {# fields}}",
+    "noChanges": "No field values to show.",
+    "before": "Before",
+    "after": "After",
+    "becomes": "becomes",
+    "empty": "empty",
+    "masked": "Hidden ({category})",
+    "request": "Request:"
+  },
+  "reveal": {
+    "maskedNotice": "Hidden in these results:",
+    "show": "Reveal hidden values",
+    "note": "Revealing is recorded in the security log as a warning.",
+    "active": "Hidden values are revealed for this view. This was recorded in the security log.",
+    "hide": "Hide them again"
+  },
+  "list": {
+    "heading": "Changes",
+    "empty": "No changes match these filters.",
+    "older": "Older changes",
+    "newest": "Back to the newest",
+    "paging": "Pages"
+  },
+  "history": {
+    "title": "Record history",
+    "timeline": "Timeline (newest first)",
+    "empty": "No recorded changes for this record.",
+    "invalid": "This address does not name a valid table and record.",
+    "back": "Back to the audit log"
+  },
+  "errors": {
+    "PERMISSION_DENIED": "Only the owner can read old and new values in the audit log.",
+    "VALIDATION": "Some filters are not valid. Check them and search again.",
+    "NOT_FOUND": "Not found.",
+    "UNAVAILABLE": "The server could not be reached. Try again.",
+    "UNKNOWN": "Something went wrong. Reference: {requestId}"
+  },
+  "tables": {
+    "authz": {
+      "role_permissions": "Role permissions",
+      "roles": "Roles",
+      "user_permission_overrides": "Permission overrides",
+      "user_roles": "Role assignments"
+    },
+    "catalog": {
+      "customer_price_lists": "Customer price lists",
+      "price_list_items": "Price list items",
+      "price_lists": "Price lists",
+      "product_costs": "Product costs",
+      "product_variants": "Product variants",
+      "products": "Products"
+    },
+    "core": {
+      "employees": "Employees",
+      "system_settings": "System settings",
+      "territories": "Territories",
+      "user_profiles": "User profiles"
+    },
+    "crm": {
+      "customer_assignments": "Customer assignments",
+      "customer_contacts": "Customer contacts",
+      "customers": "Customers",
+      "opportunities": "Opportunities"
+    },
+    "field": {
+      "tracking_notice_acks": "Tracking notice acknowledgements",
+      "tracking_notices": "Tracking notices",
+      "visits": "Visits"
+    },
+    "finance": {
+      "collection_tasks": "Collection tasks",
+      "credit_notes": "Credit notes",
+      "invoices": "Invoices",
+      "payments": "Payments"
+    },
+    "integration": {
+      "routes": "Integration routes"
+    },
+    "inventory": {
+      "transfers": "Stock transfers",
+      "warehouses": "Warehouses"
+    },
+    "perf": {
+      "commission_adjustments": "Commission adjustments",
+      "commission_periods": "Commission periods",
+      "commission_plan_rules": "Commission plan rules",
+      "commission_plans": "Commission plans",
+      "kpi_definitions": "KPI definitions",
+      "kpi_targets": "KPI targets"
+    },
+    "sales": {
+      "discount_rules": "Discount rules",
+      "order_items": "Order lines",
+      "orders": "Orders"
+    },
+    "wf": {
+      "approval_requests": "Approval requests",
+      "workflow_definitions": "Workflow definitions",
+      "workflow_rules": "Workflow rules",
+      "workflow_stages": "Workflow stages"
+    },
+    "work": {
+      "tasks": "Tasks"
+    }
+  }
+}

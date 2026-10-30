@@ -1,1 +1,168 @@
-{}
+{
+  "nav": {
+    "log": "سجل التدقيق"
+  },
+  "title": "سجل التدقيق",
+  "subtitle": "من غيّر ماذا، مع القيم القديمة والجديدة. تبقى القيم الحساسة مخفية ما لم تكشفها.",
+  "accessNotice": "كل بحث وكل سجل تفتحه هنا يُسجَّل في سجل الأمان.",
+  "securityLink": "فتح سجل الأمان",
+  "search": {
+    "legend": "بحث",
+    "table": "الجدول",
+    "anyTable": "كل الجداول",
+    "record": "معرّف السجل",
+    "recordHint": "المعرّف الدقيق للسجل كما يظهر في عنوان صفحته.",
+    "actor": "بواسطة",
+    "anyActor": "أي شخص",
+    "actorId": "معرّف المستخدم",
+    "from": "من",
+    "to": "إلى",
+    "action": "نوع التغيير",
+    "anyAction": "أي تغيير",
+    "datesHint": "التواريخ بأيام تقويم القاهرة وتشمل البداية والنهاية.",
+    "submit": "بحث",
+    "reset": "مسح"
+  },
+  "invalid": {
+    "intro": "تم تجاهل بعض عوامل التصفية لأنها غير صالحة:",
+    "table": "الجدول",
+    "record": "معرّف السجل",
+    "actor": "بواسطة",
+    "from": "تاريخ البداية",
+    "to": "تاريخ النهاية",
+    "action": "نوع التغيير",
+    "before": "الصفحة",
+    "range": "تاريخ البداية بعد تاريخ النهاية"
+  },
+  "actions": {
+    "INSERT": "إنشاء",
+    "UPDATE": "تعديل",
+    "DELETE": "حذف"
+  },
+  "kinds": {
+    "added": "أُضيف",
+    "removed": "مُسح",
+    "changed": "تغيّر"
+  },
+  "categories": {
+    "cost": "التكلفة",
+    "balance": "الرصيد",
+    "credit_limit": "حد الائتمان",
+    "phone": "الهاتف",
+    "email": "البريد الإلكتروني",
+    "gps": "الموقع",
+    "other": "قيمة حساسة"
+  },
+  "entry": {
+    "by": "بواسطة {name}",
+    "system": "بواسطة النظام",
+    "record": "السجل:",
+    "noRecordId": "بدون معرّف (مفتاح هذا الجدول مركّب)",
+    "openRecord": "فتح السجل",
+    "history": "تاريخ السجل",
+    "changes": "{count, plural, =1 {حقل واحد} two {حقلان} few {# حقول} many {# حقلًا} other {# حقل}}",
+    "noChanges": "لا توجد قيم حقول لعرضها.",
+    "before": "قبل",
+    "after": "بعد",
+    "becomes": "تصبح",
+    "empty": "فارغ",
+    "masked": "مخفي ({category})",
+    "request": "الطلب:"
+  },
+  "reveal": {
+    "maskedNotice": "مخفي في هذه النتائج:",
+    "show": "كشف القيم المخفية",
+    "note": "يُسجَّل الكشف في سجل الأمان كتحذير.",
+    "active": "القيم المخفية مكشوفة في هذا العرض، وقد سُجّل ذلك في سجل الأمان.",
+    "hide": "إخفاؤها مجددًا"
+  },
+  "list": {
+    "heading": "التغييرات",
+    "empty": "لا توجد تغييرات مطابقة لعوامل التصفية.",
+    "older": "تغييرات أقدم",
+    "newest": "العودة إلى الأحدث",
+    "paging": "الصفحات"
+  },
+  "history": {
+    "title": "تاريخ السجل",
+    "timeline": "الخط الزمني (الأحدث أولًا)",
+    "empty": "لا توجد تغييرات مسجلة لهذا السجل.",
+    "invalid": "هذا العنوان لا يحدد جدولًا وسجلًا صالحين.",
+    "back": "العودة إلى سجل التدقيق"
+  },
+  "errors": {
+    "PERMISSION_DENIED": "المالك وحده يمكنه قراءة القيم القديمة والجديدة في سجل التدقيق.",
+    "VALIDATION": "بعض عوامل التصفية غير صالحة. راجعها وأعد البحث.",
+    "NOT_FOUND": "غير موجود.",
+    "UNAVAILABLE": "تعذّر الوصول إلى الخادم. حاول مرة أخرى.",
+    "UNKNOWN": "حدث خطأ ما. المرجع: {requestId}"
+  },
+  "tables": {
+    "authz": {
+      "role_permissions": "صلاحيات الأدوار",
+      "roles": "الأدوار",
+      "user_permission_overrides": "استثناءات الصلاحيات",
+      "user_roles": "إسناد الأدوار"
+    },
+    "catalog": {
+      "customer_price_lists": "قوائم أسعار العملاء",
+      "price_list_items": "بنود قوائم الأسعار",
+      "price_lists": "قوائم الأسعار",
+      "product_costs": "تكاليف المنتجات",
+      "product_variants": "أصناف المنتجات",
+      "products": "المنتجات"
+    },
+    "core": {
+      "employees": "الموظفون",
+      "system_settings": "إعدادات النظام",
+      "territories": "المناطق",
+      "user_profiles": "ملفات المستخدمين"
+    },
+    "crm": {
+      "customer_assignments": "إسناد العملاء",
+      "customer_contacts": "جهات اتصال العملاء",
+      "customers": "العملاء",
+      "opportunities": "الفرص"
+    },
+    "field": {
+      "tracking_notice_acks": "إقرارات إشعار التتبع",
+      "tracking_notices": "إشعارات التتبع",
+      "visits": "الزيارات"
+    },
+    "finance": {
+      "collection_tasks": "مهام التحصيل",
+      "credit_notes": "الإشعارات الدائنة",
+      "invoices": "الفواتير",
+      "payments": "المدفوعات"
+    },
+    "integration": {
+      "routes": "مسارات التكامل"
+    },
+    "inventory": {
+      "transfers": "تحويلات المخزون",
+      "warehouses": "المستودعات"
+    },
+    "perf": {
+      "commission_adjustments": "تسويات العمولات",
+      "commission_periods": "فترات العمولات",
+      "commission_plan_rules": "قواعد خطط العمولات",
+      "commission_plans": "خطط العمولات",
+      "kpi_definitions": "تعريفات مؤشرات الأداء",
+      "kpi_targets": "مستهدفات مؤشرات الأداء"
+    },
+    "sales": {
+      "discount_rules": "قواعد الخصم",
+      "order_items": "بنود الطلبات",
+      "orders": "الطلبات"
+    },
+    "wf": {
+      "approval_requests": "طلبات الموافقة",
+      "workflow_definitions": "تعريفات مسارات العمل",
+      "workflow_rules": "قواعد مسارات العمل",
+      "workflow_stages": "مراحل مسارات العمل"
+    },
+    "work": {
+      "tasks": "المهام"
+    }
+  }
+}
