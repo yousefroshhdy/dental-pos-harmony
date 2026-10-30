@@ -3,7 +3,7 @@
 -- Schema `import` holds uploaded spreadsheet rows as-is (raw), what validation made of them
 -- (normalized) and the per-row errors (the rejects report). Nothing here is a business record:
 -- committing a batch posts through the normal api.* commands and ledgers
--- (20261103000200_import_commands.sql).
+-- (20261103000110_import_commands.sql).
 --
 -- D-03: synthetic data only until the PDPL legal review clears real personal data.
 --

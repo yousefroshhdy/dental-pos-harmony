@@ -1,4 +1,4 @@
--- Data migration imports (20261103000100_import_schema.sql, 20261103000200_import_commands.sql):
+-- Data migration imports (20261103000100_import_schema.sql, 20261103000110_import_commands.sql):
 -- staging, per-row validation (rejects report), idempotent staging, all-or-nothing commit,
 -- opening stock = inventory ledger, opening AR = customer ledger, permissions.
 -- Synthetic data only (D-03).

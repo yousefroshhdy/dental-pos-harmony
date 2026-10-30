@@ -9,7 +9,7 @@ type Tree = Record<string, unknown>;
 const load = (locale: string) => JSON.parse(readFileSync(join(__dirname, "../../messages", locale, "imports.json"), "utf8")) as Tree;
 const at = (tree: Tree, path: string): unknown => path.split(".").reduce<unknown>((n, k) => (n as Tree | undefined)?.[k], tree);
 
-const migration = readFileSync(join(__dirname, "../../supabase/migrations/20261103000200_import_commands.sql"), "utf8");
+const migration = readFileSync(join(__dirname, "../../supabase/migrations/20261103000110_import_commands.sql"), "utf8");
 
 /** Arrays per kind from a `case p_kind when '<kind>' then array[...]` SQL function. */
 function sqlArrays(fn: string): Record<string, string[]> {

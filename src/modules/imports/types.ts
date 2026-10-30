@@ -1,7 +1,7 @@
 import type { TranslatedCode } from "@/lib/errors";
 import type { ImportKind } from "./kinds";
 
-/** Row shapes of api.v_import_batches / api.v_import_rows (20261103000200_import_commands.sql). */
+/** Row shapes of api.v_import_batches / api.v_import_rows (20261103000110_import_commands.sql). */
 export type BatchStatus = "uploaded" | "validated" | "committed" | "failed" | "discarded";
 export type RowStatus = "pending" | "valid" | "invalid" | "committed";
 

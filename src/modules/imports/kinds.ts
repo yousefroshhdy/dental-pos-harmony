@@ -1,6 +1,6 @@
 /**
  * Import kinds and their CSV columns. Must match import._columns / import._required_columns
- * in supabase/migrations/20261103000200_import_commands.sql (unit-tested against each other
+ * in supabase/migrations/20261103000110_import_commands.sql (unit-tested against each other
  * by tests/unit/imports-kinds.test.ts reading the migration).
  *
  * Headers are English snake_case; the UI shows an Arabic hint for each (messages/*\/imports.json).
