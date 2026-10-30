@@ -31,6 +31,7 @@ import { ordersNav } from "@/modules/orders/nav";
 import { TrackingIndicator } from "@/modules/tracking/components/tracking-indicator";
 import { trackingNav } from "@/modules/tracking/nav";
 import { signOut } from "../login/actions";
+import { NativeTrackingStop } from "../login/native-stop";
 
 /** Navigation entries; each is shown only if the user holds its permission. */
 const NAV: NavItem[] = [
@@ -70,6 +71,8 @@ export default async function AppLayout({ children, params }: { children: ReactN
   if (!ctx.active) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 px-4">
+        {/* An inactive user collects nothing: remove a native watcher left by an earlier page (audit 4 F4). */}
+        <NativeTrackingStop />
         <Card className="space-y-3">
           <h1 className="text-xl font-semibold">{tAuth("inactiveTitle")}</h1>
           <p className="text-sm text-muted-foreground">{tAuth("inactiveBody")}</p>
