@@ -1,3 +1,4 @@
+import { clearOtherUsersOrders } from "@/modules/orders/device-store";
 import { clearOtherUsers } from "@/lib/offline/client";
 import { registerFieldSenders } from "@/modules/field/offline";
 import { registerOrderSenders } from "@/modules/orders/offline";
@@ -37,6 +38,7 @@ export function startOfflineDevice(userId: string): void {
   ensureSendersRegistered();
   if (typeof window === "undefined" || started.has(userId)) return;
   started.add(userId);
+  clearOtherUsersOrders(userId);
   void clearOtherUsers(userId).catch(() => {
     started.delete(userId); // try again on the next start
   });

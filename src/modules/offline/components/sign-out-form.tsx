@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRef, type FormEvent, type ReactNode } from "react";
 import { clearForUser, countUnsynced } from "@/lib/offline/client";
+import { clearOrdersDevice } from "@/modules/orders/device-store";
 import { STORAGE_PREFIX as TRACKING_STORAGE_PREFIX } from "@/modules/tracking/device-store";
 
 /**
@@ -37,6 +38,8 @@ export function OfflineSignOutForm({
         await clearForUser(userId);
         // Work-hours tracking keeps its open shift and unsent points in localStorage (D-14).
         window.localStorage.removeItem(TRACKING_STORAGE_PREFIX + userId);
+        // Offline order drafts and the cached product list (per user).
+        clearOrdersDevice(userId);
       } catch {
         // Storage unavailable: nothing was stored on this device to leak.
       }
