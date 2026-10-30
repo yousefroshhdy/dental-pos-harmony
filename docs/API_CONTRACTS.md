@@ -75,6 +75,16 @@ All the new views are `security_invoker`. Suites 19 and 21–24 cover them, and 
   - Customer-specific lists are readable only by price managers or for customers in the caller's scope.
 - **Dates:** business dates are Cairo days (`core.business_date()`).
 
+**Finance, dashboards and tracking (migrations `20261031000100`–`0300`; suites 27–30):**
+
+| Area | Commands | Read views / functions | Cron |
+|------|----------|------------------------|------|
+| Finance (AR core) | `issue_invoice(order, key)`, `issue_credit_note(invoice, lines\|amount, reason, key)` (via the `finance.credit_note` approval), `record_payment(customer, amount, method, reference, received_at, client_ref, cheque_due_date)`, `confirm_payment`, `reject_payment`, `reverse_payment(payment, reason, bounced)`, `allocate_payment(payment, allocations\|null = oldest first, key)`, `reverse_allocation`, `update_collection_task`; service: `finance_overdue_scan(limit)` | `v_invoices`, `v_invoice_lines`, `v_credit_notes`, `v_payments`, `v_payment_allocations`, `v_customer_statement`, `v_ar_aging`, `v_ar_aging_totals`, `v_collection_tasks`, `v_invoiceable_orders`, `v_invoiceable_order_lines` | `/api/cron/overdue` daily |
+| Dashboards | `set_kpi_target(…)`; service: `snapshot_kpis(as_of?)` | `kpi_summary(from, to, employee?, territory?)`, `kpi_team(from, to, codes?)`, `kpi_breakdown(from, to, 'territory'\|'brand', codes?)`, `kpi_overdue_customers(as_of?, employee?, limit?)`, `v_kpi_targets` | `/api/cron/kpi-snapshot` daily |
+| Tracking (D-14) | `acknowledge_tracking_notice(version)`, `start_shift(…)`, `end_shift(…)`, `record_location_pings(jsonb)`; service: `tracking_auto_close()`, `tracking_purge()` | `my_tracking_status()`, `tracking_day(employee, day)`, `tracking_team_day(day)`, `v_tracking_day_summaries` | `/api/cron/tracking` daily |
+
+New outbox events: `invoice.issued`, `invoice.overdue`, `credit_note.issued`, `payment.recorded`, `payment.confirmed`, `payment.rejected`, `payment.reversed`, `payment.allocated`, `payment.allocation_reversed`, `kpi_target.set`, and shift start/end/auto-close (no coordinates).
+
 **Additional error codes (beyond §8.1 of ARCHITECTURE):**
 - **Duplicates and conflicts:** `DUPLICATE_CUSTOMER`, `CONFLICT` (stale `version`), `IDEMPOTENCY_CONFLICT`.
 - **Approvals:** `SELF_APPROVAL`, `LIMIT_EXCEEDED`, `ALREADY_DECIDED`, `CANCEL_PENDING`.

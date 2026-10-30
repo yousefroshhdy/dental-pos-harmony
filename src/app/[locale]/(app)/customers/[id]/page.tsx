@@ -93,6 +93,8 @@ export default async function CustomerPage({ params, searchParams }: Props) {
   const canOpportunity = open && c.lifecycle_stage !== "blocked" && can(ctx, "crm.opportunity.manage");
   const canLog = open && can(ctx, "crm.activity.create");
   const canLocate = open && can(ctx, "crm.customer_location.verify");
+  const canStatement = can(ctx, "finance.ledger.read");
+  const canCollect = open && can(ctx, "finance.payment.record");
   const targets = employees.ok ? employees.data.filter((e) => e.id !== c.primary_rep_employee_id) : [];
   const canReassign = open && targets.length > 0;
 
@@ -121,7 +123,7 @@ export default async function CustomerPage({ params, searchParams }: Props) {
           <span dir="ltr">{c.customer_no}</span> · {tKind(c.kind)}
           {territory ? ` · ${territory}` : ""}
         </p>
-        {canEdit || canOpportunity ? (
+        {canEdit || canOpportunity || canStatement || canCollect ? (
           <div className="flex flex-wrap gap-2 pt-1">
             {canEdit ? (
               <Link href={`/customers/${c.id}/edit`} className={buttonVariants({ variant: "outline" })}>
@@ -131,6 +133,16 @@ export default async function CustomerPage({ params, searchParams }: Props) {
             {canOpportunity ? (
               <Link href={`/opportunities/new?customer=${c.id}`} className={buttonVariants({ variant: "outline" })}>
                 {t("newOpportunity")}
+              </Link>
+            ) : null}
+            {canStatement ? (
+              <Link href={`/finance/customers/${c.id}/statement`} className={buttonVariants({ variant: "outline" })}>
+                {t("statement")}
+              </Link>
+            ) : null}
+            {canCollect ? (
+              <Link href={`/finance/payments/new?customer=${c.id}`} className={buttonVariants({ variant: "outline" })}>
+                {t("recordPayment")}
               </Link>
             ) : null}
           </div>

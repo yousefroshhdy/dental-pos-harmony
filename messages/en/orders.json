@@ -116,7 +116,8 @@
     "byYou": "By you",
     "bySystem": "By the system",
     "coversAll": "covers all lines",
-    "shortLines": "{count, plural, one {short on # line} other {short on # lines}}"
+    "shortLines": "{count, plural, one {short on # line} other {short on # lines}}",
+    "issueInvoice": "Issue invoice"
   },
   "actions": {
     "submit": "Submit order",

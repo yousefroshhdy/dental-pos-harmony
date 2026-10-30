@@ -116,7 +116,8 @@
     "byYou": "بواسطتك",
     "bySystem": "بواسطة النظام",
     "coversAll": "يغطي كل البنود",
-    "shortLines": "{count, plural, one {نقص في بند واحد} two {نقص في بندين} few {نقص في # بنود} many {نقص في # بندًا} other {نقص في # بند}}"
+    "shortLines": "{count, plural, one {نقص في بند واحد} two {نقص في بندين} few {نقص في # بنود} many {نقص في # بندًا} other {نقص في # بند}}",
+    "issueInvoice": "إصدار فاتورة"
   },
   "actions": {
     "submit": "إرسال الطلب",

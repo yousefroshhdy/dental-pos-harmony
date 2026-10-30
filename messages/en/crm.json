@@ -161,7 +161,9 @@
     "opportunities": "Opportunities",
     "noOpportunities": "No opportunities yet.",
     "pipeline": "Open the pipeline",
-    "reassign": "Request reassignment"
+    "reassign": "Request reassignment",
+    "statement": "Account statement",
+    "recordPayment": "Record payment"
   },
   "activity": {
     "type": "Type",

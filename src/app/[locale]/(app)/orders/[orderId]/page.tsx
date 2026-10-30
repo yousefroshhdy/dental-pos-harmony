@@ -186,6 +186,14 @@ export default async function OrderDetailPage({ params, searchParams }: { params
         </Card>
       </section>
 
+      {["fulfilled", "partially_fulfilled", "invoiced"].includes(o.status) && can(ctx, "finance.invoice.issue") ? (
+        <div>
+          <Link href={`/finance/invoices/new?order=${o.id}`} className={buttonVariants({ variant: "outline" })}>
+            {t("detail.issueInvoice")}
+          </Link>
+        </div>
+      ) : null}
+
       {anyAction ? (
         <Card className="space-y-4">
           <CardTitle>{t("detail.actions")}</CardTitle>

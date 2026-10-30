@@ -161,7 +161,9 @@
     "opportunities": "الفرص",
     "noOpportunities": "لا توجد فرص بعد.",
     "pipeline": "فتح مسار الفرص",
-    "reassign": "طلب نقل العميل"
+    "reassign": "طلب نقل العميل",
+    "statement": "كشف الحساب",
+    "recordPayment": "تسجيل تحصيل"
   },
   "activity": {
     "type": "النوع",

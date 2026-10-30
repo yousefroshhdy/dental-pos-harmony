@@ -39,6 +39,15 @@ const ROUTES = [
   "/dashboard/targets",
   "/tracking",
   "/tracking/00000000-0000-0000-0000-000000000001/2026-10-30",
+  "/finance/invoices",
+  "/finance/invoices/new",
+  "/finance/invoices/00000000-0000-0000-0000-000000000001",
+  "/finance/payments",
+  "/finance/payments/new",
+  "/finance/payments/00000000-0000-0000-0000-000000000001",
+  "/finance/customers/00000000-0000-0000-0000-000000000001/statement",
+  "/finance/aging",
+  "/finance/collections",
 ] as const;
 
 test.describe("Phase 3 screens without a session", () => {

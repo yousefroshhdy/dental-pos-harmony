@@ -18,8 +18,8 @@ Definitions are in `docs/TESTING.md` §4.
 | 1 Architecture | ✅ | ✅ docs + draft schema | ✅ draft smoke test 45/45 | ✅ owner delegated decisions | n/a |
 | 2 Foundation | ✅ | ✅ (see detail) | ✅ (see detail) | — needs staging | — |
 | 3 Core operations | ✅ | 🟡 DB commands + first UI for every area (see detail); offline field check-in/out and tasks; migration tooling and pilot not started | 🟡 DB, unit and route-protection e2e; no live click-through | — | — |
-| 4 Financial operations | ✅ | — | — | — | — |
-| 5 Management intelligence | ✅ | — | — | — | — |
+| 4 Financial operations | ✅ | 🟡 AR core (invoices, credit notes, payments, allocation, statement, aging, collections) | 🟡 DB + unit | — | — |
+| 5 Management intelligence | ✅ | 🟡 KPI metric functions, role dashboards, targets, snapshots | 🟡 DB + unit | — | — |
 | 6 Integrations | ✅ | — | — | — | — |
 | 7 Advanced modules | ✅ | — | — | — | — |
 | 8 Production hardening | ✅ | — | — | — | — |
@@ -28,7 +28,7 @@ Definitions are in `docs/TESTING.md` §4.
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Migrations (29 files) + reference data | Implemented, Tested; **all 29 applied to Supabase staging** | `pnpm test:db`: 869 assertions in 25 suites, all also passing on staging with real pgTAP 1.3.3 (2026-10-30, rolled back) |
+| Migrations (33 files) + reference data | Implemented, Tested; the first 29 applied to Supabase staging | `pnpm test:db`: 1239 assertions in 29 suites; suites 01–26 also pass on staging with real pgTAP |
 | Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
 | Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
 | Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
@@ -38,7 +38,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Views never bypass RLS | Implemented, Tested | suite 15 |
 | Independent security audit (15 findings) | All fixed, Tested | `docs/security/audit-2026-10-29.md`, suite 17 |
 | Phase 3 audit (10 findings + 1 follow-up) | All fixed, Tested | `docs/security/audit-2026-10-30.md`, suites 25, 26 |
-| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 600 unit tests + 162 Playwright (Chromium) |
+| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 741 unit tests + 214 Playwright (Chromium) |
 | Admin console v1 (users, invite, roles editor, security events) | Implemented, unit-tested | never clicked through against a live database |
 | CI pipeline | Implemented | has not run on GitHub yet |
 | WebKit (iOS) end-to-end tests | Implemented | not run (no WebKit in the build sandbox) |
@@ -51,6 +51,9 @@ Definitions are in `docs/TESTING.md` §4.
 | Offline queue (IndexedDB), sync engine, /sync screen, header indicator; check-in, check-out and task completion queue offline and sync exactly once; per-user wipe on shared devices | Implemented, unit-tested | `src/lib/offline`, `src/modules/offline`, `src/modules/field/offline.ts`. Offline Playwright flow and order drafts not done yet |
 | Every Phase 3 screen redirects signed-out visitors to login | Tested | `tests/e2e/phase3-routes.spec.ts` (116 checks) |
 | Data migration tooling, rep pilot | Not started | Needs U-01/U-02 data and D-03 clearance |
+| AR core: invoices from fulfilled orders (VAT per line, gapless numbers, immutable), credit notes via approval, payments (pending → confirm/reject, reverse/bounce), allocation (manual or oldest-first, lock-safe), statement, aging, overdue scan → collection tasks | Implemented, Tested | `src/modules/finance`, suites 27, 28. Not done: PDF, ETA (D-02), opening-AR import, MFA on reversals |
+| Dashboards: rep, manager and owner views; KPI functions (ADR-015) with Cairo days, no double counting, DB-enforced scope; targets; daily snapshots | Implemented, Tested | `src/modules/dashboards`, suite 29 |
+| Work-hours tracking (D-14 phase 1): notice, shifts, 5-min points, stops, gaps, distance, team and day views, 90-day purge | Implemented, Tested | `src/modules/tracking`, suite 30. Browser collects only with the app open; the native Android collector is phase 2 |
 
 ## 2. MVP scope (prioritised)
 
