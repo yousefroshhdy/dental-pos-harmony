@@ -8,8 +8,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const ctx = await getUserContext();
-  // Field staff start their day on /today; everyone else sees this overview.
+  // Field staff start their day on /today; KPI readers (owner, director…) on /dashboard;
+  // everyone else sees this overview.
   if (!ctx.is_owner && can(ctx, "field.visit.create")) redirect(`/${locale}/today`);
+  if (can(ctx, "perf.kpi.read")) redirect(`/${locale}/dashboard`);
   const t = await getTranslations("home");
   const tScopes = await getTranslations("scopes");
 

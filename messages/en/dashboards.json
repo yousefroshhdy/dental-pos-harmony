@@ -1,1 +1,196 @@
-{}
+{
+  "nav": { "dashboard": "Dashboard" },
+  "pageTitle": "Dashboard",
+  "loading": "Calculating figures…",
+  "retry": "Try again",
+  "title": { "own": "My performance", "team": "Team performance", "all": "Company overview" },
+  "subtitle": {
+    "own": "Your visits, orders, sales and collections for the period.",
+    "team": "Totals for your team; open a name to see one person.",
+    "all": "Company totals, by territory and by brand."
+  },
+  "groups": { "field": "Field activity", "sales": "Sales", "cash": "Collections and receivables", "operations": "Operations" },
+  "kpi": {
+    "VISITS_PLANNED": {
+      "name": "Planned visits",
+      "short": "Planned",
+      "definition": "Visits planned for the period, one per customer per day. Cancelled visits are excluded."
+    },
+    "VISITS_COMPLETED": {
+      "name": "Completed visits",
+      "short": "Visits",
+      "definition": "Completed visits, counting one per customer per day (Cairo calendar day of check-in)."
+    },
+    "VISITS_VERIFIED_PCT": {
+      "name": "Verified visit rate",
+      "short": "Verified",
+      "definition": "Completed customer-days with a GPS-verified or approved-exception check-in ÷ completed customer-days × 100."
+    },
+    "VISIT_AVG_MINUTES": {
+      "name": "Average visit (minutes)",
+      "short": "Avg. minutes",
+      "definition": "Average time from check-in to check-out of completed visits, in minutes."
+    },
+    "CUSTOMERS_ADDED": {
+      "name": "Customers added",
+      "short": "Added",
+      "definition": "Customer records created in the period by the employee, leads included."
+    },
+    "NEW_ACCOUNTS": {
+      "name": "New accounts",
+      "short": "New accounts",
+      "definition": "Customers whose first invoice is in the period. Leads without an invoice do not count."
+    },
+    "ORDERS_BOOKED": {
+      "name": "Orders booked",
+      "short": "Orders",
+      "definition": "Orders submitted in the period. Cancelled or rejected orders do not count; a cancellation after the period closed (day 5 of the next month) is subtracted in the month it happens."
+    },
+    "BOOKED_SALES": {
+      "name": "Booked sales",
+      "short": "Booked sales",
+      "definition": "Value of booked orders excluding VAT (subtotal − discount). Orders are pipeline, not revenue."
+    },
+    "APPROVAL_TURNAROUND_HOURS": {
+      "name": "Approval turnaround (hours)",
+      "short": "Turnaround",
+      "definition": "Average hours from submitting an order to its approval, for orders approved in the period. Lower is better."
+    },
+    "SALES_FULFILLED": {
+      "name": "Sales fulfilled",
+      "short": "Fulfilled",
+      "definition": "Value of posted fulfilments excluding VAT: fulfilled quantity × net unit price of the order line."
+    },
+    "NET_REVENUE": {
+      "name": "Net invoiced revenue",
+      "short": "Invoiced",
+      "definition": "Invoices issued in the period excluding VAT (subtotal − discount), minus credit notes issued in the period (excluding VAT)."
+    },
+    "CASH_COLLECTED": {
+      "name": "Collections confirmed",
+      "short": "Collected",
+      "definition": "Payments received in the period and confirmed by finance, VAT included. Payments awaiting verification are excluded."
+    },
+    "AR_OPEN": {
+      "name": "Open receivables",
+      "short": "Open AR",
+      "definition": "What customers owe at the end of the period (or today), VAT included: the sum of positive customer ledger balances. Attributed to the customer's current primary rep."
+    },
+    "AR_OVERDUE": {
+      "name": "Overdue receivables",
+      "short": "Overdue",
+      "definition": "Open amount of invoices past their due date at the end of the period (or today): total − allocations − credit notes, VAT included."
+    },
+    "STOCK_ALERTS": {
+      "name": "Stock alerts",
+      "short": "Alerts",
+      "definition": "Active variants at or below their reorder point, plus lots in sellable warehouses that expire within 90 days. Company level, live."
+    },
+    "PENDING_APPROVALS": {
+      "name": "Pending approvals",
+      "short": "Pending",
+      "definition": "Approval requests waiting for a decision about employees in your scope. Live."
+    }
+  },
+  "tile": {
+    "progressLabel": "{name}: progress towards target",
+    "target": "Target {target}",
+    "paceNote": "Status compares with the share of the period already elapsed.",
+    "asOfEnd": "Measured at the end of the period.",
+    "noTarget": "No target set",
+    "howCalculated": "How it is calculated",
+    "openList": "Open list",
+    "planned": "{planned} planned",
+    "asOf": "As of {day}",
+    "stockDetail": "{reorder} below reorder point · {expiring} lots expiring",
+    "live": "Live figure"
+  },
+  "status": { "onTrack": "On track", "atRisk": "At risk", "behind": "Behind" },
+  "period": {
+    "label": "Period",
+    "quick": "Quick periods",
+    "today": "Today",
+    "week": "This week",
+    "month": "This month",
+    "custom": "Custom range",
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "customHint": "Cairo calendar days, up to {days} days. The working week is Sunday to Thursday.",
+    "showingDay": "Showing {day}",
+    "showingRange": "Showing {from} – {to}",
+    "invalid": "That custom range is not valid, so this month is shown."
+  },
+  "filter": {
+    "showing": "Showing figures for {name}",
+    "showingOne": "Showing figures for one team member",
+    "clear": "Back to everyone"
+  },
+  "team": {
+    "title": "Team",
+    "empty": "No one in your scope has figures for this period.",
+    "caption": "Figures per team member for the selected period",
+    "employee": "Employee",
+    "visits": "Visits / planned",
+    "vsTarget": "Booked vs target",
+    "visitsOfPlanned": "{completed} / {planned}"
+  },
+  "breakdown": {
+    "territoryTitle": "By territory",
+    "territory": "Territory",
+    "brandTitle": "By brand",
+    "brand": "Brand",
+    "empty": "Nothing to show for this period.",
+    "territoryNote": "Each region includes its sub-territories. Records without a territory appear only in the totals."
+  },
+  "overdue": {
+    "title": "Overdue customers",
+    "titleMine": "My overdue customers",
+    "empty": "No overdue customers.",
+    "meta": "{days} days overdue · {count, plural, one {# invoice} other {# invoices}} · due since {since}",
+    "openAging": "Open receivables aging"
+  },
+  "pending": {
+    "title": "Waiting for your decision",
+    "empty": "Nothing is waiting for you.",
+    "openInbox": "Open approvals"
+  },
+  "errors": {
+    "PERMISSION_DENIED": "You cannot see these figures.",
+    "VALIDATION": "Please check the values you entered.",
+    "NOT_FOUND": "That record no longer exists.",
+    "INVALID_STATE": "This KPI is not active, so it cannot take a target.",
+    "CONFLICT": "That form was already used by someone else. Reload the page and try again.",
+    "UNAVAILABLE": "The server is not reachable right now. Try again in a moment.",
+    "UNKNOWN": "Something went wrong (reference {requestId})."
+  },
+  "targets": {
+    "manage": "Targets",
+    "title": "KPI targets",
+    "intro": "Targets drive the achievement % on the dashboards. An employee target wins over a role target; territory targets apply to territory totals.",
+    "back": "Back to the dashboard",
+    "new": "Set a target",
+    "list": "Current targets",
+    "empty": "No targets set yet.",
+    "kpi": "KPI",
+    "subject": "Applies to",
+    "subjects": { "employee": "Employee", "role": "Role", "territory": "Territory" },
+    "subjectHint": {
+      "employee": "Only this person.",
+      "role": "Every holder of the role, each with this target.",
+      "territory": "The territory's total."
+    },
+    "period": "Period",
+    "periodStart": "Start",
+    "periodEnd": "End",
+    "value": "Target value",
+    "valueHint": "EGP for money, a number for counts, 0–100 for percentages.",
+    "save": "Save target",
+    "saving": "Saving…",
+    "saved": "Target saved.",
+    "roleSubject": "Role: {name}",
+    "territorySubject": "Territory: {name}",
+    "latestWins": "When targets for the same subject and period overlap, the latest one counts.",
+    "limited": "Showing the latest {count} targets."
+  }
+}
