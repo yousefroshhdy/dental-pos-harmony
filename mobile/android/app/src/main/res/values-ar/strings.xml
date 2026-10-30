@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Arabic (the app's default language for reps). English is values/strings.xml. -->
+    <string name="app_name">Honest OS</string>
+    <string name="title_activity_main">Honest OS</string>
+    <string name="capacitor_background_geolocation_notification_channel_name">موقع يوم العمل</string>
+</resources>

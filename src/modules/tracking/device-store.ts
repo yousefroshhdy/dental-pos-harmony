@@ -14,7 +14,8 @@ import type { PingInput, TrackingStatus } from "./types";
 
 export const STORAGE_PREFIX = "honest.tracking.v1:";
 
-export type CollectorProblem = "denied" | "unavailable" | "timeout" | "unsupported" | "insecure";
+/** `services_off`: the phone's location is switched off (Android shell only). */
+export type CollectorProblem = "denied" | "unavailable" | "timeout" | "unsupported" | "insecure" | "services_off";
 
 export interface DeviceState {
   shift: LocalShift | null;
@@ -70,7 +71,7 @@ function parsePing(v: unknown): PingInput | null {
   const lat = num(v.lat);
   const lng = num(v.lng);
   if (lat === null || lng === null) return null;
-  return { id: v.id, lat, lng, accuracy_m: num(v.accuracy_m), captured_at: v.captured_at, source: "pwa" };
+  return { id: v.id, lat, lng, accuracy_m: num(v.accuracy_m), captured_at: v.captured_at, source: v.source === "native" ? "native" : "pwa" };
 }
 
 /** Tolerant parse: anything malformed falls back to the empty state's value. */

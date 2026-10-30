@@ -6,7 +6,8 @@
 --       overlapping legacy windows are merged; shift anomaly flags reach the day flags
 --   M5  no points into a shift that ended long ago; retention counts from the capture time
 --   M7  a purged day shows the stored summary, not one whole-shift gap
---   L2  a forged source = 'native' is refused
+--   L2  revised by D-14 phase 2 (migration 20261102000100): source = 'native' is accepted again,
+--       as an advisory label only (suite 33 shows it gets no extra trust)
 begin;
 select tests.load_fixture();
 set constraints all immediate;
@@ -84,15 +85,15 @@ select is((current_setting('t.legacy')::jsonb ->> 'gap_seconds')::int, 32400,
   'and the empty merged window is one 9-hour gap, not two');
 
 -- ===========================================================================
--- L2: a forged native source
+-- L2, revised by D-14 phase 2 (20261102000100): 'native' is accepted, advisory only
 -- ===========================================================================
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
-select throws_like($$select api.record_location_pings(jsonb_build_array(jsonb_build_object(
+select is((api.record_location_pings(jsonb_build_array(jsonb_build_object(
     'id','f2000000-0000-0000-0000-000000000001','lat',30.05,'lng',31.24,'accuracy_m',5,
-    'captured_at',now() - interval '3 hours','source','native')))$$,
-  'VALIDATION%native%', 'L2: a point claiming source "native" is refused until the native collector is attested');
-select is((select count(*)::int from field.location_pings where id = 'f2000000-0000-0000-0000-000000000001'), 0,
-  'and it is not stored');
+    'captured_at',now() - interval '3 hours','source','native'))) ->> 'accepted'), '1',
+  'L2 (phase 2): a point with source "native" is accepted into the caller''s own shift, like any point');
+select is((select source from field.location_pings where id = 'f2000000-0000-0000-0000-000000000001'), 'native',
+  'and stored with its advisory source label');
 
 -- ===========================================================================
 -- M5: points only into an open or recently closed shift

@@ -160,7 +160,7 @@ export interface DayPoint {
   lat: number;
   lng: number;
   accuracy_m: number | null;
-  source: "pwa" | "native";
+  source: PingSource;
   anomaly_flags: string[];
   /** Counted for distance and stops (not low accuracy, impossible travel or a duplicate). */
   usable: boolean;
@@ -206,6 +206,13 @@ export interface TrackingDay {
   stored_summary: Record<string, unknown> | null;
 }
 
+/**
+ * Which collector took the point: the in-browser one or the Android shell (D-14 phase 2).
+ * Advisory only: anyone can send either value, so the server gives `native` no extra trust.
+ */
+export const PING_SOURCES = ["pwa", "native"] as const;
+export type PingSource = (typeof PING_SOURCES)[number];
+
 /** One location point as the device sends it. */
 export interface PingInput {
   [key: string]: string | number | null;
@@ -214,7 +221,7 @@ export interface PingInput {
   lng: number;
   accuracy_m: number | null;
   captured_at: string;
-  source: "pwa";
+  source: PingSource;
 }
 
 export interface PingsResult {

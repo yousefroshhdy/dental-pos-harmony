@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Honest OS</string>
+    <string name="title_activity_main">Honest OS</string>
+    <string name="package_name">eg.honest.os</string>
+    <string name="custom_url_scheme">eg.honest.os</string>
+    <!-- background-geolocation plugin: the notification channel (long-press the notification).
+         The notification's own title and text come from the web app, in the rep's language
+         (messages/{ar,en}/tracking.json, native.notificationTitle / notificationMessage). -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Working-day location</string>
+</resources>

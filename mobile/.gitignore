@@ -1,0 +1,3 @@
+node_modules/
+# Generated at cap sync from CAP_SERVER_URL (scripts/www-config.mjs).
+www/config.js

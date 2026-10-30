@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { Card } from "@/components/ui/primitives";
 import { LoginForm } from "./login-form";
+import { NativeTrackingStop } from "./native-stop";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -25,6 +26,7 @@ export default async function LoginPage({
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 px-4 py-10">
+      <NativeTrackingStop />
       <div className="flex items-center justify-between">
         <div>
           <p className="text-2xl font-bold">{app("name")}</p>

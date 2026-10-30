@@ -1,0 +1,24 @@
+{
+  "name": "honest-os-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Honest OS Android shell: a Capacitor remote-URL WebView plus background location for work-hours tracking (D-14 phase 2)",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "capacitor:copy:before": "node scripts/www-config.mjs",
+    "sync": "cap sync android",
+    "open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "1.3.1",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "typescript": "6.0.3"
+  }
+}

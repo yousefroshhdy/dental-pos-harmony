@@ -1,6 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { backgroundGeolocation } from "@/lib/native/background-geolocation";
 import { getSyncEngine } from "@/lib/offline/client";
 import type { SyncEngine } from "@/lib/offline/sync";
 import type { JsonObject } from "@/lib/offline/types";
@@ -18,14 +20,18 @@ import {
   TRACKING_QUEUED_COMMANDS,
   type TrackingSubmit,
 } from "./logic";
+import { startNativeCollector } from "./native-collector";
 import type { EndShiftPayload, StartShiftPayload } from "./schemas";
-import type { EndShiftResult, StartShiftResult, TrackingStatus } from "./types";
+import type { EndShiftResult, PingSource, StartShiftResult, TrackingStatus } from "./types";
 
 /**
  * Browser glue for work-hours tracking: the shared device state, the collector
  * (header, app-wide), and the Start / End my day commands (shift card). Client
- * components only. NEVER collects without an open shift: the collector runs only
- * while isCollecting(shift) and the page is visible.
+ * components only. NEVER collects without an open shift: a collector runs only
+ * while isCollecting(shift), and exactly one of them:
+ * - inside the Android shell (D-14 phase 2), the native background watcher
+ *   (native-collector.ts), which keeps running while the page is hidden;
+ * - in a browser, the in-page collector (collector.ts), only while the page is visible.
  */
 
 ensureSendersRegistered();
@@ -81,6 +87,17 @@ export function useClock(): number | null {
     subscribeClock,
     () => clockNow,
     () => null,
+  );
+}
+
+const subscribeNothing = () => () => undefined;
+
+/** True inside the Android shell with the background-location plugin (false on the server and in browsers). */
+export function useNativeShell(): boolean {
+  return useSyncExternalStore(
+    subscribeNothing,
+    () => backgroundGeolocation() !== null,
+    () => false,
   );
 }
 
@@ -154,28 +171,32 @@ async function syncAndPrune(userId: string, engine: SyncEngine): Promise<void> {
   }
 }
 
-function addSample(userId: string, sample: Sample): void {
+function addSample(userId: string, sample: Sample, source: PingSource): void {
   const store = trackingStoreFor(userId);
   store.update((s) => {
     // Never keep a point without an open shift, or past the shift's maximum length.
     if (!isCollecting(s.shift, Date.now())) return s;
-    const ping = toPing({ id: crypto.randomUUID(), lat: sample.lat, lng: sample.lng, accuracy: sample.accuracy, timestampMs: sample.timestampMs });
+    const ping = toPing({ id: crypto.randomUUID(), lat: sample.lat, lng: sample.lng, accuracy: sample.accuracy, timestampMs: sample.timestampMs, source });
     return { ...s, buffer: [...s.buffer, ping].slice(-500), lastSampleMs: Date.now() };
   });
   void flushPoints(userId);
 }
 
 /**
- * The app-wide collector (mounted once, in the header). Runs while a shift is open
- * and the page is visible; holds a screen wake lock where available; flushes the
- * buffer when the page is hidden; re-reads the server status on start and when
- * the page becomes visible again.
+ * The app-wide collector (mounted once, in the header). Runs while a shift is open:
+ * in the Android shell through the native watcher (also in the background), in a
+ * browser only while the page is visible, with a screen wake lock where available.
+ * Flushes the buffer when the page is hidden; re-reads the server status on start
+ * and when the page becomes visible again. Unmounting (sign-out) stops it.
  */
 export function useTrackingCollector(userId: string, enabled: boolean): DeviceState {
+  const t = useTranslations("tracking.native");
   const state = useTrackingState(userId);
   const now = useClock();
   const collecting = enabled && now !== null && isCollecting(state.shift, now);
   const intervalMs = Math.max(30, state.intervalS) * 1000;
+  const notificationTitle = t("notificationTitle");
+  const notificationMessage = t("notificationMessage");
 
   useEffect(() => {
     if (!enabled) return;
@@ -196,8 +217,48 @@ export function useTrackingCollector(userId: string, enabled: boolean): DeviceSt
     };
   }, [enabled, userId]);
 
+  // Inside the Android shell: the native watcher, never paused while the page is hidden.
   useEffect(() => {
     if (!collecting) return;
+    const plugin = backgroundGeolocation();
+    if (!plugin) return;
+    const store = trackingStoreFor(userId);
+    const start = () =>
+      startNativeCollector({
+        plugin,
+        intervalMs,
+        now: Date.now,
+        lastSampleMs: () => store.get().lastSampleMs,
+        isActive: () => isCollecting(store.get().shift, Date.now()),
+        notification: { title: notificationTitle, message: notificationMessage },
+        onSample: (sample) => addSample(userId, sample, "native"),
+        onProblem: (problem) => {
+          if (store.get().problem !== problem) store.update((s) => ({ ...s, problem }));
+        },
+      });
+    let stop = start();
+    // Back from Android settings: a fresh watcher if the permission or location services were off.
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      const problem = store.get().problem;
+      if (problem === "denied" || problem === "services_off") {
+        stop();
+        stop = start();
+      }
+    };
+    const flushTimer = window.setInterval(() => void flushPoints(userId), 60_000);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(flushTimer);
+      stop();
+      void flushPoints(userId, { force: true });
+    };
+  }, [collecting, intervalMs, userId, notificationTitle, notificationMessage]);
+
+  // In a browser: the in-page collector, only while the page is visible.
+  useEffect(() => {
+    if (!collecting || backgroundGeolocation()) return;
     let stopCollector: (() => void) | null = null;
     let releaseLock: (() => void) | null = null;
     let alive = true;
@@ -211,7 +272,7 @@ export function useTrackingCollector(userId: string, enabled: boolean): DeviceSt
         intervalMs,
         now: Date.now,
         lastSampleMs: () => store.get().lastSampleMs,
-        onSample: (sample) => addSample(userId, sample),
+        onSample: (sample) => addSample(userId, sample, "pwa"),
         onProblem: (problem) => {
           if (store.get().problem !== problem) store.update((s) => ({ ...s, problem }));
         },

@@ -3,7 +3,7 @@ import type { TranslatedCode } from "@/lib/errors";
 import type { EnqueueInput } from "@/lib/offline/queue";
 import type { Json, JsonObject, QueueItem, SendResult } from "@/lib/offline/types";
 import { cairoDate, zonedLocalToInstant } from "@/modules/field/logic";
-import { DAY_FLAGS, type DayGap, type DayPoint, type DayShift, type DayStop, type DayVisit, type DeviceResult, type OpenShift, type PingInput, type TeamDayRow, type TrackingDay, type TrackingNotice } from "./types";
+import { DAY_FLAGS, type DayGap, type DayPoint, type DayShift, type DayStop, type DayVisit, type DeviceResult, type OpenShift, type PingInput, type PingSource, type TeamDayRow, type TrackingDay, type TrackingNotice } from "./types";
 
 /**
  * Pure logic for work-hours tracking (D-14). UI gating here is cosmetic:
@@ -291,6 +291,15 @@ export function elapsedSeconds(shift: Pick<LocalShift, "startedAt" | "maxEndAt">
   return Math.max(0, Math.floor((end - Date.parse(shift.startedAt)) / 1000));
 }
 
+/** The Android shell's messages under `tracking.native.problem.*`. */
+export const NATIVE_PROBLEM_KEYS = ["denied", "services_off", "unavailable"] as const;
+export type NativeProblemKey = (typeof NATIVE_PROBLEM_KEYS)[number];
+
+/** A collector problem → the Android shell's guidance (a browser-only reason reads as "unavailable"). */
+export function nativeProblemKey(problem: string): NativeProblemKey {
+  return problem === "denied" || problem === "services_off" ? problem : "unavailable";
+}
+
 /** Keep a position when none was kept yet or the sampling interval has passed (small slack for timer drift). */
 export function shouldSample(lastSampleMs: number | null, nowMs: number, intervalMs: number, slackMs = 10_000): boolean {
   return lastSampleMs === null || nowMs - lastSampleMs >= Math.max(0, intervalMs - slackMs);
@@ -312,14 +321,14 @@ export function chunk<T>(items: readonly T[], size: number): T[][] {
 }
 
 /** numeric(9,6) / numeric(8,1) on the server: round on the device so a replay sends identical values. */
-export function toPing(input: { id: string; lat: number; lng: number; accuracy: number | null; timestampMs: number }): PingInput {
+export function toPing(input: { id: string; lat: number; lng: number; accuracy: number | null; timestampMs: number; source?: PingSource }): PingInput {
   return {
     id: input.id,
     lat: Math.round(input.lat * 1e6) / 1e6,
     lng: Math.round(input.lng * 1e6) / 1e6,
     accuracy_m: input.accuracy === null || !Number.isFinite(input.accuracy) ? null : Math.min(Math.round(input.accuracy * 10) / 10, 9_999_999.9),
     captured_at: new Date(input.timestampMs).toISOString(),
-    source: "pwa",
+    source: input.source ?? "pwa",
   };
 }
 

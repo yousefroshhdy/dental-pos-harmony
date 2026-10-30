@@ -4,7 +4,7 @@ import { MapPinOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { useTrackingCollector } from "../use-tracking";
+import { useNativeShell, useTrackingCollector } from "../use-tracking";
 
 /**
  * Header: the app-wide location collector and its "Tracking on" indicator (D-14).
@@ -18,11 +18,13 @@ import { useTrackingCollector } from "../use-tracking";
 export function TrackingIndicator({ userId, enabled }: { userId: string; enabled: boolean }) {
   const t = useTranslations("tracking.indicator");
   const state = useTrackingCollector(userId, enabled);
+  const native = useNativeShell();
   if (!enabled || !state.shift) return null;
 
   const problem = state.problem !== null;
   const pending = !state.shift.confirmed;
-  const label = problem ? t("problem") : pending ? t("pending") : t("label", { minutes: String(Math.round(state.intervalS / 60)) });
+  const minutes = String(Math.round(state.intervalS / 60));
+  const label = problem ? t("problem") : pending ? t("pending") : native ? t("labelNative", { minutes }) : t("label", { minutes });
 
   return (
     <Link

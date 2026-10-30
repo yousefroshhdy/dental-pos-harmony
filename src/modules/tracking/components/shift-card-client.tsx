@@ -12,7 +12,8 @@ import { trackingStoreFor } from "../device-store";
 import { CAIRO_DATE_TIME, CAIRO_TIME, formatDuration } from "../format";
 import { elapsedSeconds, TRACKING_QUEUED_COMMANDS, trackingErrorCode, type TrackingSubmit } from "../logic";
 import type { StartShiftResult, TrackingStatus } from "../types";
-import { applyServerStatus, dismissStartFailed, endDay, forgetFailedStart, startDay, useClock, useTrackingState } from "../use-tracking";
+import { applyServerStatus, dismissStartFailed, endDay, forgetFailedStart, startDay, useClock, useNativeShell, useTrackingState } from "../use-tracking";
+import { NativeProblemAlert, NativeTrackingHelp } from "./native-help";
 import { NoticePanel, NoticeText } from "./notice";
 
 type Phase =
@@ -21,6 +22,7 @@ type Phase =
   | { kind: "sending" }
   | { kind: "confirmEnd" }
   | { kind: "ending" }
+  | { kind: "nativeDenied" }
   | { kind: "message"; tone: "info" | "success" | "danger"; text: string };
 
 /**
@@ -37,6 +39,7 @@ export function ShiftCardClient({ userId, employeeId, status }: { userId: string
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [showNotice, setShowNotice] = useState(false);
   const now = useClock();
+  const native = useNativeShell();
   const shift = state.shift;
 
   // The server's view (read when the page rendered) → the device state.
@@ -84,7 +87,8 @@ export function ShiftCardClient({ userId, employeeId, status }: { userId: string
     setPhase({ kind: "locating" });
     const geo = await captureFix();
     if (!geo.ok && (geo.reason === "denied" || geo.reason === "unsupported" || geo.reason === "insecure")) {
-      setPhase({ kind: "message", tone: "danger", text: t(`shift.geo.${geo.reason}`) });
+      // In the Android shell, a refusal is fixed in the app's settings, not the browser's.
+      setPhase(native && geo.reason === "denied" ? { kind: "nativeDenied" } : { kind: "message", tone: "danger", text: t(`shift.geo.${geo.reason}`) });
       return;
     }
     setPhase({ kind: "sending" });
@@ -145,11 +149,17 @@ export function ShiftCardClient({ userId, employeeId, status }: { userId: string
               {state.lastSentMs ? (
                 <p className="text-muted-foreground">{t("shift.lastSent", { time: format.dateTime(new Date(state.lastSentMs), CAIRO_TIME) })}</p>
               ) : null}
-              {state.problem ? <Alert>{t(`shift.geo.${state.problem}`)}</Alert> : null}
+              {state.problem ? (
+                native ? (
+                  <NativeProblemAlert problem={state.problem} />
+                ) : (
+                  <Alert>{t(`shift.geo.${state.problem === "services_off" ? "unavailable" : state.problem}`)}</Alert>
+                )
+              ) : null}
               {shift.overdue || (now !== null && now >= Date.parse(shift.maxEndAt)) ? (
                 <Alert>{t("shift.overdue", { hours: String(state.maxShiftHours) })}</Alert>
               ) : null}
-              <Alert tone="info">{t("shift.browserLimit")}</Alert>
+              {native ? null : <Alert tone="info">{t("shift.browserLimit")}</Alert>}
             </div>
           ) : (
             <div className="space-y-1 text-sm text-muted-foreground">
@@ -158,8 +168,10 @@ export function ShiftCardClient({ userId, employeeId, status }: { userId: string
             </div>
           )}
 
+          {native ? <NativeTrackingHelp onShift={shift !== null} /> : null}
           {state.startFailed && !shift ? <Alert>{t("shift.startFailed")}</Alert> : null}
           {phase.kind === "message" ? <Alert tone={phase.tone}>{phase.text}</Alert> : null}
+          {phase.kind === "nativeDenied" ? <NativeProblemAlert problem="denied" /> : null}
           {busyText ? (
             <p role="status" aria-live="polite" className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
               <span className="inline-block size-3 animate-pulse rounded-full bg-primary motion-reduce:animate-none" aria-hidden="true" />

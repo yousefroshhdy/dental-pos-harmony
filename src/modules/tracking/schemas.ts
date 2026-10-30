@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PING_SOURCES } from "./types";
 
 /**
  * Input validation for the tracking Server Actions. It only rejects malformed
@@ -42,7 +43,8 @@ export const pingSchema = z
     lng: z.number().min(-180).max(180),
     accuracy_m: z.number().min(0).max(9_999_999.9).nullable(),
     captured_at: isoInstant,
-    source: z.literal("pwa"),
+    // Advisory (which collector took it); the server gives "native" no extra trust (migration 20261102000100).
+    source: z.enum(PING_SOURCES),
   })
   .strict();
 
