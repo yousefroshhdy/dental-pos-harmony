@@ -9,7 +9,8 @@ type Tree = Record<string, unknown>;
 const load = (locale: string) => JSON.parse(readFileSync(join(__dirname, `../../messages/${locale}/returns.json`), "utf8")) as Tree;
 const at = (tree: Tree, path: string) => path.split(".").reduce<unknown>((n, k) => (n as Tree | undefined)?.[k], tree);
 const APPROVAL_STATUSES = ["pending", "approved", "rejected", "cancelled", "expired"];
-const NEXT_STEPS = ["approval", "receive", "credit", "done", "closed"];
+const NEXT_STEPS = ["approval", "receive", "credit", "done", "closed", "cancelled"];
+const CANCEL = ["title", "introPending", "introApproved", "reason", "reasonPlaceholder", "help", "submit", "submitting"];
 const CHECKS = ["noLines", "invalidQuantity", "tooMany", "missingReason", "notesRequired"];
 
 describe.each(["ar", "en"])("returns messages (%s)", (locale) => {
@@ -22,12 +23,15 @@ describe.each(["ar", "en"])("returns messages (%s)", (locale) => {
     for (const s of APPROVAL_STATUSES) expect(at(messages, `approvalStatus.${s}`), s).toEqual(expect.any(String));
     for (const n of NEXT_STEPS) expect(at(messages, `next.${n}`), n).toEqual(expect.any(String));
     for (const c of CHECKS) expect(at(messages, `request.check.${c}`), c).toEqual(expect.any(String));
+    for (const c of CANCEL) expect(at(messages, `cancel.${c}`), c).toEqual(expect.any(String));
+    for (const d of ["cancelledAt", "cancelReason", "customerCredit"]) expect(at(messages, `detail.${d}`), d).toEqual(expect.any(String));
+    expect(at(messages, "detail.customerCredit")).toContain("{amount}");
     for (const e of RETURN_ERROR_CODES) expect(at(messages, `errors.${e}`), e).toEqual(expect.any(String));
   });
 
   it("translate every filter, success message and nav entry", () => {
     for (const f of Object.keys(STATUS_FILTERS)) expect(at(messages, `filters.${f}`), f).toEqual(expect.any(String));
-    for (const k of ["requested", "received", "credited"]) expect(at(messages, `messages.${k}`), k).toEqual(expect.any(String));
+    for (const k of ["requested", "received", "credited", "cancelled"]) expect(at(messages, `messages.${k}`), k).toEqual(expect.any(String));
     for (const item of returnsNav) expect(at(messages, item.labelKey.replace(/^returns\./, "")), item.labelKey).toEqual(expect.any(String));
   });
 

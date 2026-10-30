@@ -3,8 +3,8 @@ import type { ReturnErrorCode } from "./logic";
 /** numeric columns arrive from PostgREST as number or string. */
 export type Numeric = number | string;
 
-/** sales.returns.status (CHECK in 20261028000700_sales.sql). */
-export const RETURN_STATUSES = ["requested", "pending_approval", "approved", "received", "credited", "rejected"] as const;
+/** sales.returns.status (CHECK in 20261028000700_sales.sql; 'cancelled' added in 20261104000100). */
+export const RETURN_STATUSES = ["requested", "pending_approval", "approved", "received", "credited", "rejected", "cancelled"] as const;
 export type ReturnStatus = (typeof RETURN_STATUSES)[number];
 
 /** sales.return_items.reason_code (CHECK in 20261103000200_returns.sql). */
@@ -61,6 +61,11 @@ export interface ReturnRow {
   estimated_total: Numeric;
   credit_notes: number;
   credited_total: Numeric;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  cancel_reason: string | null;
+  /** Part of the credit that became unapplied customer credit (paid invoice); 0 when hidden by RLS. */
+  customer_credit: Numeric;
 }
 
 /** api.v_return_lines */
@@ -136,6 +141,6 @@ export interface ReturnCreditNoteRow {
 }
 
 export type ReturnActionResult =
-  | { ok: true; message?: "requested" | "received" | "credited" }
+  | { ok: true; message?: "requested" | "received" | "credited" | "cancelled" }
   | { ok: false; errorCode: ReturnErrorCode; requestId?: string };
 export type ReturnActionState = ReturnActionResult | null;

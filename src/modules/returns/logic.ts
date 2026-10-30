@@ -31,6 +31,19 @@ export function canCredit(ctx: UserContext, row: Pick<ReturnRow, "status">): boo
   return row.status === "received" && can(ctx, RETURN_PERMISSIONS.credit);
 }
 
+/** Decides 'sales.return' approvals (seeded workflow); may also cancel an approved return. */
+export const RETURN_DECIDE_PERMISSION = "wf.decide.return";
+
+/**
+ * Mirrors api.cancel_return: a pending return is withdrawn by its requester; an approved
+ * return that was never received is cancelled by a return approver or the warehouse.
+ */
+export function canCancel(ctx: UserContext, row: Pick<ReturnRow, "status" | "is_mine">): boolean {
+  if (row.status === "requested" || row.status === "pending_approval") return row.is_mine && can(ctx, RETURN_PERMISSIONS.request);
+  if (row.status === "approved") return can(ctx, RETURN_DECIDE_PERMISSION) || can(ctx, RETURN_PERMISSIONS.receive);
+  return false;
+}
+
 /** Order statuses api.request_return accepts (delivered goods). */
 export const RETURNABLE_ORDER_STATUSES = ["partially_fulfilled", "fulfilled", "invoiced", "closed"] as const;
 
@@ -87,6 +100,8 @@ export function statusTone(status: ReturnStatus): BadgeTone {
       return "success";
     case "rejected":
       return "danger";
+    case "cancelled":
+      return "neutral";
     default:
       return "neutral";
   }
@@ -105,6 +120,7 @@ export const STATUS_FILTERS = {
   received: ["received"],
   credited: ["credited"],
   rejected: ["rejected"],
+  cancelled: ["cancelled"],
 } as const satisfies Record<string, readonly ReturnStatus[]>;
 export type StatusFilter = keyof typeof STATUS_FILTERS;
 
@@ -114,8 +130,10 @@ export function parseStatusFilter(raw: string | string[] | undefined): StatusFil
 }
 
 /** The next step of a return, as a key under `returns.next.*`. */
-export function nextStepKey(status: ReturnStatus): "approval" | "receive" | "credit" | "done" | "closed" {
+export function nextStepKey(status: ReturnStatus): "approval" | "receive" | "credit" | "done" | "closed" | "cancelled" {
   switch (status) {
+    case "cancelled":
+      return "cancelled";
     case "requested":
     case "pending_approval":
       return "approval";

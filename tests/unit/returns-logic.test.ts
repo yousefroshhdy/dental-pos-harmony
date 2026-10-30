@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ANONYMOUS_CONTEXT, type UserContext } from "@/lib/authz/can";
 import {
+  canCancel,
   canCredit,
   canReceive,
   canSeeReturns,
@@ -53,6 +54,23 @@ describe("permission gating (UX only; Postgres enforces)", () => {
     expect(canCredit(inv, { status: "received" })).toBe(false);
   });
 
+  it("offers cancel to the requester while pending, to approvers or the warehouse once approved", () => {
+    const rep = user({ "sales.return.request": "own" });
+    const approver = user({ "wf.decide.return": "all" });
+    const inv = user({ "sales.return.receive": "all" });
+    expect(canCancel(rep, { status: "pending_approval", is_mine: true })).toBe(true);
+    expect(canCancel(rep, { status: "requested", is_mine: true })).toBe(true);
+    expect(canCancel(rep, { status: "pending_approval", is_mine: false })).toBe(false);
+    expect(canCancel(approver, { status: "pending_approval", is_mine: false })).toBe(false);
+    expect(canCancel(rep, { status: "approved", is_mine: true })).toBe(false);
+    expect(canCancel(approver, { status: "approved", is_mine: false })).toBe(true);
+    expect(canCancel(inv, { status: "approved", is_mine: false })).toBe(true);
+    for (const status of ["received", "credited", "rejected", "cancelled"] as const) {
+      expect(canCancel(inv, { status, is_mine: true })).toBe(false);
+      expect(canCancel(approver, { status, is_mine: true })).toBe(false);
+    }
+  });
+
   it("knows which order statuses take returns", () => {
     expect(orderAcceptsReturns("invoiced")).toBe(true);
     expect(orderAcceptsReturns("partially_fulfilled")).toBe(true);
@@ -89,6 +107,9 @@ describe("status", () => {
     expect(statusTone("rejected")).toBe("danger");
     expect(nextStepKey("approved")).toBe("receive");
     expect(nextStepKey("received")).toBe("credit");
+    expect(statusTone("cancelled")).toBe("neutral");
+    expect(nextStepKey("cancelled")).toBe("cancelled");
+    expect(STATUS_FILTERS.cancelled).toEqual(["cancelled"]);
   });
 
   it("parses filters safely", () => {

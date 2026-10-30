@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { callCommand } from "@/lib/command";
 import type { AppError } from "@/lib/errors";
 import { returnErrorCode } from "./logic";
-import { creditReturnSchema, formToObject, receiveReturnSchema, requestReturnSchema } from "./schemas";
+import { cancelReturnSchema, creditReturnSchema, formToObject, receiveReturnSchema, requestReturnSchema } from "./schemas";
 import type { ReturnActionResult, ReturnActionState } from "./types";
 
 /**
@@ -57,7 +57,25 @@ export async function receiveReturn(_prev: ReturnActionState, form: FormData): P
   return { ok: true, message: "received" };
 }
 
-/** Issue the credit note(s) of a received return at the invoiced prices. */
+/** Withdraw a pending return, or cancel an approved one that was never received. */
+export async function cancelReturn(_prev: ReturnActionState, form: FormData): Promise<ReturnActionResult> {
+  const parsed = cancelReturnSchema.safeParse(formToObject(form));
+  if (!parsed.success) return { ok: false, errorCode: "VALIDATION" };
+  const v = parsed.data;
+  const result = await callCommand("cancel_return", {
+    p_return_id: v.return_id,
+    p_reason: v.reason,
+    p_idempotency_key: v.idempotency_key,
+  });
+  if (!result.ok) return failed(result.error);
+  refresh();
+  return { ok: true, message: "cancelled" };
+}
+
+/**
+ * Issue the credit note(s) of a received return at the invoiced prices. On a paid invoice the
+ * part above what is still open becomes customer credit on the server (never cash).
+ */
 export async function creditReturn(_prev: ReturnActionState, form: FormData): Promise<ReturnActionResult> {
   const parsed = creditReturnSchema.safeParse(formToObject(form));
   if (!parsed.success) return { ok: false, errorCode: "VALIDATION" };
