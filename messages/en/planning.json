@@ -18,7 +18,9 @@
     "PAST_DATE": "That day has already passed. Choose today or a later day.",
     "NOT_ASSIGNED": "This customer is not assigned to this rep.",
     "DUPLICATE": "This customer is already planned on that day.",
-    "NO_EMPLOYEE_PROFILE": "Your account has no employee profile, so there is no plan to show. Ask an administrator."
+    "NO_EMPLOYEE_PROFILE": "Your account has no employee profile, so there is no plan to show. Ask an administrator.",
+    "DAILY_CAP": "That day already has the most visits one rep can have. Choose another day or remove a visit first.",
+    "TIMEOUT": "Working out the plan took too long. Please try again in a moment."
   },
   "routeError": {
     "title": "The plan could not be loaded",
@@ -67,6 +69,7 @@
     "run": "Propose",
     "heading": "{month} · {name}",
     "summary": "{proposals} visits proposed for {customers} customers, {from} to {to}, at most {cap} a day.",
+    "skipped": "{skipped, plural, one {# more customer with a later due day was left out} other {# more customers with later due days were left out}} (at most {max} customers per plan).",
     "empty": "Nothing to propose: every customer is already covered for this month.",
     "dayLoad": "{existing} already planned · {proposed} proposed · at most {cap}",
     "reason": {
