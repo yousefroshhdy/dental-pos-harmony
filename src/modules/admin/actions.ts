@@ -10,19 +10,32 @@ import type { AppError } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { getRequestId } from "@/lib/request-id";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { canInvite } from "./logic";
+import { adminErrorCode, canInvite } from "./logic";
 import {
+  assignTerritorySchema,
+  coverageSchema,
+  createEmployeeSchema,
   createRoleSchema,
+  createTerritorySchema,
+  employmentStatusSchema,
+  endTerritorySchema,
   formToObject,
   grantRoleSchema,
   invalidFieldsOf,
   inviteResumeSchema,
   inviteUserSchema,
+  moveTerritorySchema,
+  parseSettingValue,
   reactivateUserSchema,
+  removeCoverageSchema,
   removeRolePermissionSchema,
+  renameTerritorySchema,
   revokeRoleSchema,
   setRolePermissionSchema,
   suspendUserSchema,
+  territoryActiveSchema,
+  updateEmployeeSchema,
+  updateSettingSchema,
   validationMessageKey,
 } from "./schemas";
 import type { ActionResult, ActionState, InviteState } from "./types";
@@ -40,6 +53,10 @@ const PAGES = {
   roles: "/[locale]/admin/roles",
   role: "/[locale]/admin/roles/[roleId]",
   security: "/[locale]/admin/security",
+  settings: "/[locale]/admin/settings",
+  employees: "/[locale]/admin/employees",
+  employee: "/[locale]/admin/employees/[employeeId]",
+  territories: "/[locale]/admin/territories",
 } as const;
 
 function refresh(...pages: (keyof typeof PAGES)[]) {
@@ -47,7 +64,10 @@ function refresh(...pages: (keyof typeof PAGES)[]) {
   for (const page of new Set([...pages, "security" as const])) revalidatePath(PAGES[page], "page");
 }
 
-const failed = (error: AppError): ActionResult => ({ ok: false, messageKey: error.messageKey, requestId: error.requestId });
+const failed = (error: AppError): ActionResult => {
+  const adminCode = adminErrorCode(error.code);
+  return { ok: false, messageKey: error.messageKey, requestId: error.requestId, ...(adminCode ? { adminCode } : {}) };
+};
 
 function invalid(error: z.ZodError): ActionResult {
   return { ok: false, messageKey: validationMessageKey(error) };
@@ -248,4 +268,175 @@ export async function removeRolePermission(_prev: ActionState, form: FormData): 
   const parsed = removeRolePermissionSchema.safeParse(formToObject(form));
   if (!parsed.success) return invalid(parsed.error);
   return command("remove_role_permission", { p_role_id: parsed.data.role_id, p_permission: parsed.data.permission }, "roles", "role");
+}
+
+// ---------------------------------------------------------------------------
+// System settings (admin console v2)
+// ---------------------------------------------------------------------------
+
+/**
+ * One setting. The hidden value_type only says how to read the form fields; the database
+ * validates the value against the whitelist definition and enforces owner-only keys.
+ */
+export async function updateSetting(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = updateSettingSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const text = (name: string) => {
+    const v = form.get(name);
+    return typeof v === "string" ? v : undefined;
+  };
+  const value = parseSettingValue(parsed.data.value_type, {
+    value: text("value"),
+    values: form.getAll("value").filter((v): v is string => typeof v === "string"),
+    start: text("start"),
+    end: text("end"),
+  });
+  if (!value.ok) return { ok: false, messageKey: "VALIDATION" };
+  return command(
+    "update_setting",
+    {
+      p_key: parsed.data.key,
+      p_value: value.value,
+      p_reason: parsed.data.reason ?? null,
+      p_expected_updated_at: parsed.data.expected_updated_at ?? null,
+    },
+    "settings",
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Employees (admin console v2)
+// ---------------------------------------------------------------------------
+
+export async function createEmployee(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = createEmployeeSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const input = parsed.data;
+  const created = await callCommand<string>("create_employee", {
+    p_employee_no: input.employee_no,
+    p_full_name_en: input.full_name_en,
+    p_job_title: input.job_title,
+    p_full_name_ar: input.full_name_ar ?? null,
+    p_phone: input.phone ?? null,
+    p_email: input.email ?? null,
+    p_department_id: input.department_id ?? null,
+    p_office_id: input.office_id ?? null,
+    p_manager_id: input.manager_id ?? null,
+    p_hired_on: input.hired_on ?? null,
+  });
+  if (!created.ok) return failed(created.error);
+  refresh("employees");
+  // Next step: territories (and, separately, a login via Users → Invite).
+  redirect(`/${input.locale}/admin/employees/${created.data}`);
+}
+
+export async function updateEmployee(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = updateEmployeeSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const input = parsed.data;
+  return command(
+    "update_employee",
+    {
+      p_employee_id: input.employee_id,
+      p_full_name_en: input.full_name_en,
+      p_job_title: input.job_title,
+      p_full_name_ar: input.full_name_ar ?? null,
+      p_phone: input.phone ?? null,
+      p_email: input.email ?? null,
+      p_department_id: input.department_id ?? null,
+      p_office_id: input.office_id ?? null,
+      p_manager_id: input.manager_id ?? null,
+      p_hired_on: input.hired_on ?? null,
+      p_expected_updated_at: input.expected_updated_at,
+    },
+    "employees",
+    "employee",
+    "users",
+  );
+}
+
+/** Deactivation reassigns nothing; the employee page keeps listing the customers still held. */
+export async function setEmploymentStatus(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = employmentStatusSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  return command(
+    "set_employment_status",
+    { p_employee_id: parsed.data.employee_id, p_status: parsed.data.status, p_reason: parsed.data.reason },
+    "employees",
+    "employee",
+    "users",
+  );
+}
+
+export async function assignEmployeeTerritory(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = assignTerritorySchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  return command(
+    "assign_employee_territory",
+    { p_employee_id: parsed.data.employee_id, p_territory_id: parsed.data.territory_id, p_assignment: parsed.data.assignment },
+    "employee",
+    "employees",
+    "territories",
+  );
+}
+
+export async function endEmployeeTerritory(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = endTerritorySchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  return command(
+    "end_employee_territory",
+    { p_employee_territory_id: parsed.data.employee_territory_id, p_reason: parsed.data.reason ?? null },
+    "employee",
+    "employees",
+    "territories",
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Territories & coverage (admin console v2)
+// ---------------------------------------------------------------------------
+
+export async function createTerritory(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = createTerritorySchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const { code, name_en, name_ar, parent_id } = parsed.data;
+  return command("create_territory", { p_code: code, p_name_en: name_en, p_name_ar: name_ar, p_parent_id: parent_id ?? null }, "territories");
+}
+
+export async function renameTerritory(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = renameTerritorySchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const { territory_id, name_en, name_ar } = parsed.data;
+  return command("rename_territory", { p_territory_id: territory_id, p_name_en: name_en, p_name_ar: name_ar }, "territories");
+}
+
+export async function moveTerritory(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = moveTerritorySchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const { territory_id, parent_id, reason } = parsed.data;
+  return command("move_territory", { p_territory_id: territory_id, p_new_parent_id: parent_id, p_reason: reason ?? null }, "territories");
+}
+
+export async function setTerritoryActive(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = territoryActiveSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const { territory_id, active, reason } = parsed.data;
+  return command("set_territory_active", { p_territory_id: territory_id, p_active: active, p_reason: reason }, "territories");
+}
+
+export async function setTerritoryCoverage(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = coverageSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const { territory_id, governorate_code, city } = parsed.data;
+  return command(
+    "set_territory_coverage",
+    { p_territory_id: territory_id, p_governorate_code: governorate_code, p_city: city ?? "*" },
+    "territories",
+  );
+}
+
+export async function removeTerritoryCoverage(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = removeCoverageSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  return command("remove_territory_coverage", { p_governorate_code: parsed.data.governorate_code, p_city: parsed.data.city ?? "*" }, "territories");
 }
