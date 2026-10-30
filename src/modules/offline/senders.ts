@@ -1,5 +1,6 @@
 import { clearOtherUsers } from "@/lib/offline/client";
 import { registerFieldSenders } from "@/modules/field/offline";
+import { registerTrackingSenders } from "@/modules/tracking/offline";
 
 /**
  * Client-side start of the offline queue, in one place:
@@ -14,6 +15,7 @@ import { registerFieldSenders } from "@/modules/field/offline";
  *
  * Senders registered here, each opted in as idempotent (audit #15, F9):
  * - field.visit_check_in, field.visit_check_out, work.complete_task (field module)
+ * - tracking.start_shift, tracking.end_shift, tracking.record_pings (tracking module, D-14)
  */
 
 let registered = false;
@@ -22,6 +24,7 @@ export function ensureSendersRegistered(): void {
   if (registered || typeof window === "undefined") return;
   registered = true;
   registerFieldSenders();
+  registerTrackingSenders();
 }
 
 const started = new Set<string>();

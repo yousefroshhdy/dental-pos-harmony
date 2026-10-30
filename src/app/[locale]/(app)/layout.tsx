@@ -19,6 +19,7 @@ import { inventoryNav } from "@/modules/inventory/nav";
 import { OfflineSignOutForm } from "@/modules/offline/components/sign-out-form";
 import { SyncIndicator } from "@/modules/offline/components/sync-indicator";
 import { ordersNav } from "@/modules/orders/nav";
+import { TrackingIndicator } from "@/modules/tracking/components/tracking-indicator";
 import { trackingNav } from "@/modules/tracking/nav";
 import { signOut } from "../login/actions";
 
@@ -81,6 +82,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
               </Link>
             ))}
           </nav>
+          <TrackingIndicator userId={ctx.user_id} enabled={can(ctx, "field.shift.start") && ctx.employee !== null} />
           <SyncIndicator userId={ctx.user_id} />
           <NotificationBadge />
           <LocaleSwitcher />

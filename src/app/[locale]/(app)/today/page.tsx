@@ -14,6 +14,8 @@ import { CAIRO_DATE_TIME, CAIRO_TIME } from "@/modules/field/format";
 import { canSeeToday, groupToday, priorityTone } from "@/modules/field/logic";
 import { listMyToday } from "@/modules/field/queries";
 import type { TodayItem } from "@/modules/field/types";
+import { ShiftCard } from "@/modules/tracking/components/shift-card";
+import { canStartShift } from "@/modules/tracking/logic";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -99,6 +101,8 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
           </BottomActions>
         ) : null}
       </div>
+
+      {canStartShift(ctx) && ctx.user_id && ctx.employee ? <ShiftCard userId={ctx.user_id} employeeId={ctx.employee.id} /> : null}
 
       {nothing ? <Empty>{t("allClear")}</Empty> : null}
 
