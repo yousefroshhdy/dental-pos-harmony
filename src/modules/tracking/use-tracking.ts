@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { backgroundGeolocation } from "@/lib/native/background-geolocation";
+import { backgroundGeolocation, releaseIdleNativeWatcher } from "@/lib/native/background-geolocation";
 import { getSyncEngine } from "@/lib/offline/client";
 import type { SyncEngine } from "@/lib/offline/sync";
 import type { JsonObject } from "@/lib/offline/types";
@@ -216,6 +216,12 @@ export function useTrackingCollector(userId: string, enabled: boolean): DeviceSt
       window.removeEventListener("online", onOnline);
     };
   }, [enabled, userId]);
+
+  // Inside the Android shell, while NOT collecting: remove any watcher an earlier page left
+  // running (its callback died with that page, the GPS and notification did not).
+  useEffect(() => {
+    void releaseIdleNativeWatcher(collecting);
+  }, [collecting]);
 
   // Inside the Android shell: the native watcher, never paused while the page is hidden.
   useEffect(() => {
