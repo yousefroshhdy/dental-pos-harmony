@@ -97,25 +97,27 @@ select is(api.record_location_pings('[{"id":"not-a-uuid","lat":30.0,"lng":31.0,"
   'malformed points are rejected one by one, not the whole batch');
 select throws_like($$select api.record_location_pings('{"id":"x"}'::jsonb)$$, 'VALIDATION%array%', 'the batch must be an array');
 select is((api.record_location_pings(jsonb_build_array(
-  jsonb_build_object('id','e2000000-0000-0000-0000-000000000005','lat',30.5000,'lng',31.2360,'accuracy_m',15,'captured_at',now() - interval '14 minutes'))))
-  ->> 'accepted', '1', 'setup: a point 50 km away one minute later');
+  jsonb_build_object('id','e2000000-0000-0000-0000-000000000005','lat',30.5000,'lng',31.2360,'accuracy_m',15,'captured_at',now() - interval '12 minutes'))))
+  ->> 'accepted', '1', 'setup: a point 50 km away three minutes later');
 select ok((select anomaly_flags @> '{impossible_travel}' from field.location_pings where id = 'e2000000-0000-0000-0000-000000000005'),
   'impossible travel is flagged');
 select lives_ok($$select api.record_location_pings(jsonb_build_array(
-  jsonb_build_object('id','e2000000-0000-0000-0000-000000000006','lat',30.0450,'lng',31.2360,'accuracy_m',500,'captured_at',now() - interval '13 minutes'),
-  jsonb_build_object('id','e2000000-0000-0000-0000-000000000007','lat',30.0450,'lng',31.2360,'accuracy_m',15,'captured_at',now() - interval '13 minutes'),
+  jsonb_build_object('id','e2000000-0000-0000-0000-000000000006','lat',30.0450,'lng',31.2360,'accuracy_m',500,'captured_at',now() - interval '9 minutes'),
+  jsonb_build_object('id','e2000000-0000-0000-0000-000000000007','lat',30.0450,'lng',31.2360,'accuracy_m',15,'captured_at',now() - interval '9 minutes'),
   jsonb_build_object('id','e2000000-0000-0000-0000-000000000008','lat',30.0451,'lng',31.2361,'accuracy_m',15,'captured_at',now() + interval '90 seconds')))$$,
   'setup: low-accuracy, duplicate and slightly-future points');
 select ok((select anomaly_flags @> '{low_accuracy}' from field.location_pings where id = 'e2000000-0000-0000-0000-000000000006'),
   'low accuracy is flagged');
-select ok((select anomaly_flags @> '{duplicate_fix}' from field.location_pings where id = 'e2000000-0000-0000-0000-000000000007'),
-  'a second point with the same time and place is flagged duplicate');
+-- Audit 3 (M3): a point closer than half the sampling interval to a stored one is refused
+-- (too_frequent), so a same-time, same-place repeat is no longer stored as duplicate_fix.
+select ok(not exists (select 1 from field.location_pings where id = 'e2000000-0000-0000-0000-000000000007'),
+  'a second point with the same time and place is refused as too frequent');
 select ok((select anomaly_flags @> '{clock_skew}' from field.location_pings where id = 'e2000000-0000-0000-0000-000000000008'),
   'a point from the device''s future (within tolerance) is flagged clock_skew');
 select is((api.record_location_pings(jsonb_build_array(
   jsonb_build_object('id','e2000000-0000-0000-0000-000000000009','lat',30.0451,'lng',31.2361,'accuracy_m',15,'captured_at',now() + interval '1 hour'))))
   -> 'rejected' -> 0 ->> 'reason', 'outside_shift', 'a point far in the future is rejected');
-select is((select (api.my_tracking_status() -> 'open_shift' ->> 'ping_count')::int), 6, 'status counts the points of the open shift');
+select is((select (api.my_tracking_status() -> 'open_shift' ->> 'ping_count')::int), 5, 'status counts the points of the open shift');
 select throws_like($$update field.location_pings set latitude = 0 where id = 'e2000000-0000-0000-0000-000000000001'$$,
   '%permission denied%', 'points cannot be edited by app users');
 
@@ -131,7 +133,7 @@ select is(api.end_shift('e1000000-0000-0000-0000-0000000000e1', 30.0451, 31.2361
 select throws_like($$select api.end_shift('e1000000-0000-0000-0000-0000000000e2', null, null, null, now())$$,
   'NO_OPEN_SHIFT%', 'ending again with a new ref finds no open shift');
 select is((api.record_location_pings(jsonb_build_array(
-  jsonb_build_object('id','e2000000-0000-0000-0000-000000000010','lat',30.0452,'lng',31.2362,'accuracy_m',15,'captured_at',now() - interval '10 minutes'),
+  jsonb_build_object('id','e2000000-0000-0000-0000-000000000010','lat',30.0452,'lng',31.2362,'accuracy_m',15,'captured_at',now() - interval '5 minutes'),
   jsonb_build_object('id','e2000000-0000-0000-0000-000000000011','lat',30.0452,'lng',31.2362,'accuracy_m',15,'captured_at',now() + interval '5 minutes'))))
   ->> 'accepted', '1', 'after the end, a late upload inside the closed window is accepted and one after it is not');
 select is(api.my_tracking_status() -> 'open_shift', 'null'::jsonb, 'status shows no open shift after the end');
@@ -151,11 +153,11 @@ select lives_ok($$select api.tracking_day('20000000-0000-0000-0000-000000000005'
 
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select is((select (api.tracking_day('20000000-0000-0000-0000-000000000004',
-            (select business_date from field.work_shifts where client_ref = 'e1000000-0000-0000-0000-000000000001')) ->> 'ping_count')::int), 7,
+            (select business_date from field.work_shifts where client_ref = 'e1000000-0000-0000-0000-000000000001')) ->> 'ping_count')::int), 6,
   'the rep reads their own points');
 
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a3');
-select is((select count(*)::int from field.location_pings where employee_id = '20000000-0000-0000-0000-000000000004'), 7,
+select is((select count(*)::int from field.location_pings where employee_id = '20000000-0000-0000-0000-000000000004'), 6,
   'the area manager reads the team''s points');
 select lives_ok($$select api.tracking_day('20000000-0000-0000-0000-000000000004', core.business_date())$$, 'the area manager opens a team member''s day');
 select throws_like($$select api.tracking_day('20000000-0000-0000-0000-000000000005', core.business_date())$$,
@@ -305,7 +307,12 @@ insert into field.location_pings (id, shift_id, employee_id, latitude, longitude
    31.04, 31.37, 10, now() - interval '100 days', now() - interval '100 days'),
   ('e2000000-0000-0000-0000-000000000031', 'e3000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000005',
    31.05, 31.37, 10, now() - interval '100 days' + interval '5 minutes', now() - interval '100 days');
-select is((service.tracking_purge() ->> 'deleted')::int, 2, 'points older than 90 days are deleted, newer ones are kept');
+-- Audit 3 (M5): retention counts from the capture time; the synthetic 2026-10-01 track above
+-- also expires once that date is more than 90 days ago, so the expected count is taken first.
+select set_config('t.expired', (select count(*) from field.location_pings
+                                where least(captured_at, received_at) < now() - interval '90 days')::text, true) is not null;
+select is((service.tracking_purge() ->> 'deleted')::int, current_setting('t.expired')::int,
+  'points captured more than 90 days ago are deleted, newer ones are kept');
 select is((select count(*)::int from field.location_pings where id in ('e2000000-0000-0000-0000-000000000030','e2000000-0000-0000-0000-000000000031')),
   0, 'the old points are gone');
 select ok((select ping_count = 2 and shift_seconds = 3600 and distance_m > 1000 from field.tracking_day_summaries
@@ -315,7 +322,7 @@ select ok((select ping_count = 2 and shift_seconds = 3600 and distance_m > 1000 
 select ok((select start_latitude is null and start_longitude is null from field.work_shifts where id = 'e3000000-0000-0000-0000-000000000005'),
   'start/end coordinates of old shifts are cleared too');
 select is((select (details ->> 'deleted')::int from audit.security_events where event_type = 'retention_purge'
-           and details ->> 'table' = 'field.location_pings'), 2, 'the purge is logged as a security event');
+           and details ->> 'table' = 'field.location_pings'), current_setting('t.expired')::int, 'the purge is logged as a security event');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a1');
 select ok((select from_summary and ping_count = 2 from api.tracking_team_day(((now() - interval '100 days') at time zone 'Africa/Cairo')::date)
            where employee_id = '20000000-0000-0000-0000-000000000005'), 'the team view falls back to the kept summary');

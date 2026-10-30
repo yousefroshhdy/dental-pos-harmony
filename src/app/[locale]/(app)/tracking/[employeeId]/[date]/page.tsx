@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Empty, PageBody, Section } from "@/modules/field/components/layout-bits";
 import { localizedName } from "@/modules/field/logic";
 import { CAIRO_DATE_LONG, CAIRO_TIME, dayAsDate, formatDuration, formatKm } from "@/modules/tracking/format";
-import { addDays, buildTimeline, cairoToday, canOpenDay, canReadTracking, dayFlags, mapsUrl, trackingErrorCode, type TimelineEntry } from "@/modules/tracking/logic";
+import { addDays, cairoToday, canOpenDay, canReadTracking, dayView, mapsUrl, trackingErrorCode, type TimelineEntry } from "@/modules/tracking/logic";
 import { getTrackingDay } from "@/modules/tracking/queries";
 import { dayParamsSchema } from "@/modules/tracking/schemas";
 import { PING_FLAGS } from "@/modules/tracking/types";
@@ -28,6 +28,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
  * stops and gaps in order, with durations) and the point list. Each point and stop
  * opens in Google Maps (no map library). A rep may open their own day; others need
  * field.tracking.read covering the rep (the database decides; 42501 → Forbidden).
+ * Once the retention purge has summarized the day, only the stored summary is shown,
+ * labelled as such (dayView); a long point list is capped by the server and says so.
  */
 export default async function TrackingDayPage({ params }: { params: Params }) {
   const { locale, employeeId, date } = await params;
@@ -62,7 +64,8 @@ export default async function TrackingDayPage({ params }: { params: Params }) {
   const range = (from: string, to: string | null) => t("timeline.range", { from: time(from), to: to ? time(to) : "…" });
   const today = cairoToday();
   const base = `/tracking/${data.employee_id}`;
-  const timeline = buildTimeline(data);
+  const view = dayView(data);
+  const timeline = view.timeline;
   const isManager = canReadTracking(ctx);
 
   const mapLink = (lat: number | string, lng: number | string) => (
@@ -134,12 +137,12 @@ export default async function TrackingDayPage({ params }: { params: Params }) {
   };
 
   const stats: [string, string][] = [
-    [t("day.shiftTime"), formatDuration(t, data.shift_seconds)],
-    [t("day.visits"), String(data.visit_count)],
-    [t("day.visitTime"), formatDuration(t, data.visit_seconds)],
-    [t("day.idle"), formatDuration(t, data.idle_stop_seconds)],
-    [t("day.gaps"), formatDuration(t, data.gap_seconds)],
-    [t("day.distance"), formatKm(t, data.distance_m)],
+    [t("day.shiftTime"), formatDuration(t, view.figures.shift_seconds)],
+    [t("day.visits"), String(view.figures.visit_count)],
+    [t("day.visitTime"), formatDuration(t, view.figures.visit_seconds)],
+    [t("day.idle"), formatDuration(t, view.figures.idle_stop_seconds)],
+    [t("day.gaps"), formatDuration(t, view.figures.gap_seconds)],
+    [t("day.distance"), formatKm(t, view.figures.distance_m)],
   ];
 
   return (
@@ -153,7 +156,7 @@ export default async function TrackingDayPage({ params }: { params: Params }) {
         <h1 className="text-2xl font-semibold break-words">{t("day.title", { name })}</h1>
         <p className="text-sm text-muted-foreground">{format.dateTime(dayAsDate(day), CAIRO_DATE_LONG)}</p>
         <div className="flex flex-wrap gap-1">
-          {dayFlags(data.flags).map((f) => (
+          {view.flags.map((f) => (
             <Badge key={f} tone="warning">
               {t(`flags.${f}`)}
             </Badge>
@@ -172,7 +175,13 @@ export default async function TrackingDayPage({ params }: { params: Params }) {
         ) : null}
       </nav>
 
-      {data.raw_purged ? <Alert tone="info">{t("day.purged")}</Alert> : null}
+      {view.summaryOnly ? (
+        <Alert tone="info">
+          <strong className="font-semibold">{t("day.summaryOnlyTitle")}</strong> {t("day.summaryOnly", { days: data.retention_days ?? 90 })}
+        </Alert>
+      ) : view.purgedWithoutSummary ? (
+        <Alert tone="info">{t("day.purged")}</Alert>
+      ) : null}
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map(([label, value]) => (
@@ -188,16 +197,23 @@ export default async function TrackingDayPage({ params }: { params: Params }) {
         {timeline.length === 0 ? <Empty>{t("day.empty")}</Empty> : <ol className="space-y-2">{timeline.map(entry)}</ol>}
       </Section>
 
-      <Section title={t("day.points")} count={data.points.length}>
-        {data.points.length === 0 ? (
+      <Section title={t("day.points")} count={view.summaryOnly ? view.figures.ping_count : view.points.length}>
+        {view.summaryOnly ? (
+          <Empty>{t("day.pointsDeleted", { count: view.figures.ping_count, days: data.retention_days ?? 90 })}</Empty>
+        ) : view.points.length === 0 ? (
           <Empty>{t("day.pointsCount", { count: 0 })}</Empty>
         ) : (
           <details className="rounded-lg border bg-card">
             <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm font-medium">
-              {t("day.showPoints")} ({t("day.pointsCount", { count: data.points.length })})
+              {t("day.showPoints")} ({t("day.pointsCount", { count: view.points.length })})
             </summary>
+            {view.pointsTruncated ? (
+              <p className="border-b px-4 py-2 text-sm text-muted-foreground" role="note">
+                {t("day.pointsTruncated", { shown: view.points.length, total: view.figures.ping_count })}
+              </p>
+            ) : null}
             <ol className="divide-y">
-              {data.points.map((p) => {
+              {view.points.map((p) => {
                 const flags = PING_FLAGS.filter((f) => p.anomaly_flags.includes(f));
                 return (
                   <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
