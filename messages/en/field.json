@@ -66,7 +66,7 @@
     "title": "Location at check-in",
     "intro": "To confirm that a visit took place at the clinic, Honest OS reads your location once when you check in and once when you check out.",
     "what": "What is collected: one GPS position (latitude, longitude and its accuracy) and the time on your phone, at the moment you tap the button.",
-    "when": "When: only when you tap check-in or check-out. There is no background or continuous tracking.",
+    "when": "When: check-in and check-out each take one location fix when you tap them. Separately, during your working day (Start my day → End my day) your location is recorded about every 5 minutes; see the tracking notice.",
     "why": "Why: the server compares the position with the clinic's location and marks the visit verified, out of range or low accuracy.",
     "retention": "Retention: raw positions are kept for 12 months and then deleted automatically. The visit result (verified or not) is kept as a work record.",
     "access": "Who can see it: you can see your own data; your managers see their team's visits.",

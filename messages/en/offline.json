@@ -103,6 +103,11 @@
     },
     "orders": {
       "save_order_draft": "Order draft"
+    },
+    "tracking": {
+      "start_shift": "Start of working day",
+      "end_shift": "End of working day",
+      "record_pings": "Location points"
     }
   }
 }

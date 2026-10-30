@@ -1,6 +1,6 @@
 /**
  * One high-accuracy GPS fix, taken only when the rep taps check-in or
- * check-out (ADR-010: no background or continuous tracking). Browser only;
+ * check-out (ADR-010). Work-hours tracking is separate (D-14, src/modules/tracking). Browser only;
  * the Geolocation object is injectable so the logic is unit-testable.
  */
 

@@ -103,6 +103,11 @@
     },
     "orders": {
       "save_order_draft": "مسودة طلب"
+    },
+    "tracking": {
+      "start_shift": "بدء يوم العمل",
+      "end_shift": "إنهاء يوم العمل",
+      "record_pings": "نقاط الموقع"
     }
   }
 }

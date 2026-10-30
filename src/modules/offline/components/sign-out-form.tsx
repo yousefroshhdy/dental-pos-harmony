@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRef, type FormEvent, type ReactNode } from "react";
 import { clearForUser, countUnsynced } from "@/lib/offline/client";
+import { STORAGE_PREFIX as TRACKING_STORAGE_PREFIX } from "@/modules/tracking/device-store";
 
 /**
  * Sign-out form that wipes this user's offline queue from the device first
@@ -34,6 +35,8 @@ export function OfflineSignOutForm({
         const unsynced = await countUnsynced(userId);
         if (unsynced > 0 && !window.confirm(t("unsyncedWarning", { count: unsynced }))) return;
         await clearForUser(userId);
+        // Work-hours tracking keeps its open shift and unsent points in localStorage (D-14).
+        window.localStorage.removeItem(TRACKING_STORAGE_PREFIX + userId);
       } catch {
         // Storage unavailable: nothing was stored on this device to leak.
       }
