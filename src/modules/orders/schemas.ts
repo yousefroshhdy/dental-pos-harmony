@@ -32,30 +32,22 @@ export const draftLineSchema = z.strictObject({
   quantity: z.number().int().min(1).max(MAX_QUANTITY),
 });
 
-const linesJson = z
-  .string()
-  .transform((raw, ctx) => {
-    try {
-      return JSON.parse(raw) as unknown;
-    } catch {
-      ctx.addIssue({ code: "custom", message: "lines must be JSON" });
-      return z.NEVER;
-    }
-  })
-  .pipe(z.array(draftLineSchema).min(1).max(MAX_LINES));
-
-export const saveDraftSchema = z.object({
-  /** Generated on the device: retrying the first save is a replay, not a second order. */
+/**
+ * One draft save as the device fixed it (offline-logic.ts buildDraftPayload). The
+ * same payload is sent directly or replayed from the offline queue, so it is
+ * strict: an unknown key — a price, a discount, a total — is rejected.
+ */
+export const draftPayloadSchema = z.strictObject({
+  /** Generated on the device: the creating call and its replays share it. */
   order_id: id,
   customer_id: id,
-  lines: linesJson,
-  notes: z.string().max(1000).optional(),
-  visit_id: id.optional(),
-  /** Current version of an existing draft (optimistic concurrency); absent for a new draft. */
-  version: z.coerce.number().int().min(1).optional(),
-  locale,
+  lines: z.array(draftLineSchema).min(1).max(MAX_LINES),
+  notes: z.string().trim().max(1000).nullable(),
+  visit_id: id.nullable(),
+  /** The draft version this save is based on (optimistic concurrency); null for a new draft. */
+  version: z.number().int().min(1).nullable(),
 });
-export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
+export type DraftPayloadInput = z.infer<typeof draftPayloadSchema>;
 
 export const orderRefSchema = z.object({ order_id: id, locale });
 export const orderReasonSchema = orderRefSchema.extend({ reason });

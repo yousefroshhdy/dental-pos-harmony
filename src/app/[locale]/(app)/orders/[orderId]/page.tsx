@@ -9,7 +9,7 @@ import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { approveOrder, cancelOrder, fulfilOrder, rejectOrder, reserveOrder, submitOrder } from "@/modules/orders/actions";
-import { CommandForm, FulfilForm, ReasonForm, ReserveForm } from "@/modules/orders/components/order-action-forms";
+import { CommandForm, FulfilForm, OnlineOnlyCommandForm, ReasonForm, ReserveForm } from "@/modules/orders/components/order-action-forms";
 import { OrderError } from "@/modules/orders/components/order-error";
 import { CAIRO_DATE_TIME, PERCENT, QUANTITY } from "@/modules/orders/format";
 import {
@@ -199,7 +199,13 @@ export default async function OrderDetailPage({ params, searchParams }: { params
           <CardTitle>{t("detail.actions")}</CardTitle>
           <div className="grid gap-3 sm:grid-cols-2">
             {actions.submit ? (
-              <CommandForm action={submitOrder} orderId={o.id} locale={locale} label={t("actions.submit")} />
+              <OnlineOnlyCommandForm
+                action={submitOrder}
+                orderId={o.id}
+                locale={locale}
+                label={t("actions.submit")}
+                offlineHint={t("offline.submitOffline")}
+              />
             ) : null}
             {actions.edit ? (
               <Link href={`/orders/${o.id}/edit`} className={buttonVariants({ variant: "outline" })}>

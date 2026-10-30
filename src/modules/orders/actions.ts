@@ -4,18 +4,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { callCommand } from "@/lib/command";
 import type { AppError } from "@/lib/errors";
+import type { SendResult } from "@/lib/offline/types";
+import { CATALOG_MAX_VARIANTS } from "./device-store";
 import { orderErrorCode } from "./logic";
-import { searchSellableVariants } from "./queries";
+import { toDraftSendResult, type DraftPayload } from "./offline-logic";
+import { listSellableCatalog, searchSellableVariants } from "./queries";
 import {
+  draftPayloadSchema,
   formToObject,
   fulfilSchema,
   orderReasonSchema,
   orderRefSchema,
   reserveSchema,
-  saveDraftSchema,
   searchSchema,
 } from "./schemas";
-import type { OrderActionResult, OrderActionState, VariantSearchResult } from "./types";
+import type { CatalogSnapshotResult, OrderActionResult, OrderActionState, VariantSearchResult } from "./types";
 
 /**
  * Order mutations. Each action validates FormData, calls exactly one api.*
@@ -35,23 +38,36 @@ const invalid = (field?: string): OrderActionResult => ({ ok: false, errorCode: 
 
 const detailPath = (locale: string, orderId: string, flag?: string) => `/${locale}/orders/${orderId}${flag ? `?${flag}=1` : ""}`;
 
-/** Create or replace a draft, then open it: the detail page shows the server's prices (save-draft-then-read). */
-export async function saveDraft(_prev: OrderActionState, form: FormData): Promise<OrderActionResult> {
-  const parsed = saveDraftSchema.safeParse(formToObject(form));
-  if (!parsed.success) return invalid();
-  const { order_id, customer_id, lines, notes, visit_id, version, locale } = parsed.data;
+/**
+ * Create or replace a draft (api.save_order_draft). The payload was fixed on the
+ * device before the first attempt; the same payload is sent directly or replayed
+ * from the offline queue (offline.ts), and the command answers a replay of the
+ * same (order id, base version) as `replayed` (migration 20261103000300). The
+ * answer carries no prices: the order page then reads the server's prices
+ * (save-draft-then-read).
+ */
+export async function saveDraftOnDevice(payload: DraftPayload): Promise<SendResult> {
+  const parsed = draftPayloadSchema.safeParse(payload);
+  if (!parsed.success) return { ok: false, error: { code: "VALIDATION", messageKey: "VALIDATION", retryable: false } };
+  const { order_id, customer_id, lines, notes, visit_id, version } = parsed.data;
   const result = await callCommand("save_order_draft", {
     p_order_id: order_id,
     p_customer_id: customer_id,
     // Exactly the two keys the client may send per line (see draftLineSchema).
     p_lines: lines.map((l) => ({ variant_id: l.variant_id, quantity: l.quantity })),
-    p_notes: notes ?? null,
-    p_visit_id: visit_id ?? null,
-    p_version: version ?? null,
+    p_notes: notes || null,
+    p_visit_id: visit_id,
+    p_version: version,
   });
-  if (!result.ok) return failed(result.error);
-  refresh();
-  redirect(detailPath(locale, order_id, "saved"));
+  if (result.ok) refresh();
+  return toDraftSendResult(result);
+}
+
+/** The sellable-variant list with indicative list prices, for the device cache (offline search). */
+export async function loadCatalogSnapshot(): Promise<CatalogSnapshotResult> {
+  const result = await listSellableCatalog(CATALOG_MAX_VARIANTS);
+  if (!result.ok) return { ok: false, errorCode: orderErrorCode(result.error), requestId: result.error.requestId };
+  return { ok: true, snapshot: { at: new Date().toISOString(), ...result.data } };
 }
 
 export async function submitOrder(_prev: OrderActionState, form: FormData): Promise<OrderActionResult> {

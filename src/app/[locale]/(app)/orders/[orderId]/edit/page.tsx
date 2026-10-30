@@ -45,11 +45,12 @@ export default async function EditOrderPage({ params }: { params: Params }) {
         </Link>
         <h1 className="text-2xl font-semibold">{t("editTitle")}</h1>
       </div>
-      {o.status !== "draft" ? (
+      {!ctx.user_id ? null : o.status !== "draft" ? (
         <Card className="text-sm text-muted-foreground">{t("notDraft")}</Card>
       ) : (
         <OrderBuilder
           locale={locale}
+          userId={ctx.user_id}
           customers={customers.data}
           initial={{
             orderId: o.id,

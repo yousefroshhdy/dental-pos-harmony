@@ -47,11 +47,12 @@ export default async function NewOrderPage({
         <h1 className="text-2xl font-semibold">{t("newTitle")}</h1>
         <p className="text-sm text-muted-foreground">{t("intro")}</p>
       </div>
-      {!customers.ok ? (
+      {!ctx.user_id ? null : !customers.ok ? (
         <OrderError code={orderErrorCode(customers.error)} requestId={customers.error.requestId} />
       ) : (
         <OrderBuilder
           locale={locale}
+          userId={ctx.user_id}
           customers={customers.data}
           initial={{ customerId: optionalId(sp.customer), visitId: optionalId(sp.visit) }}
         />

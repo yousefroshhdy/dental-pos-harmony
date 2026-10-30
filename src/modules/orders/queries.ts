@@ -2,7 +2,8 @@ import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeSearch } from "./logic";
+import { sanitizeSearch, toNumber } from "./logic";
+import type { CachedVariant } from "./offline-logic";
 import type { CustomerOption, OrderHistoryRow, OrderLineRow, OrderRow, OrderStatus, SellableVariant, StockAvailableRow } from "./types";
 
 /**
@@ -116,6 +117,56 @@ export async function searchSellableVariants(raw: string): Promise<Result<Sellab
       .limit(SEARCH_LIMIT),
     [],
   );
+}
+
+const CATALOG_PAGE = 1000;
+
+/**
+ * The sellable-variant list for the device cache (offline search), with the
+ * DEFAULT list's single-unit price as an indicative price (api.v_catalog_variants
+ * default_price; NULL without catalog.price.read). Up to `limit` variants, read in
+ * pages; `truncated` says the catalogue was larger. A failed price read keeps the
+ * list (prices are only indicative); a failed list read fails the snapshot.
+ */
+export async function listSellableCatalog(limit: number): Promise<Result<{ variants: CachedVariant[]; truncated: boolean }>> {
+  const db = await createClient();
+  const variants: SellableVariant[] = [];
+  for (let from = 0; from <= limit; from += CATALOG_PAGE) {
+    const to = Math.min(from + CATALOG_PAGE, limit + 1) - 1;
+    const page = await run<SellableVariant[]>(
+      "v_sellable_variants",
+      db.from("v_sellable_variants").select(VARIANT_COLUMNS).order("sku").order("variant_id").range(from, to),
+      [],
+    );
+    if (!page.ok) return page;
+    variants.push(...page.data);
+    if (page.data.length < to - from + 1) break;
+  }
+  const truncated = variants.length > limit;
+  if (truncated) variants.length = limit;
+
+  const prices = new Map<string, number>();
+  for (let from = 0; from <= limit; from += CATALOG_PAGE) {
+    const to = Math.min(from + CATALOG_PAGE, limit + 1) - 1;
+    const page = await run<{ id: string; default_price: number | string | null }[]>(
+      "v_catalog_variants",
+      db
+        .from("v_catalog_variants")
+        .select("id, default_price")
+        .eq("is_sellable", true)
+        .not("default_price", "is", null)
+        .order("id")
+        .range(from, to),
+      [],
+    );
+    if (!page.ok) break;
+    for (const row of page.data) {
+      const n = toNumber(row.default_price);
+      if (n > 0) prices.set(row.id, n);
+    }
+    if (page.data.length < to - from + 1) break;
+  }
+  return ok({ variants: variants.map((v) => ({ ...v, price: prices.get(v.variant_id) ?? null })), truncated });
 }
 
 /** Sellable availability of the order's variants per warehouse (RLS: inventory.stock.read). */
