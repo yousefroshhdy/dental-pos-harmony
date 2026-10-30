@@ -18,8 +18,14 @@ interface Recorded {
 type Source = Record<string, unknown>[] | { error: { code: string; message: string } };
 type Provider = (target: string, calls: Call[], from: number, to: number) => Source | undefined;
 
-function mockDb(provider: Provider, maxRows = Number.MAX_SAFE_INTEGER) {
+/** Answers the export log RPCs (api.log_export / api.log_export_result); default: accepted, export id 101. */
+type Gate = (fn: string, args: Record<string, unknown>) => { data: unknown; error: { code: string; message: string } | null };
+const ACCEPT: Gate = (fn) => ({ data: fn === "log_export" ? 101 : null, error: null });
+const LOG_RPCS = new Set(["log_export", "log_export_result"]);
+
+function mockDb(provider: Provider, maxRows = Number.MAX_SAFE_INTEGER, gate: Gate = ACCEPT) {
   const queries: Recorded[] = [];
+  const logs: { fn: string; args: Record<string, unknown> }[] = [];
   const builder = (target: string, initial: Call[] = []) => {
     const rec: Recorded = { target, calls: [...initial] };
     queries.push(rec);
@@ -49,9 +55,13 @@ function mockDb(provider: Provider, maxRows = Number.MAX_SAFE_INTEGER) {
   };
   const db = {
     from: vi.fn((view: string) => builder(view)),
-    rpc: vi.fn((fn: string, args: unknown) => builder(`rpc:${fn}`, [["args", args]])),
+    rpc: vi.fn((fn: string, args: Record<string, unknown>) => {
+      if (!LOG_RPCS.has(fn)) return builder(`rpc:${fn}`, [["args", args]]);
+      logs.push({ fn, args });
+      return Promise.resolve(gate(fn, args));
+    }),
   };
-  return { db: db as unknown as Db, queries, raw: db };
+  return { db: db as unknown as Db, queries, logs, raw: db };
 }
 
 function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}): UserContext {
@@ -71,8 +81,8 @@ function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}
 const OWNER = ctx({}, { is_owner: true });
 const NOW = new Date("2026-10-30T10:00:00Z");
 
-function run(kind: string, query: string, user: UserContext, provider: Provider, rowCap = 50_000, maxRows?: number) {
-  const mock = mockDb(provider, maxRows);
+function run(kind: string, query: string, user: UserContext, provider: Provider, rowCap = 50_000, maxRows?: number, gate?: Gate) {
+  const mock = mockDb(provider, maxRows, gate);
   const createClient = vi.fn(async () => mock.db);
   const deps: ExportDeps = { getContext: async () => user, createClient, rowCap: () => rowCap, now: () => NOW, requestId: () => "req-test" };
   const response = handleExport(new Request(`https://app.test/api/export/${kind}${query}`), kind, deps);
@@ -310,5 +320,97 @@ describe("GET /api/export/[kind]: filters mirror the list pages", () => {
       "SO-TEST-0,approved,Test Clinic 0,2026-10-29 10:00:00,2,SKU-A2",
       "SO-TEST-1,approved,Test Clinic 1,2026-10-29 10:00:00,1,SKU-B",
     ]);
+  });
+});
+
+describe("GET /api/export/[kind]: server-side gate and security log (audit-4 A-L4)", () => {
+  const refuse =
+    (code: string, message: string): Gate =>
+    (fn) =>
+      fn === "log_export" ? { data: null, error: { code, message } } : { data: null, error: null };
+
+  it("opens the log before reading any row, with the kind, loggable filters and request id", async () => {
+    const user = ctx({ "crm.customer.read": "all", "crm.customer.export": "all" });
+    const { response, mock } = run("customers", "?q=Dr%20Ahmed%20%2B201001234567&stage=active", user, () => []);
+    await body(await response);
+    expect(mock.logs[0]).toEqual({
+      fn: "log_export",
+      args: { p_kind: "customers", p_filters: { q: "[redacted]", stage: "active" }, p_row_count: null, p_request_id: "req-test" },
+    });
+    expect(JSON.stringify(mock.logs)).not.toMatch(/Ahmed|201001234567/);
+  });
+
+  it("records the final row count against the opened export when the file ends", async () => {
+    const { response, mock } = run("orders", "", ctx(SALES), () => orders(3));
+    await body(await response);
+    expect(mock.logs.map((l) => l.fn)).toEqual(["log_export", "log_export_result"]);
+    expect(mock.logs[1]?.args).toEqual({ p_export_id: 101, p_row_count: 3, p_truncated: false, p_failed: false });
+  });
+
+  it("reports truncation and failures in the result", async () => {
+    const { response, mock } = run("orders", "", ctx(SALES), () => orders(5), 3);
+    await body(await response);
+    expect(mock.logs[1]?.args).toMatchObject({ p_row_count: 3, p_truncated: true, p_failed: false });
+
+    const all = orders(1500);
+    const provider: Provider = (_t, _c, from) => (from === 0 ? all : { error: { code: "57014", message: "canceling statement" } });
+    const { response: r2, mock: m2 } = run("orders", "", ctx(SALES), provider);
+    await body(await r2);
+    expect(m2.logs[1]?.args).toMatchObject({ p_row_count: 1000, p_truncated: false, p_failed: true });
+  });
+
+  it("records a cancelled download as not finished", async () => {
+    const { response, mock } = run("orders", "", ctx(SALES), () => orders(2500));
+    const res = await response;
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error("no body");
+    await reader.read(); // header row
+    await reader.read(); // first 1,000 rows
+    await reader.cancel();
+    expect(mock.logs[1]?.args).toMatchObject({ p_row_count: 1000, p_failed: true });
+  });
+
+  it("fails closed: no row is read when the database refuses the export", async () => {
+    const offline: Gate = () => {
+      throw new Error("network down");
+    };
+    const cases: [Gate, number, string][] = [
+      [refuse("42501", "PERMISSION_DENIED: crm.customer.export"), 403, "forbidden"],
+      [refuse("42501", "MFA_REQUIRED: sales.order.export needs a session verified with your authenticator app"), 403, "mfa_required"],
+      [refuse("P0001", "RATE_LIMITED: at most 20 exports per 10 minutes; try again later"), 429, "rate_limited"],
+      [refuse("22023", "VALIDATION: unknown export kind orders"), 400, "export_failed"],
+      [refuse("PGRST202", "Could not find the function api.log_export"), 404, "export_failed"],
+      [refuse("08006", "connection failure"), 500, "export_failed"],
+      [offline, 503, "export_failed"],
+    ];
+    for (const [gate, status, error] of cases) {
+      const { response, mock } = run("orders", "", ctx(SALES), () => orders(3), 50_000, undefined, gate);
+      const res = await response;
+      expect(res.status).toBe(status);
+      expect(await res.json()).toEqual({ error, requestId: "req-test" });
+      expect(mock.queries).toHaveLength(0);
+      expect(mock.logs).toHaveLength(1);
+    }
+  });
+
+  it("records a failed result when the first page cannot be read", async () => {
+    const { response, mock } = run("orders", "", ctx(SALES), () => ({ error: { code: "XX000", message: "boom" } }));
+    expect((await response).status).toBe(500);
+    expect(mock.logs[1]).toEqual({ fn: "log_export_result", args: { p_export_id: 101, p_row_count: 0, p_truncated: false, p_failed: true } });
+  });
+
+  it("tells a rate-limited user when to retry", async () => {
+    const { response } = run("orders", "", ctx(SALES), () => [], 50_000, undefined, refuse("P0001", "RATE_LIMITED: slow down"));
+    const res = await response;
+    expect(res.headers.get("retry-after")).toBe("600");
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("still sends the file when recording the result fails (it is already delivered)", async () => {
+    const gate: Gate = (fn) => (fn === "log_export" ? { data: 7, error: null } : { data: null, error: { code: "P0002", message: "NOT_FOUND: export 7" } });
+    const { response, mock } = run("orders", "", ctx(SALES), () => orders(2), 50_000, undefined, gate);
+    const { lines } = await body(await response);
+    expect(lines).toHaveLength(3);
+    expect(mock.logs[1]?.args).toMatchObject({ p_export_id: 7, p_row_count: 2 });
   });
 });

@@ -6,8 +6,11 @@ import { can, type UserContext } from "@/lib/authz/can";
  * where the catalogue has a dedicated `<module>.<resource>.export` permission
  * (docs/AUTHORIZATION.md §2, level 7) that is required as well.
  *
- * This is UX and an early 403 only: rows come from the api.v_* views through
- * the user's own session, so RLS decides what is in the file.
+ * Here it is UX and an early 403. The database enforces the same rule in
+ * api.log_export (migration 20261104000710, its `export-kinds` whitelist;
+ * tests/unit/reports-export-log.test.ts keeps the two in step), adding the MFA
+ * step-up and the rate limit. Rows come from the api.v_* views through the
+ * user's own session, so RLS decides what is in the file.
  */
 export const EXPORT_KINDS = ["orders", "order_lines", "invoices", "payments", "aging", "visits", "customers", "stock", "tracking"] as const;
 export type ExportKind = (typeof EXPORT_KINDS)[number];
