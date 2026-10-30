@@ -13,8 +13,10 @@ import { EMPTY_STAGE, StageFields, type StageOptions } from "./stage-fields";
 
 /**
  * Create a rule (priority, condition, first stage) or edit an existing rule
- * (priority, condition, auto-approve). Only owners see the auto-approve switch;
- * the database refuses it for anyone else (OWNER_ONLY).
+ * (priority, condition, auto-approve). Only owners see the auto-approve switch, and only
+ * owners may change a rule that approves automatically: nobody else can submit it
+ * else. The database enforces both (OWNER_ONLY), including edits of rules checked before an
+ * auto-approve rule.
  */
 export function RuleForm({
   definitionId,
@@ -41,6 +43,7 @@ export function RuleForm({
   const [state, formAction, pending] = useActionState(saveRule, null);
   const id = useId();
   const isNew = !ruleId;
+  const ownerOnly = !isNew && !isOwner && (autoApprove ?? false);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -70,8 +73,11 @@ export function RuleForm({
           {t("autoApprove")}
         </label>
       ) : autoApprove ? (
-        // Keeps an owner's auto-approve rule as it is when an admin edits its condition.
-        <input type="hidden" name="auto_approve" value="on" />
+        <>
+          {/* Keeps the flag in the request; the database still refuses a non-owner (OWNER_ONLY). */}
+          <input type="hidden" name="auto_approve" value="on" />
+          <p className="text-sm text-muted-foreground">{t("ownerOnlyEdit")}</p>
+        </>
       ) : null}
       {isNew ? (
         <fieldset className="space-y-3">
@@ -82,7 +88,7 @@ export function RuleForm({
       ) : null}
       <ReasonField />
       <ActionMessage state={state} success={isNew ? t("created") : t("saved")} />
-      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+      <Button type="submit" disabled={pending || ownerOnly} className="w-full sm:w-auto">
         {isNew ? t("create") : t("save")}
       </Button>
     </form>

@@ -27,7 +27,7 @@
   "errors": {
     "PERMISSION_DENIED": "You are not allowed to do this. (ref {requestId})",
     "ESCALATION_BLOCKED": "You cannot route a stage to yourself, a role you hold or a permission you hold. Ask an owner. (ref {requestId})",
-    "OWNER_ONLY": "Only an owner can make a rule approve automatically. (ref {requestId})",
+    "OWNER_ONLY": "Only an owner can create or change a rule that approves automatically, or change a rule checked before one. (ref {requestId})",
     "SELF_GRANT_FORBIDDEN": "You cannot delegate someone else's approvals to yourself. (ref {requestId})",
     "NOT_FOUND": "It no longer exists or you cannot see it. (ref {requestId})",
     "INVALID_STATE": "This delegation has already ended. (ref {requestId})",
@@ -101,6 +101,7 @@
     "priority": "Priority",
     "priorityHint": "Lower numbers are checked first; the first rule whose condition holds decides the stages.",
     "autoApprove": "Approve automatically when this rule matches (owner only)",
+    "ownerOnlyEdit": "This rule approves automatically. Only an owner can change it.",
     "firstStage": "First stage",
     "firstStageHint": "A new rule needs at least one stage. Add more stages after saving.",
     "created": "Rule created.",
