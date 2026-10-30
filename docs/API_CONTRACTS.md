@@ -144,9 +144,16 @@ New outbox events: `invoice.issued`, `invoice.overdue`, `credit_note.issued`, `p
 | `POST /api/webhooks/paymob` | Paymob | HMAC (Paymob HMAC secret, computed over Paymob's documented field order; verify against current Paymob docs at integration time) | Verify → `insert integration.inbound_webhooks` (unique provider + transaction id) → `api.ingest_paymob_event` → 200 fast. Invalid signature → 401 + security event. |
 | `POST /api/webhooks/shopify` | Shopify | `X-Shopify-Hmac-Sha256` (base64 HMAC-SHA256 of raw body with app secret) | Same pattern. Handles `orders/create`, `orders/paid`, `products/update` (log only; Honest OS wins). |
 | `GET/POST /api/webhooks/whatsapp` | Meta | GET: `hub.verify_token` challenge. POST: `X-Hub-Signature-256` (HMAC-SHA256 with app secret) | Delivery statuses + inbound replies → `notify` / CRM activity |
-| `POST /api/cron/outbox` | Vercel Cron (every 1–5 min) | `Authorization: Bearer $CRON_SECRET` | Claim ≤ 100 rows `FOR UPDATE SKIP LOCKED` → deliver → update status/backoff |
-| `POST /api/cron/kpi-snapshot` | Vercel Cron nightly 02:00 Cairo | `CRON_SECRET` | Calls `api.snapshot_kpis(period)` (or pg_cron directly) |
-| `POST /api/cron/overdue-scan` | daily 07:00 Cairo | `CRON_SECRET` | Overdue invoices → collection tasks + outbox `invoice.overdue` |
+| `GET\|POST /api/cron/outbox` | Vercel Cron `17 3 * * *` UTC (daily: Hobby limit; target every 1–5 min on Pro or via pg_cron) | `Authorization: Bearer $CRON_SECRET` | Claim ≤ 100 rows `FOR UPDATE SKIP LOCKED` → deliver → update status/backoff |
+| `GET\|POST /api/cron/kpi-snapshot` | `23 22 * * *` UTC (00:23 Cairo in winter, 01:23 in summer) | `CRON_SECRET` | `service.snapshot_kpis(as_of?)` via the service role. Writes the current month; the previous month is provisional until day 5, then written once as final. |
+| `GET\|POST /api/cron/overdue` | `7 3 * * *` UTC (before the outbox run) | `CRON_SECRET` | `service.finance_overdue_scan(500)`. Overdue invoices → collection tasks (and reopens tasks closed while still unpaid) + outbox `invoice.overdue`. Returns `{business_date, scanned, created, unassigned, reopened}`. |
+| `GET\|POST /api/cron/tracking` | `41 0 * * *` UTC | `CRON_SECRET` | `service.tracking_auto_close()`, then `service.tracking_purge()` (90-day retention) |
+
+**2026-11-01 audit changes (suite 31):**
+- **Payments:** `record_payment` refuses a `received_at` more than `finance.payment.max_backdate_days_rep` (3) days back for reps, or more than `…_finance` (31) days for finance, and refuses any date in a closed KPI period.
+- **Collection tasks:** in `update_collection_task`, the assignee may only `promise` or `escalate`. `close` and `reopen` need `finance.collection.manage`. `collected` requires the invoice to be fully paid (`INVOICE_STILL_OPEN`).
+- **Concurrency:** every AR mutation for a customer takes a per-customer advisory lock (`finance.lock_customer_ar`).
+- **CASH_COLLECTED:** a reversal after its period closed counts as a negative amount on the reversal day; closed months are never restated.
 
 ## 5. Outbound event contract (outbox → Make.com / consumers)
 
