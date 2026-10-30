@@ -68,7 +68,11 @@ describe("company profile and header", () => {
   });
 
   it("allows only https or same-origin logo URLs", () => {
-    expect(safeLogoUrl("https://cdn.example.test/logo.png")).toBe("https://cdn.example.test/logo.png");
+    expect(safeLogoUrl("https://cdn.example.test/logo.png")).toBeNull();
+    expect(safeLogoUrl("/api/export/customers")).toBeNull();
+    expect(safeLogoUrl("/brand/../api/x.png")).toBeNull();
+    expect(safeLogoUrl("/brand/logo.png?x=1")).toBeNull();
+    expect(safeLogoUrl("/brand/logo.txt")).toBeNull();
     expect(safeLogoUrl("/brand/logo.svg")).toBe("/brand/logo.svg");
     expect(safeLogoUrl("")).toBeNull();
     expect(safeLogoUrl(null)).toBeNull();

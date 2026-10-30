@@ -155,7 +155,9 @@
         "territory_moved": "نقل منطقة",
         "territory_deactivated": "إيقاف منطقة",
         "territory_reactivated": "إعادة تفعيل منطقة",
-        "audit_row_image_read": "قراءة قيم سجل التدقيق"
+        "audit_row_image_read": "قراءة قيم سجل التدقيق",
+        "export": "بدء تصدير",
+        "export_result": "انتهاء تصدير"
       }
     },
     "forbidden": {

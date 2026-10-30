@@ -155,7 +155,9 @@
         "territory_moved": "Territory moved",
         "territory_deactivated": "Territory deactivated",
         "territory_reactivated": "Territory reactivated",
-        "audit_row_image_read": "Audit row images read"
+        "audit_row_image_read": "Audit row images read",
+        "export": "Export started",
+        "export_result": "Export finished"
       }
     },
     "forbidden": {

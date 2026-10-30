@@ -54,17 +54,16 @@ export function parseCompanyProfile(raw: unknown): CompanyProfile {
   return out;
 }
 
-/** An https URL or a same-origin absolute path; anything else (javascript:, data:, http:, //host) is dropped. */
+/** A same-origin static image path; anything else (https:, javascript:, data:, //host, /api/) is dropped. */
 export function safeLogoUrl(raw: string | null | undefined): string | null {
+  // Same rule as api.update_setting for company.logo_url (20261104000400): a same-origin
+  // static image path only. The page CSP (img-src 'self' data: blob:) blocks external hosts.
   const value = (raw ?? "").trim();
   if (!value) return null;
-  if (value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")) return value;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.hostname ? url.toString() : null;
-  } catch {
-    return null;
-  }
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  if (!/^[A-Za-z0-9._~/-]+$/.test(value)) return null;
+  if (/\/api\//i.test(value) || /(^|\/)\.{1,2}(\/|$)/.test(value)) return null;
+  return /\.(png|svg|jpe?g|webp)$/i.test(value) ? value : null;
 }
 
 export interface CompanyHeader {
