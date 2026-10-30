@@ -21,6 +21,7 @@
     "SELF_APPROVAL": "You cannot approve your own request.",
     "WORKFLOW_MISSING": "The approval workflow is not configured. Ask an administrator.",
     "INVOICE_IMMUTABLE": "An issued invoice cannot be changed. Issue a credit note instead.",
+    "INVOICE_STILL_OPEN": "Money is still owed. Record and allocate the payment first; the task is then collected automatically.",
     "REASON_REQUIRED": "Please give a reason or a note.",
     "INVALID_STATE": "This record changed in the meantime. Reload the page to see its current status.",
     "PERMISSION_DENIED": "You don't have permission for this, or the customer is outside your scope.",
@@ -221,7 +222,7 @@
     "reference": "Reference (optional)",
     "chequeDueDate": "Cheque due date",
     "receivedAt": "Received at (optional)",
-    "receivedAtHelp": "Leave empty if you received it just now.",
+    "receivedAtHelp": "Leave empty if you received it just now. It can only go back a few days, and never into a closed month.",
     "verificationNote": "Cash and cheques collected in the field wait for finance to verify them before they reach the customer's account.",
     "saving": "Saving…",
     "submit": "Record payment",
@@ -256,7 +257,9 @@
     "reason": "Reason",
     "bounced": "The cheque bounced",
     "rejectConfirm": "Reject payment",
-    "reverseConfirm": "Reverse payment"
+    "reverseConfirm": "Reverse payment",
+    "receivedAt": "Money received on",
+    "backdated": "{count, plural, one {Recorded # day after it was received. Check the date before confirming.} other {Recorded # days after it was received. Check the date before confirming.}}"
   },
   "allocate": {
     "title": "Allocate to invoices",

@@ -69,7 +69,7 @@
     "CASH_COLLECTED": {
       "name": "Collections confirmed",
       "short": "Collected",
-      "definition": "Payments received in the period and confirmed by finance, VAT included. Payments awaiting verification are excluded."
+      "definition": "Payments received in the period and confirmed by finance, VAT included. Payments awaiting verification are excluded. A closed month is never restated: a payment confirmed after its month closed counts when it is confirmed, and a later bounce or reversal counts as a negative amount in the period it happens."
     },
     "AR_OPEN": {
       "name": "Open receivables",

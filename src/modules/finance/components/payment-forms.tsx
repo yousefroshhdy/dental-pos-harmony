@@ -115,14 +115,40 @@ export function RecordPaymentForm({
   );
 }
 
-/** One-tap confirm (finance verified the money). */
-export function ConfirmPaymentForm({ paymentId, locale }: { paymentId: string; locale: string }) {
+/**
+ * One-tap confirm (finance verified the money). The date the money was received is shown
+ * above the button, flagged when it is not the Cairo day the payment was recorded on:
+ * confirming books it in that day's period.
+ */
+export function ConfirmPaymentForm({
+  paymentId,
+  locale,
+  receivedLabel,
+  daysBeforeRecording,
+}: {
+  paymentId: string;
+  locale: string;
+  /** received_at, formatted in Africa/Cairo. */
+  receivedLabel: string;
+  /** Cairo days between received_at and the recording (0 = same day). */
+  daysBeforeRecording: number;
+}) {
   const t = useTranslations("finance.paymentActions");
   const [state, action, pending] = useActionState(confirmPayment, null);
+  const backdated = daysBeforeRecording > 0;
+  const receivedId = useId();
   return (
-    <form action={action} className="flex flex-col gap-2">
+    <form action={action} className="flex flex-col gap-2" aria-describedby={receivedId}>
       <input type="hidden" name="payment_id" value={paymentId} />
       <input type="hidden" name="locale" value={locale} />
+      <div
+        id={receivedId}
+        className={cn("rounded-md border px-3 py-2", backdated ? "border-destructive/40 bg-destructive/10" : "bg-card")}
+      >
+        <p className="text-xs text-muted-foreground">{t("receivedAt")}</p>
+        <p className="text-lg font-semibold">{receivedLabel}</p>
+        {backdated ? <p className="text-sm font-medium">{t("backdated", { count: daysBeforeRecording })}</p> : null}
+      </div>
       <Button type="submit" disabled={pending}>
         {t("confirm")}
       </Button>

@@ -35,6 +35,7 @@ export const FINANCE_ERROR_CODES = [
   "SELF_APPROVAL",
   "WORKFLOW_MISSING",
   "INVOICE_IMMUTABLE",
+  "INVOICE_STILL_OPEN",
   "REASON_REQUIRED",
   "INVALID_STATE",
   "PERMISSION_DENIED",
@@ -254,6 +255,28 @@ export function collectionActions(status: CollectionStatus): CollectionAction[] 
   }
 }
 
+/** Actions the assignee (a rep without finance.collection.manage) may take: record a promise or escalate. */
+export const ASSIGNEE_COLLECTION_ACTIONS: readonly CollectionAction[] = ["promise", "escalate"];
+
+/**
+ * Actions to offer this user on this task (mirrors api.update_collection_task):
+ *   finance.collection.manage → every action of the status, but "collected" only once nothing is
+ *     open on the invoice (a task without an invoice is checked against the balance on the server)
+ *   the assignee              → only "promise" and "escalate"
+ */
+export function collectionActionsFor(
+  ctx: UserContext,
+  task: { status: CollectionStatus; assignee_employee_id: string; invoice_open_amount: Numeric | null },
+): CollectionAction[] {
+  const byStatus = collectionActions(task.status);
+  if (can(ctx, "finance.collection.manage")) {
+    const settled = task.invoice_open_amount === null || toCents(task.invoice_open_amount) <= 0;
+    return byStatus.filter((a) => a !== "collected" || settled);
+  }
+  if (canManageCollection(ctx, task)) return byStatus.filter((a) => ASSIGNEE_COLLECTION_ACTIONS.includes(a));
+  return [];
+}
+
 /** api.update_collection_task: finance.collection.manage in scope, or the assignee with work.task.manage. */
 export function canManageCollection(ctx: UserContext, task: { assignee_employee_id: string }): boolean {
   if (can(ctx, "finance.collection.manage")) return true;
@@ -407,6 +430,23 @@ export function statementPeriod(rows: readonly StatementRow[], from: string | nu
 // ---------------------------------------------------------------------------
 // Display helpers
 // ---------------------------------------------------------------------------
+/** Cairo calendar day (YYYY-MM-DD) of an instant, or null if it is not a valid time. */
+export function cairoDay(at: string | Date): string | null {
+  const d = typeof at === "string" ? new Date(at) : at;
+  return Number.isNaN(d.getTime()) ? null : cairoToday(d);
+}
+
+/**
+ * How many Cairo days before it was recorded a payment says it was received (0 = same day).
+ * Finance double-checks a back-dated payment before confirming it (api.record_payment bounds it).
+ */
+export function receivedDaysBeforeRecording(receivedAt: string, recordedAt: string): number {
+  const received = cairoDay(receivedAt);
+  const recorded = cairoDay(recordedAt);
+  if (!received || !recorded) return 0;
+  return Math.max(daysBetween(received, recorded), 0);
+}
+
 /** Name in the viewer's locale, falling back to English. */
 export function localizedName(locale: string, en: string | null | undefined, ar: string | null | undefined): string {
   if (locale === "ar" && ar) return ar;
