@@ -9,6 +9,14 @@ import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import type { NavItem } from "@/lib/nav";
 import { NotificationBadge } from "@/modules/approvals/components/notification-badge";
+import { importsNav } from "@/modules/imports/nav";
+import { returnsNav } from "@/modules/returns/nav";
+import { commissionsNav } from "@/modules/commissions/nav";
+import { planningNav } from "@/modules/planning/nav";
+import { workflowNav } from "@/modules/workflow/nav";
+import { auditNav } from "@/modules/audit/nav";
+import { reportsNav } from "@/modules/reports/nav";
+import { securityNav } from "@/modules/security/nav";
 import { approvalsNav } from "@/modules/approvals/nav";
 import { catalogNav } from "@/modules/catalog/nav";
 import { crmNav } from "@/modules/crm/nav";
@@ -35,6 +43,14 @@ const NAV: NavItem[] = [
   ...approvalsNav,
   ...inventoryNav,
   ...catalogNav,
+  ...planningNav,
+  ...returnsNav,
+  ...commissionsNav,
+  ...reportsNav,
+  ...importsNav,
+  ...workflowNav,
+  ...auditNav,
+  ...securityNav,
   { href: "/admin/users", labelKey: "nav.users", permission: "admin.user.read" },
   { href: "/admin/roles", labelKey: "nav.roles", permission: "admin.role.read" },
   { href: "/admin/security", labelKey: "nav.security", permission: "audit.security.read" },
