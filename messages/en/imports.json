@@ -1,1 +1,218 @@
-{}
+{
+  "nav": { "imports": "Data import" },
+  "title": "Data import",
+  "summary": "Move customers, products, prices, opening stock and opening balances in from spreadsheets. Every row is checked first; nothing is posted until you commit, and a commit posts all rows or none.",
+  "loading": "Loading imports…",
+  "errorTitle": "This page could not be shown",
+  "errorBody": "Something went wrong while loading the import. Nothing was changed.",
+  "retry": "Try again",
+  "synthetic": {
+    "title": "Synthetic data only",
+    "body": "Until the legal review of personal data (decision D-03) is complete, import only made-up test data. Do not upload real customer names, phone numbers, addresses or balances."
+  },
+  "steps": {
+    "one": "Download the template for what you are importing and fill it in a spreadsheet.",
+    "two": "Save it as CSV (UTF-8). Excel files (.xlsx) are not accepted. At most {max} rows per file.",
+    "three": "Upload it, check the preview, then validate. Fix the rejected rows (download the errors file) and upload again.",
+    "four": "When every row is valid, commit. All rows are posted in one step, or none are."
+  },
+  "upload": {
+    "title": "Upload a file",
+    "kind": "What are you importing?",
+    "file": "CSV file",
+    "fileHint": "Save as CSV (UTF-8). Excel (.xlsx) is not supported. Up to 900 KB and 5,000 rows.",
+    "submit": "Upload",
+    "uploading": "Uploading…",
+    "noKinds": "You do not have the permissions any import needs.",
+    "problems": {
+      "no_file": "Choose a CSV file to upload.",
+      "too_large": "The file is larger than 900 KB. Split it into smaller files.",
+      "not_text": "This is not a UTF-8 CSV file. In your spreadsheet choose Save as → CSV UTF-8 (comma delimited). Excel files (.xlsx) are not accepted.",
+      "unterminated_quote": "A quoted value that starts on line {line} is never closed. Check the quotes in the file.",
+      "unexpected_quote": "Line {line} has a quote in the middle of a value. Save the file again as CSV from your spreadsheet.",
+      "empty": "The file has a header row but no data rows.",
+      "too_many_rows": "The file has {count} rows; the limit is 5,000. Split it into smaller files.",
+      "duplicate_header": "The column {column} appears twice in the header row.",
+      "unknown_columns": "These columns are not part of this template: {columns}. Use the template's header row.",
+      "missing_columns": "These required columns are missing: {columns}.",
+      "extra_cells": "Line {line} has more values than the header has columns."
+    }
+  },
+  "templates": {
+    "title": "Templates",
+    "intro": "Headers stay in English exactly as in the template. The examples are made-up rows: replace them.",
+    "download": "Download template",
+    "columnsLabel": "Columns",
+    "required": "Required"
+  },
+  "kinds": {
+    "customers": {
+      "title": "Customers",
+      "description": "Clinics, doctors, hospitals and labs. Each becomes a lead with source “import”; a phone already registered is rejected."
+    },
+    "products": {
+      "title": "Products and variants",
+      "description": "One row per SKU. Rows with the same product code create one product; an existing product code adds variants to it."
+    },
+    "customer_prices": {
+      "title": "Customer price lists",
+      "description": "Customer-specific prices. A new list code creates a customer price list; each customer in the file is assigned to it."
+    },
+    "opening_stock": {
+      "title": "Opening stock",
+      "description": "Stock on hand by warehouse, lot and expiry. Posted as goods receipts, so every unit is a receipt movement in the inventory ledger."
+    },
+    "opening_ar": {
+      "title": "Opening balances (AR)",
+      "description": "What each customer owes on the start date: one opening balance entry in the customer ledger. Negative = credit in the customer's favour."
+    }
+  },
+  "columns": {
+    "doctor_name": "Doctor's name. Doctor or clinic name is required.",
+    "clinic_name": "Clinic name. Doctor or clinic name is required.",
+    "display_name": "Name shown in lists (optional; built from clinic and doctor when empty).",
+    "kind": "clinic, doctor, hospital, university, lab or distributor (default clinic).",
+    "specialty_code": "Specialty code, e.g. IMPLANTOLOGY, ENDO, ORTHO, GP.",
+    "phone_primary": "Main phone, Egyptian format: 01xxxxxxxxx or +201xxxxxxxxx. Must be unique.",
+    "phone_secondary": "Second phone (optional).",
+    "email": "Email (optional).",
+    "governorate_code": "Governorate code, e.g. EG-C (Cairo), EG-GZ (Giza), EG-ALX (Alexandria).",
+    "city": "City or district.",
+    "address_line": "Street address (optional).",
+    "territory_code": "Territory code (optional; otherwise taken from the coverage map).",
+    "rep_employee_no": "Employee number of the primary sales rep (optional).",
+    "notes": "Notes (optional).",
+    "product_code": "Product code: letters, digits, dot, dash, underscore.",
+    "brand_code": "Brand code: BIONER, DERBY or RDT (new products only).",
+    "category_code": "Category code, e.g. IMPLANT, BUR, INSTRUMENT (new products only).",
+    "product_name_en": "Product name in English (new products only).",
+    "product_name_ar": "Product name in Arabic (optional).",
+    "lot_tracked": "yes or no (default yes).",
+    "expiry_tracked": "yes or no (default no).",
+    "sku": "SKU (variant code). Must be unique.",
+    "variant_name_en": "Variant name in English, e.g. 4.1 x 10 mm.",
+    "barcode": "Barcode (optional, unique).",
+    "uom": "Unit of measure (default unit).",
+    "reorder_point": "Reorder point, whole number (default 0).",
+    "customer_no": "Customer number (CUS-…). Customer number or phone is required.",
+    "customer_phone": "Customer's main phone. Customer number or phone is required.",
+    "price_list_code": "Price list code. A new code creates a customer price list.",
+    "price_list_name": "Price list name (needed once for a new list).",
+    "unit_price": "Price in EGP, at most 2 decimals, no thousands separators.",
+    "min_qty": "Minimum quantity for this price (default 1).",
+    "valid_from": "Start date YYYY-MM-DD (default today).",
+    "warehouse_code": "Warehouse code, e.g. WH-CAI.",
+    "lot_no": "Lot number (NO-LOT for products without lots).",
+    "expiry_date": "Expiry date YYYY-MM-DD (required when the product tracks expiry).",
+    "quantity": "Quantity on hand, whole number above 0.",
+    "unit_cost": "Purchase cost per unit in EGP (optional when the catalogue has a cost).",
+    "amount": "Amount owed in EGP on the start date; negative for a credit."
+  },
+  "history": {
+    "title": "Import history",
+    "empty": "No imports yet.",
+    "listLabel": "Import batches",
+    "fileUnnamed": "(no file name)",
+    "meta": "Uploaded {at} by {by}",
+    "counts": "{rows} rows · {errors} rejected"
+  },
+  "status": {
+    "uploaded": "Uploaded",
+    "validated": "Ready to commit",
+    "committed": "Committed",
+    "failed": "Needs fixing",
+    "discarded": "Discarded"
+  },
+  "rowStatus": {
+    "pending": "Not checked",
+    "valid": "Valid",
+    "invalid": "Rejected",
+    "committed": "Posted"
+  },
+  "batch": {
+    "title": "Import batch",
+    "back": "← All imports",
+    "rows": "Rows",
+    "valid": "Valid",
+    "rejected": "Rejected",
+    "uploaded": "Uploaded {at} by {by}",
+    "validatedAt": "Last validated {at}",
+    "committedAt": "Committed {at}",
+    "discardedAt": "Discarded {at}",
+    "notValidatedYet": "Check the preview below, then validate the file.",
+    "discarded": "This batch was discarded and its rows were deleted. Nothing was posted.",
+    "failureTitle": "The commit was refused. Nothing was posted.",
+    "failureRow": "It stopped at spreadsheet row {row}. Fix the data, validate again and commit.",
+    "failureNoRow": "Fix the data, validate again and commit.",
+    "failureDetail": "Technical detail",
+    "resultTitle": "What was posted",
+    "actions": "Batch actions",
+    "validate": "Validate",
+    "revalidate": "Validate again",
+    "validating": "Validating…",
+    "commit": "Commit",
+    "committing": "Committing…",
+    "commitCheckbox": "I checked the preview. Post all {count} rows now. This cannot be undone by deleting; corrections are made as new entries.",
+    "commitConfirm": "Post all {count} rows now?",
+    "discard": "Discard",
+    "discardConfirm": "Discard this batch? Its rows will be deleted.",
+    "outcome": {
+      "validated": "Every row is valid. You can commit now.",
+      "rejected": "Some rows were rejected. See the list below.",
+      "committed": "Committed. Every row was posted.",
+      "commitRefused": "The commit was refused and nothing was posted. See the reason above."
+    }
+  },
+  "rejects": {
+    "title": "Rejected rows ({count})",
+    "intro": "Download the errors file, fix the rows in your spreadsheet, remove the sheet_row and errors columns and upload them as a new file.",
+    "download": "Download errors (CSV)",
+    "listLabel": "Rejected rows",
+    "sheetRow": "Spreadsheet row {row}",
+    "more": "Only the first {shown} are shown here; the errors file has them all."
+  },
+  "preview": {
+    "title": "Preview",
+    "intro": "The first {shown} of {total} rows, as uploaded.",
+    "sheetRow": "Row",
+    "status": "Check",
+    "empty": "No rows."
+  },
+  "result": {
+    "customers_created": "Customers created",
+    "products_created": "Products created",
+    "variants_created": "Variants created",
+    "price_lists_created": "Price lists created",
+    "prices_set": "Prices set",
+    "assignments": "Customers assigned to a list",
+    "receipts_posted": "Goods receipts posted",
+    "lines": "Stock lines",
+    "units": "Units received",
+    "entries": "Opening balance entries",
+    "total_amount": "Total opening balance"
+  },
+  "rowErrors": {
+    "required": "is required",
+    "invalid": "is not valid",
+    "unknown": "was not found",
+    "inactive": "is archived or inactive",
+    "duplicate_in_file": "appears more than once in the file",
+    "exists": "already exists",
+    "inconsistent": "does not match other rows for the same item",
+    "negative": "cannot be negative",
+    "expired": "is in the past (only a quarantine warehouse may receive expired stock)",
+    "mismatch": "does not match what is already recorded",
+    "discontinued": "is discontinued",
+    "overlap": "overlaps an existing assignment of this list",
+    "already_imported": "was already imported",
+    "wrong_kind": "is the wrong kind for this import"
+  },
+  "errors": {
+    "ALREADY_COMMITTED": "This batch was already committed. It cannot be committed, validated or discarded again.",
+    "CONFLICT": "This upload was already used for a different file. Reload the page and upload again.",
+    "INVALID_STATE": "That step is not possible now. Validate the batch first; a discarded batch cannot be used.",
+    "PERMISSION_DENIED": "You don't have permission to run this import.",
+    "CONFIRM_REQUIRED": "Tick the confirmation box before committing.",
+    "VALIDATION": "The file could not be staged. Check the columns against the template."
+  }
+}
