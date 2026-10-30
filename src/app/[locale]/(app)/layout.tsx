@@ -12,19 +12,25 @@ import { NotificationBadge } from "@/modules/approvals/components/notification-b
 import { approvalsNav } from "@/modules/approvals/nav";
 import { catalogNav } from "@/modules/catalog/nav";
 import { crmNav } from "@/modules/crm/nav";
+import { dashboardsNav } from "@/modules/dashboards/nav";
 import { fieldNav } from "@/modules/field/nav";
+import { financeNav } from "@/modules/finance/nav";
 import { inventoryNav } from "@/modules/inventory/nav";
 import { OfflineSignOutForm } from "@/modules/offline/components/sign-out-form";
 import { SyncIndicator } from "@/modules/offline/components/sync-indicator";
 import { ordersNav } from "@/modules/orders/nav";
+import { trackingNav } from "@/modules/tracking/nav";
 import { signOut } from "../login/actions";
 
 /** Navigation entries; each is shown only if the user holds its permission. */
 const NAV: NavItem[] = [
   { href: "/", labelKey: "nav.home", permission: null },
+  ...dashboardsNav,
   ...fieldNav,
+  ...trackingNav,
   ...crmNav,
   ...ordersNav,
+  ...financeNav,
   ...approvalsNav,
   ...inventoryNav,
   ...catalogNav,

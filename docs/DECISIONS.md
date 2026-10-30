@@ -25,6 +25,7 @@ On 2026-10-28 the owner delegated these decisions ("do whatever the right things
 | D-10 | Make.com for non-critical automations | Adopted |
 | D-11 | Arabic default (RTL), Western digits | Adopted |
 | D-12 | 14% VAT on all products until the accountant says otherwise | Adopted, confirm before Phase 4 |
+| D-14 | Work-hours location tracking on company devices, during an open shift only (supersedes ADR-010's "no continuous tracking") | Adopted 2026-10-30 by owner request; **legal review (D-03) required before real use** |
 | D-13 | Moving stock out of quarantine (to any non-quarantine warehouse) requires `inventory.quarantine.release` (inventory manager by default) | Adopted 2026-10-30, owner may change |
 
 Details of each decision (options considered and the recommendation's reasoning) follow.
@@ -95,6 +96,22 @@ Details of each decision (options considered and the recommendation's reasoning)
 
 ### D-12 · Product tax treatment
 - **Default:** 14% VAT on all products (A-09). Confirm with your accountant whether any medical devices are exempt or zero-rated (U-09).
+
+### D-14 · Work-hours tracking of field reps (owner request, 2026-10-30)
+- **Request:** during the 8-hour working day, track each rep's location on the company-issued device, to see where they are, idle time, number of visits and the time spent at each visit.
+- **Working design (defaults; the owner may change any value in `core.system_settings`):**
+  - **When:** only while a shift is open. The rep taps "Start my day" and "End my day". The server refuses location points outside an open shift and closes any shift that is still open after 10 hours.
+  - **Working week:** Sunday–Thursday, 09:00–17:00 Cairo time.
+  - **Sampling:** one point every 5 minutes (lat/lng, accuracy, device time), uploaded in batches. Points are idempotent by client id, and they queue offline.
+  - **Derived facts:** visits and visit durations (from check-in/out), stops of 30 minutes or more away from any visit or customer location, gaps of 20 minutes or more with no points, and distance travelled. These are flags for a manager to review, never automatic penalties.
+  - **Who sees it:** the rep sees their own. Managers see their team, via the new permission `field.tracking.read`, scoped by team. The owner sees everyone.
+  - **Retention:** raw points for 90 days; daily summaries are kept.
+  - **Transparency:** a notice the rep must acknowledge (versioned and stored on the server) before the first shift, and a visible "tracking is on" indicator while a shift is open.
+- **Technical limit (V-06):** a web app in the browser can only collect points while it is open with the screen on. Reliable background tracking needs a small native Android app on the company devices (for example the same app wrapped with Capacitor, plus a background-location service with a permanent notification). **Phase 1** builds the server side, the manager screens and the in-browser collector. **Phase 2** adds the native collector, once the device platform (assumed Android) is confirmed.
+- **Legal:** location tracking of employees is personal data under Egypt's PDPL (Law 151/2020). Before real use:
+  - add this to the D-03 legal review;
+  - inform employees in writing (policy or contract annex);
+  - keep it to working hours and to the stated purpose.
 
 ### D-13 · Releasing quarantine stock
 - **Problem (audit 2026-10-30, F3):** returned or recalled goods received into a quarantine warehouse could be made sellable by an ordinary transfer, with no control.

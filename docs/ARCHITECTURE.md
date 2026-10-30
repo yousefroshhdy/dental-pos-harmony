@@ -403,6 +403,8 @@ Queue rules: max age 7 days (older items are flagged for review, not silently ap
 
 ## 7. GPS and privacy design (ADR-010)
 
+> **Changed 2026-10-30 (D-14):** the owner asked for work-hours tracking on company devices. Check-in/out verification below still applies. On top of it, location points are collected during an open shift only; see `docs/DECISIONS.md` D-14 for scope, retention, access and the browser limit.
+
 - **What is collected:** a single high-accuracy fix at check-in and at check-out, only when the rep taps the button. **No background or continuous tracking.** Browsers cannot do this reliably, and it would raise PDPL and labour-law proportionality questions.
 - **Consent:** a one-time in-app consent screen (versioned text, stored with timestamp), plus the browser's own permission prompt. Without permission the visit is recorded as `no_device_location` and needs manager approval to count.
 - **Verification:** the server computes distance to the customer's verified location. The geofence radius (default 150 m) and max accuracy (default 100 m) are configurable in `core.system_settings`. The customer location itself is set at first verified visit or by a manager, and changing it is audited.
