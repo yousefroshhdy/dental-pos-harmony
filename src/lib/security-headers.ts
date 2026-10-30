@@ -11,6 +11,12 @@
  *   `next.config.ts`.
  * - API routes (the proxy skips them): a locked-down static CSP, because they
  *   return JSON and never need to run or embed anything.
+ * - Pages again, as `<meta http-equiv="Content-Security-Policy">` in the root layout:
+ *   the same policy and nonce minus the directives a meta policy may not carry. The
+ *   Android app (Capacitor, remote `server.url`) fetches top-level HTML itself and
+ *   drops every response header, so the meta copy is the only CSP it enforces.
+ *   Browsers enforce both copies; policies intersect, so the copies must not differ
+ *   in anything else (tests/unit/security-headers-meta.test.ts).
  */
 
 export type HeaderEntry = { key: string; value: string };
@@ -28,7 +34,21 @@ export type CspOptions = {
    * the e2e server) it would rewrite same-origin asset URLs to https and break the page.
    */
   upgradeInsecureRequests?: boolean;
+  /**
+   * "header" (default): the `Content-Security-Policy` response header.
+   * "meta": the `<meta http-equiv>` copy, without META_UNSUPPORTED_DIRECTIVES.
+   */
+  delivery?: "header" | "meta";
 };
+
+/** Directives a policy delivered by `<meta http-equiv>` must not carry (CSP3: ignored there, with a console warning). */
+export const META_UNSUPPORTED_DIRECTIVES = ["frame-ancestors", "report-uri", "sandbox"] as const;
+
+/** Request headers the proxy sets for the render (it overwrites any copy the client sent). */
+export const NONCE_REQUEST_HEADER = "x-nonce";
+export const CSP_META_REQUEST_HEADER = "x-csp-meta";
+
+const NONCE_PATTERN = /^[A-Za-z0-9+/=_-]+$/;
 
 /** Unpredictable per-request nonce: 128 random bits, base64. Works in Node and edge runtimes. */
 export function generateNonce(): string {
@@ -68,8 +88,8 @@ export function supabaseConnectSources(url: string | undefined): string[] {
  * - frame-ancestors 'none': never embedded (clickjacking); X-Frame-Options DENY mirrors it for old browsers.
  */
 export function buildContentSecurityPolicy(options: CspOptions): string {
-  const { nonce, supabaseUrl, isDev = false, upgradeInsecureRequests = false } = options;
-  if (!/^[A-Za-z0-9+/=_-]+$/.test(nonce)) throw new Error("CSP nonce must be base64");
+  const { nonce, supabaseUrl, isDev = false, upgradeInsecureRequests = false, delivery = "header" } = options;
+  if (!NONCE_PATTERN.test(nonce)) throw new Error("CSP nonce must be base64");
 
   const directives: [string, string[]][] = [
     ["default-src", ["'self'"]],
@@ -86,9 +106,33 @@ export function buildContentSecurityPolicy(options: CspOptions): string {
     ["form-action", ["'self'"]],
     ["frame-ancestors", ["'none'"]],
   ];
-  const parts = directives.map(([name, values]) => `${name} ${values.join(" ")}`);
+  const unsupported: readonly string[] = delivery === "meta" ? META_UNSUPPORTED_DIRECTIVES : [];
+  const parts = directives
+    .filter(([name]) => !unsupported.includes(name))
+    .map(([name, values]) => `${name} ${values.join(" ")}`);
   if (upgradeInsecureRequests) parts.push("upgrade-insecure-requests");
   return parts.join("; ");
+}
+
+/** Both copies of the page policy from one options object (the proxy's only entry point), so they cannot drift. */
+export function buildPageContentSecurityPolicies(options: Omit<CspOptions, "delivery">): { header: string; meta: string } {
+  return {
+    header: buildContentSecurityPolicy({ ...options, delivery: "header" }),
+    meta: buildContentSecurityPolicy({ ...options, delivery: "meta" }),
+  };
+}
+
+/**
+ * The root layout's `<meta>` content, from the request headers the proxy set
+ * (CSP_META_REQUEST_HEADER, NONCE_REQUEST_HEADER). Null, so no meta is emitted, unless
+ * the policy carries that exact nonce and no meta-invalid directive. A meta policy can
+ * only add restrictions to the header one, never lift them.
+ */
+export function metaPolicyForNonce(policy: string | null, nonce: string | null): string | null {
+  if (!policy || !nonce || !NONCE_PATTERN.test(nonce)) return null;
+  const names = policy.split(";").map((d) => d.trim().split(/\s+/)[0]?.toLowerCase() ?? "");
+  if (names.some((n) => (META_UNSUPPORTED_DIRECTIVES as readonly string[]).includes(n))) return null;
+  return policy.includes(`'nonce-${nonce}'`) ? policy : null;
 }
 
 /** CSP for API routes: JSON only, nothing to run, load or embed. */

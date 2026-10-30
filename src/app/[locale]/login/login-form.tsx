@@ -9,7 +9,7 @@ import { sendLoginCode, sendMagicLink, signIn, verifyLoginCode, type LoginState 
 const initial: LoginState = { status: "idle" };
 
 /**
- * Password, magic link, or a 6-digit email code. The code exists for the Android app
+ * Password, magic link, or an 8-digit email code. The code exists for the Android app
  * (D-14 phase 2): a magic link opens the phone's browser, so the session would land
  * there instead of in the app. One form, so the single hidden `next` field serves all.
  */
@@ -47,7 +47,7 @@ export function LoginForm({ locale, next }: { locale: string; next?: string }) {
             inputMode="numeric"
             autoComplete="one-time-code"
             pattern="[0-9]*"
-            maxLength={7}
+            maxLength={11}
             dir="ltr"
             className="tracking-widest"
             aria-describedby="otp-hint"
