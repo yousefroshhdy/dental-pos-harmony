@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Overrides Capacitor's layout of the same name (BridgeActivity inflates it) so that the
+     bridge's WebView is HonestWebView: plugin calls only from the top frame of the
+     configured deployment, and only for the background-location plugin (audit 4 F1).
+     MainActivity refuses to run if this override stops applying. -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="eg.honest.os.MainActivity">
+
+    <eg.honest.os.HonestWebView
+        android:id="@+id/webview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

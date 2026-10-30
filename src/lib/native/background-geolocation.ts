@@ -15,7 +15,8 @@
  *
  * Native watchers outlive a page reload (the plugin's service keeps them, while the page's
  * callback is gone), so the active watcher id is kept in localStorage and removed before
- * a new one is added, and on the login page (stopNativeTracking).
+ * a new one is added, whenever a page is not collecting (releaseIdleNativeWatcher), and on
+ * the login page (stopNativeTracking).
  *
  * Nothing the native shell sends is trusted more than the browser: the server treats a
  * point's `source` as advisory only (migration 20261102000100).
@@ -221,6 +222,23 @@ export function watchPosition(
 export async function stopNativeTracking(win: NativeWindow | undefined = currentWindow(), storage: WatcherStorage | null = browserStorage()): Promise<void> {
   const plugin = backgroundGeolocation(win);
   if (plugin) await removeStaleWatcher(plugin, storage);
+}
+
+/**
+ * For a page that is not collecting: removes whatever watcher the device still has.
+ * A full WebView load (the offline page, a reload, the app restored overnight) drops the
+ * earlier page's callback while the plugin's service keeps its watcher, so without this
+ * the GPS and the "recording your location" notification stayed on outside the working
+ * day (audit 4 F4). Idempotent and cheap (one storage read); a no-op in browsers and
+ * while collecting, when the native collector owns the watcher.
+ */
+export async function releaseIdleNativeWatcher(
+  collecting: boolean,
+  win: NativeWindow | undefined = currentWindow(),
+  storage: WatcherStorage | null = browserStorage(),
+): Promise<void> {
+  if (collecting) return;
+  await stopNativeTracking(win, storage);
 }
 
 /** Opens the app's page in Android settings (permissions, battery). False when not available. */
