@@ -30,6 +30,7 @@
    - **Email template:** as in §2 below.
 3. **Owner login:** Supabase → Authentication → Users → **Add user** (your email). Then, in the SQL editor: `select core.bootstrap_owner('<your email>', '<Your Name>');`
 4. **Optional cleanup:** in the SQL editor run `drop extension if exists http;`. The `http` extension was used only to load migrations.
+5. **Vercel → honest-os-staging → Settings → Environments → Production → Branch Tracking:** set the branch to `ccr-cd8ec6c2-y28xig`, so each push goes live. Until then pushes create previews, and production stays on the last manual deploy (commit `a80cf8c`).
 
 ## 0. Before you start
 - [ ] D-03: until the PDPL legal review clears it, load **synthetic data only** into any project, including production.
