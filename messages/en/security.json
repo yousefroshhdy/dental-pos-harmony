@@ -63,7 +63,10 @@
     "noFactor": "You have not set up an authenticator app yet.",
     "enrolLink": "Set up an authenticator app",
     "verifyNow": "Verify this session",
-    "verified": "This session is verified."
+    "verified": "This session is verified.",
+    "openAccountPage": "Verify on My security",
+    "returnHint": "Verify this session with your authenticator app below. You will go back to the page you were on.",
+    "back": "Back to the page you were on"
   },
   "errors": {
     "INVALID_CODE": "That code is not correct. Check the app and try again.",

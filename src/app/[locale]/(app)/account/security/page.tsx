@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import NextLink from "next/link";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
 import { EnrolTotp } from "@/modules/security/components/enrol-totp";
 import { RemoveFactorButton } from "@/modules/security/components/remove-factor-button";
 import { VerifySessionButton } from "@/modules/security/components/verify-session";
 import { CAIRO_DATE } from "@/modules/security/format";
-import { mfaStanding, sortFactors } from "@/modules/security/logic";
+import { mfaStanding, sortFactors, stepUpReturnPath } from "@/modules/security/logic";
 import { getMfaStatus, listTotpFactors } from "@/modules/security/queries";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -20,9 +21,19 @@ const STANDING_TONE = { protected: "success", verifyNow: "info", enrolNeeded: "d
  * The signed-in user's own second factor (any active user; the app layout
  * already requires a session). Supabase Auth owns the factors; the database
  * decides which actions need aal2 (authz.require, security.mfa_enforced).
+ * `?next=` (set by StepUpLink after an MFA_REQUIRED error) is where the user goes back to
+ * once this session is verified; only a safe in-app path is honoured.
  */
-export default async function AccountSecurityPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function AccountSecurityPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
   const { locale } = await params;
+  const { next } = await searchParams;
+  const returnTo = stepUpReturnPath(next, locale);
   setRequestLocale(locale);
   const t = await getTranslations("security");
   const format = await getFormatter();
@@ -37,6 +48,12 @@ export default async function AccountSecurityPage({ params }: { params: Promise<
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("intro")}</p>
       </div>
+
+      {returnTo && standing !== "protected" ? (
+        <Alert tone="info" role="status">
+          {t("stepUp.returnHint")}
+        </Alert>
+      ) : null}
 
       <Card className="space-y-3">
         <CardTitle>{t("status.title")}</CardTitle>
@@ -83,7 +100,12 @@ export default async function AccountSecurityPage({ params }: { params: Promise<
                 </ul>
               )}
             </div>
-            {standing === "verifyNow" ? <VerifySessionButton /> : null}
+            {standing === "verifyNow" ? <VerifySessionButton returnTo={returnTo} /> : null}
+            {standing === "protected" && returnTo ? (
+              <NextLink href={returnTo} className="inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4">
+                {t("stepUp.back")}
+              </NextLink>
+            ) : null}
           </>
         )}
       </Card>
