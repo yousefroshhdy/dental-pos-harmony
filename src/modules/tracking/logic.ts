@@ -3,7 +3,7 @@ import type { TranslatedCode } from "@/lib/errors";
 import type { EnqueueInput } from "@/lib/offline/queue";
 import type { Json, JsonObject, QueueItem, SendResult } from "@/lib/offline/types";
 import { cairoDate, zonedLocalToInstant } from "@/modules/field/logic";
-import { DAY_FLAGS, type DayGap, type DayShift, type DayStop, type DayVisit, type DeviceResult, type OpenShift, type PingInput, type TeamDayRow, type TrackingDay, type TrackingNotice } from "./types";
+import { DAY_FLAGS, type DayGap, type DayPoint, type DayShift, type DayStop, type DayVisit, type DeviceResult, type OpenShift, type PingInput, type TeamDayRow, type TrackingDay, type TrackingNotice } from "./types";
 
 /**
  * Pure logic for work-hours tracking (D-14). UI gating here is cosmetic:
@@ -99,6 +99,91 @@ export function buildTimeline(day: Pick<TrackingDay, "shifts" | "visits" | "stop
   for (const stop of day.stops ?? []) entries.push({ kind: "stop", at: stop.start_at, stop });
   for (const gap of day.gaps ?? []) entries.push({ kind: "gap", at: gap.start_at, gap });
   return entries.sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
+}
+
+/** The six figures at the top of the day page. */
+export interface DayFigures {
+  shift_seconds: number;
+  visit_count: number;
+  visit_seconds: number;
+  idle_stop_seconds: number;
+  gap_seconds: number;
+  distance_m: number | string;
+  ping_count: number;
+}
+
+/** What the day page renders (api.tracking_day → page). */
+export interface DayView {
+  /** The purge summarized this day: stored figures only, labelled as such (audit 3, M7). */
+  summaryOnly: boolean;
+  /** Past retention with no stored summary: no point was kept for this day. */
+  purgedWithoutSummary: boolean;
+  figures: DayFigures;
+  flags: (typeof DAY_FLAGS)[number][];
+  timeline: TimelineEntry[];
+  points: DayPoint[];
+  /** The list stops at the server's limit; `figures.ping_count` counts every point. */
+  pointsTruncated: boolean;
+}
+
+const asNumber = (v: unknown, fallback: number): number => {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : Number.NaN;
+  return Number.isFinite(n) ? n : fallback;
+};
+
+/**
+ * Chooses between the live day and the stored summary. Once the retention purge has
+ * summarized a day, recomputing it from the remaining shifts would report the whole shift
+ * as one gap, so the stored figures and flags are shown instead, with no stops, gaps or
+ * points (the server already does this; the page follows `summary_only`, or falls back to
+ * "purged and summarized" for an older server).
+ */
+export function dayView(
+  day: Pick<
+    TrackingDay,
+    | "shifts" | "visits" | "stops" | "gaps" | "points" | "flags" | "raw_purged" | "stored_summary" | "summary_only" | "points_truncated"
+    | "shift_seconds" | "visit_count" | "visit_seconds" | "idle_stop_seconds" | "gap_seconds" | "distance_m" | "ping_count"
+  >,
+): DayView {
+  const summary = day.stored_summary ?? null;
+  const summaryOnly = day.summary_only ?? (day.raw_purged && summary !== null);
+  if (summaryOnly && summary) {
+    const flags = Array.isArray(summary.flags) ? (summary.flags as unknown[]).filter((f): f is string => typeof f === "string") : day.flags;
+    return {
+      summaryOnly: true,
+      purgedWithoutSummary: false,
+      figures: {
+        shift_seconds: asNumber(summary.shift_seconds, day.shift_seconds),
+        visit_count: asNumber(summary.visit_count, day.visit_count),
+        visit_seconds: asNumber(summary.visit_seconds, day.visit_seconds),
+        idle_stop_seconds: asNumber(summary.idle_stop_seconds, day.idle_stop_seconds),
+        gap_seconds: asNumber(summary.gap_seconds, day.gap_seconds),
+        distance_m: asNumber(summary.distance_m, Number(day.distance_m)),
+        ping_count: asNumber(summary.ping_count, day.ping_count),
+      },
+      flags: dayFlags(flags),
+      timeline: buildTimeline({ shifts: day.shifts, visits: day.visits, stops: [], gaps: [] }),
+      points: [],
+      pointsTruncated: false,
+    };
+  }
+  return {
+    summaryOnly: false,
+    purgedWithoutSummary: day.raw_purged && summary === null,
+    figures: {
+      shift_seconds: day.shift_seconds,
+      visit_count: day.visit_count,
+      visit_seconds: day.visit_seconds,
+      idle_stop_seconds: day.idle_stop_seconds,
+      gap_seconds: day.gap_seconds,
+      distance_m: day.distance_m,
+      ping_count: day.ping_count,
+    },
+    flags: dayFlags(day.flags),
+    timeline: buildTimeline(day),
+    points: day.points ?? [],
+    pointsTruncated: day.points_truncated === true || (day.points ?? []).length < day.ping_count,
+  };
 }
 
 export function noticeBody(notice: TrackingNotice, locale: string): string {

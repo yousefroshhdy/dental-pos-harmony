@@ -12,11 +12,26 @@ export type ShiftStatus = (typeof SHIFT_STATUSES)[number];
 export const PING_FLAGS = ["low_accuracy", "impossible_travel", "duplicate_fix", "clock_skew"] as const;
 export type PingFlag = (typeof PING_FLAGS)[number];
 
-/** Flags on a rep's day (field.tracking_compute_day). Signals for review, never penalties. */
-export const DAY_FLAGS = ["idle_stop", "gap", "auto_closed", "anomaly", "overdue_shift"] as const;
+/**
+ * Flags on a rep's day (field.tracking_compute_day). Signals for review, never penalties.
+ * The last five are the shifts' own anomaly flags, carried into the day (audit 3, M4).
+ */
+export const DAY_FLAGS = [
+  "idle_stop",
+  "gap",
+  "auto_closed",
+  "anomaly",
+  "overdue_shift",
+  "late_sync",
+  "clock_skew",
+  "no_device_location",
+  "no_device_location_end",
+  "overlap_clamped",
+] as const;
 export type DayFlag = (typeof DAY_FLAGS)[number];
 
-export const REJECT_REASONS = ["invalid", "conflict", "outside_shift"] as const;
+/** Why api.record_location_pings did not store a point (the device drops it; never retried). */
+export const REJECT_REASONS = ["invalid", "conflict", "outside_shift", "too_late", "too_frequent", "shift_cap"] as const;
 
 export interface TrackingNotice {
   version: string;
@@ -175,9 +190,19 @@ export interface TrackingDay {
   visits: DayVisit[];
   stops: DayStop[];
   gaps: DayGap[];
+  /** At most `points_limit` points, in time order; `ping_count` counts them all. */
   points: DayPoint[];
+  /** More points were recorded than the list carries (tracking.max_day_points). */
+  points_truncated?: boolean;
+  points_limit?: number;
   /** The raw points of this day are past retention (deleted). */
   raw_purged: boolean;
+  /**
+   * The retention purge summarized this day: the figures are the stored summary, and no
+   * stops, gaps or points are listed (audit 3, M7).
+   */
+  summary_only?: boolean;
+  retention_days?: number;
   stored_summary: Record<string, unknown> | null;
 }
 
