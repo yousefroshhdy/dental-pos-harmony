@@ -2,7 +2,7 @@
 -- auditor's reproduction and asserts the fixed behaviour. (#6 → suite 11, #10 → 14, #11 → 02.)
 begin;
 select tests.load_fixture();
-select plan(23);
+select plan(24);
 set constraints all immediate;
 
 -- Shared stock: quarantine warehouse with a recalled lot, main warehouse with good stock
@@ -73,10 +73,16 @@ select throws_like($$select authz.log_security_event('role_granted','critical','
 select tests.clear_authentication();
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
            where p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute')
-             and n.nspname in ('core','authz','catalog','inventory','crm','field','work','sales','finance','perf','wf','audit','notify','integration')
+             and n.nspname in ('core','authz','catalog','inventory','crm','field','work','sales','finance','perf','wf','audit','notify','integration','import')
              and not exists (select 1 from pg_policies pol where coalesce(pol.qual,'') || ' ' || coalesce(pol.with_check,'') ~ ('\m' || p.proname || '\M'))
              and not exists (select 1 from pg_views v where v.definition ~ ('\m' || p.proname || '\M'))),
           0, '#5 #8 every client-executable internal definer function is needed by a policy or view');
+-- Audit 4 M-6: the import schema (authenticated has USAGE on it) exposes no function at all; its
+-- helpers run only inside the api.import_* commands. A PUBLIC execute grant would show up here.
+select is((select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'import'
+             and (has_function_privilege('authenticated', p.oid, 'execute') or has_function_privilege('anon', p.oid, 'execute'))),
+          null::text, 'M-6 no import.* function is executable by authenticated or anon');
 
 -- ---- #7 owner reactivation is owner-only ----
 insert into authz.user_roles (user_id, role_id) select '00000000-0000-0000-0000-0000000000a2', id from authz.roles where is_owner_role;
