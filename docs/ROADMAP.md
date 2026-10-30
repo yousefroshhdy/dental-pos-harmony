@@ -10,7 +10,7 @@
 
 Definitions are in `docs/TESTING.md` §4.
 - **"Tested"** means automated tests pass locally: PostgreSQL 16 with the Supabase stub, Vitest, and Playwright on Chromium.
-- **"Verified"** needs a real Supabase/Vercel staging environment, which does not exist yet (runbook: `docs/runbooks/supabase-vercel-setup.md`).
+- **"Verified"** means exercised end-to-end on staging by a human. Staging exists since 2026-10-30: https://honest-os-staging.vercel.app with Supabase `honest-os-staging`. It needs the owner steps in `docs/runbooks/supabase-vercel-setup.md` (server secrets, exposed schemas, owner login) before anyone can sign in.
 
 | Phase | Planned | Implemented | Tested | Verified | Deployed |
 |-------|:-------:|:-----------:|:------:|:--------:|:--------:|

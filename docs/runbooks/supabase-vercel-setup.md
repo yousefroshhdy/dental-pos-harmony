@@ -3,6 +3,34 @@
 > Who: the **owner** (or someone acting with the owner present). Accounts must be **company-owned** (D-08), with MFA.
 > Status: written 2026-10-28; not yet executed. Follow the steps in order and tick them off.
 
+## Staging as built (2026-10-30)
+
+| Item | Value |
+|------|-------|
+| Supabase project | `honest-os-staging`, ref `hhdctubhbdqriyqwjgfk`, eu-central-1, Free plan |
+| Database | All 29 migrations applied; 869 pgTAP assertions pass there (run in a rolled-back transaction, nothing persisted) |
+| Vercel project | `honest-os-staging` (Hobby), linked to `yousefroshhdy/dental-pos-harmony`, region fra1, Node 22 |
+| URL | https://honest-os-staging.vercel.app (behind Vercel Authentication: you must be signed in to Vercel) |
+| Deployed branch | `ccr-cd8ec6c2-y28xig` (Vercel serves it as production for this project) |
+| Env vars set | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key), `NEXT_PUBLIC_APP_URL` |
+| Cron | `/api/cron/outbox` once a day (Hobby limit; see DECISIONS 2026-10-30) |
+| Separation | Nothing is shared with the Noah projects (`noah-os`, `noor`) |
+
+**Still to do (owner; secrets never go through chat):**
+1. **Vercel → honest-os-staging → Settings → Environment Variables.** Add these three as **Sensitive**, for Production:
+   - `SUPABASE_SERVICE_ROLE_KEY`, from Supabase → Project Settings → API Keys (secret key)
+   - `CRON_SECRET`, generated with `openssl rand -hex 32`
+   - `OUTBOX_SIGNING_SECRET`, generated with `openssl rand -hex 32`
+
+   Then **Redeploy**.
+2. **Supabase → honest-os-staging:**
+   - **API → Exposed schemas:** set `api, service` and remove `public`.
+   - **Authentication:** turn sign-ups off.
+   - **URL Configuration:** set the Site URL to `https://honest-os-staging.vercel.app`, and add the redirects `https://honest-os-staging.vercel.app/ar/auth/confirm` and `https://honest-os-staging.vercel.app/en/auth/confirm`.
+   - **Email template:** as in §2 below.
+3. **Owner login:** Supabase → Authentication → Users → **Add user** (your email). Then, in the SQL editor: `select core.bootstrap_owner('<your email>', '<Your Name>');`
+4. **Optional cleanup:** in the SQL editor run `drop extension if exists http;`. The `http` extension was used only to load migrations.
+
 ## 0. Before you start
 - [ ] D-03: until the PDPL legal review clears it, load **synthetic data only** into any project, including production.
 - [ ] Company email accounts exist for the two owners (e.g. `owner1@honesteg.co`, `owner2@honesteg.co`).
