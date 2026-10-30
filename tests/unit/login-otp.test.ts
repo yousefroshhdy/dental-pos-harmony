@@ -75,8 +75,35 @@ describe("verifying the code", () => {
     expect(await verifyLoginCode(idle, form({ email: EMAIL, token: "000000", locale: "ar" }))).toEqual({ status: "code_error", email: EMAIL });
     expect(redirects).toEqual([]);
   });
-  it.each(["12345", "1234567", "12a456", ""])("refuses %j without calling Supabase", async (token) => {
+  it.each(["12345", "123456789", "12a456", "1234567a", ""])("refuses %j without calling Supabase", async (token) => {
     expect(await verifyLoginCode(idle, form({ email: EMAIL, token, locale: "ar" }))).toEqual({ status: "code_error", email: EMAIL });
     expect(auth.verifyOtp).not.toHaveBeenCalled();
+  });
+});
+
+// F7: supabase/config.toml (and the hosted projects, per the runbook) issue 8-digit codes.
+describe("8-digit codes", () => {
+  it.each([
+    ["12345678", "12345678"],
+    ["1234 5678", "12345678"],
+    ["12 34 56 78", "12345678"],
+    ["1234-5678", "12345678"],
+    // Arabic-Indic and Persian digits, as an Arabic phone keyboard may type them.
+    ["١٢٣٤٥٦٧٨", "12345678"],
+    ["۱۲۳۴ ۵۶۷۸", "12345678"],
+  ])("accepts %j and sends %j to Supabase", async (typed, sent) => {
+    await expect(verifyLoginCode(idle, form({ email: EMAIL, token: typed, locale: "ar" }))).rejects.toThrow("NEXT_REDIRECT");
+    expect(auth.verifyOtp).toHaveBeenCalledWith({ email: EMAIL, token: sent, type: "email" });
+  });
+  it("the local Supabase config issues 8-digit codes valid for 10 minutes", async () => {
+    const { readFileSync } = await import("node:fs");
+    const toml = readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8");
+    const email = toml.split(/^\[auth\.email\]\s*$/m)[1]?.split(/^\[/m)[0] ?? "";
+    expect(email).toMatch(/^otp_length = 8$/m);
+    expect(email).toMatch(/^otp_expiry = 600$/m);
+  });
+  it("still accepts a 6-digit code while a hosted project has not switched yet (Supabase checks the length)", async () => {
+    await expect(verifyLoginCode(idle, form({ email: EMAIL, token: "123456", locale: "ar" }))).rejects.toThrow("NEXT_REDIRECT");
+    expect(auth.verifyOtp).toHaveBeenCalledWith({ email: EMAIL, token: "123456", type: "email" });
   });
 });

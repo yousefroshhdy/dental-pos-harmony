@@ -9,8 +9,8 @@ const ALLOWED_TYPES: EmailOtpType[] = ["email", "magiclink", "invite", "recovery
 /**
  * Magic-link / invite landing. The Supabase email templates must point here:
  *   {{ .SiteURL }}/ar/auth/confirm?token_hash={{ .TokenHash }}&type=email
- * (docs/runbooks/supabase-setup.md). The "Magic Link" template also shows {{ .Token }},
- * the 6-digit code that the Android app's login uses instead (login/actions.ts verifyLoginCode).
+ * (docs/runbooks/supabase-vercel-setup.md §2). The "Magic Link" template also shows {{ .Token }},
+ * the 8-digit code that the Android app's login uses instead (login/actions.ts verifyLoginCode).
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

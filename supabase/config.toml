@@ -35,3 +35,18 @@ enable_signup = false
 enable_signup = false
 enable_confirmations = true
 double_confirm_changes = true
+# Email sign-in code (src/app/[locale]/login/actions.ts verifyLoginCode): 8 digits valid for
+# 10 minutes instead of the 6 digits / 1 hour default, so the code cannot be guessed within
+# the verification rate limit below. Hosted projects: set the same values in the dashboard
+# (docs/runbooks/supabase-vercel-setup.md §2).
+otp_length = 8
+otp_expiry = 600
+# Minimum gap between two sign-in emails to one address (the hosted default). Each new email
+# replaces the previous code, so this also limits how often anyone can void a user's code.
+max_frequency = "60s"
+
+[auth.rate_limit]
+# OTP / magic-link verifications per 5 minutes per IP (the CLI default, pinned). The app's
+# server actions call Supabase from the host's egress IPs, so all users share this budget:
+# do not lower it without an app-side limit.
+token_verifications = 30

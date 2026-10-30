@@ -6,6 +6,7 @@ import { publicEnv } from "@/env";
 import { log } from "@/lib/log";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/server";
+import { normaliseTotpCode } from "@/modules/security/logic";
 
 export type LoginState = { status: "idle" | "error" | "link_sent" | "code_sent" | "code_error"; email?: string };
 
@@ -35,7 +36,7 @@ const magic = z.object({ email: z.email().max(254), locale: z.enum(["ar", "en"])
 /**
  * One sign-in email for both options: Supabase's "Magic Link" template carries the link
  * ({{ .TokenHash }} → /auth/confirm) and, once the template includes {{ .Token }}, the
- * 6-digit code of the same one-time password.
+ * 8-digit code of the same one-time password.
  */
 async function sendSignInEmail(form: FormData, sent: "link_sent" | "code_sent", event: string): Promise<LoginState> {
   const parsed = magic.safeParse(Object.fromEntries(form));
@@ -60,21 +61,29 @@ export async function sendMagicLink(_prev: LoginState, form: FormData): Promise<
 
 /**
  * Email sign-in code, for the Android app (D-14 phase 2): a magic link opens the phone's
- * browser, not the app, so the rep types the 6-digit code from the same email instead.
+ * browser, not the app, so the rep types the 8-digit code from the same email instead.
  */
 export async function sendLoginCode(_prev: LoginState, form: FormData): Promise<LoginState> {
   return sendSignInEmail(form, "code_sent", "auth.login_code_failed");
 }
 
+/**
+ * Email codes are 8 digits valid for 10 minutes (supabase/config.toml [auth.email] otp_length /
+ * otp_expiry, and the same settings on the hosted projects). 6 digits are still let through so
+ * the login keeps working on a project not yet switched; Supabase checks the code itself.
+ */
+const LOGIN_CODE = /^\d{6,8}$/;
+
 const code = z.object({
   email: z.email().max(254),
-  // Digits only; spaces a rep may type or paste ("123 456") are removed first.
-  token: z.preprocess((v) => (typeof v === "string" ? v.replace(/\s+/g, "") : v), z.string().regex(/^\d{6}$/)),
+  // Digits only; spaces or dashes a rep may type or paste ("1234 5678") are removed and
+  // Arabic-Indic digits converted first (same normaliser as the TOTP code).
+  token: z.preprocess((v) => (typeof v === "string" ? normaliseTotpCode(v) : v), z.string().regex(LOGIN_CODE)),
   locale: z.enum(["ar", "en"]),
   next: z.string().optional(),
 });
 
-/** Checks the 6-digit code and signs in; same safe `next` handling as the password and the confirm route. */
+/** Checks the email code and signs in; same safe `next` handling as the password and the confirm route. */
 export async function verifyLoginCode(_prev: LoginState, form: FormData): Promise<LoginState> {
   const parsed = code.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { status: "code_error", email: String(form.get("email") ?? "") };
