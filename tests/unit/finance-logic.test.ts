@@ -5,12 +5,15 @@ import { ANONYMOUS_CONTEXT, type Grant, type UserContext } from "@/lib/authz/can
 import { parseOverdueScan } from "@/modules/finance/cron";
 import {
   allocationLimit,
+  ASSIGNEE_COLLECTION_ACTIONS,
+  cairoDay,
   cairoToday,
   canCreditInvoice,
   canManageCollection,
   checkAllocations,
   checkCreditLines,
   collectionActions,
+  collectionActionsFor,
   collectionStatusTone,
   daysBetween,
   documentHref,
@@ -29,6 +32,7 @@ import {
   parseUuid,
   paymentActions,
   paymentStatusTone,
+  receivedDaysBeforeRecording,
   statementPeriod,
   toCents,
   toNumber,
@@ -373,13 +377,81 @@ describe("statementPeriod", () => {
 
 describe("overdue cron summary", () => {
   it("keeps counts only and tolerates malformed payloads", () => {
-    expect(parseOverdueScan({ business_date: "2026-10-30", scanned: 7, created: 7, unassigned: 0 })).toEqual({
+    expect(parseOverdueScan({ business_date: "2026-10-30", scanned: 7, created: 7, unassigned: 0, reopened: 2 })).toEqual({
       business_date: "2026-10-30",
       scanned: 7,
       created: 7,
       unassigned: 0,
+      reopened: 2,
     });
-    expect(parseOverdueScan(null)).toEqual({ business_date: null, scanned: 0, created: 0, unassigned: 0 });
-    expect(parseOverdueScan({ created: "7", scanned: -1 })).toMatchObject({ created: 0, scanned: 0 });
+    expect(parseOverdueScan(null)).toEqual({ business_date: null, scanned: 0, created: 0, unassigned: 0, reopened: 0 });
+    expect(parseOverdueScan({ created: "7", scanned: -1, reopened: 1.5 })).toMatchObject({ created: 0, scanned: 0, reopened: 0 });
+  });
+
+  it("matches the keys service.finance_overdue_scan returns", () => {
+    const scan = allSql.slice(allSql.lastIndexOf("create or replace function service.finance_overdue_scan"));
+    const body = scan.slice(0, scan.indexOf("end $$;"));
+    for (const key of ["business_date", "scanned", "created", "unassigned", "reopened"]) expect(body, key).toContain(`'${key}'`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Audit 3: collection actions by role, back-dated payments
+// ---------------------------------------------------------------------------
+describe("collection actions by role (api.update_collection_task)", () => {
+  const task = (status: "open" | "promised" | "escalated", open: string | null, assignee = ME) => ({
+    status,
+    assignee_employee_id: assignee,
+    invoice_open_amount: open,
+  });
+
+  it("the assignee may only promise or escalate", () => {
+    expect(collectionActionsFor(rep, task("open", "1140.00"))).toEqual(["promise", "escalate"]);
+    expect(collectionActionsFor(rep, task("promised", "1140.00"))).toEqual(["promise", "escalate"]);
+    expect(collectionActionsFor(rep, task("escalated", "1140.00"))).toEqual(["promise"]);
+    expect(collectionActionsFor(rep, task("open", "0.00"))).not.toContain("collected");
+  });
+
+  it("someone else's task offers nothing to a rep", () => {
+    expect(collectionActionsFor(rep, task("open", "1140.00", "20000000-0000-0000-0000-000000000005"))).toEqual([]);
+  });
+
+  it("finance closes and reopens, and marks collected only once nothing is open", () => {
+    expect(collectionActionsFor(finance, task("promised", "1140.00"))).toEqual(["promise", "reopen", "escalate", "close"]);
+    expect(collectionActionsFor(finance, task("open", "0.00"))).toContain("collected");
+    expect(collectionActionsFor(finance, task("open", "-5.00"))).toContain("collected");
+    expect(collectionActionsFor(finance, task("open", "0.01"))).not.toContain("collected");
+    // Without an invoice the server checks the customer's balance.
+    expect(collectionActionsFor(finance, task("open", null))).toContain("collected");
+  });
+
+  it("the rep's actions are a subset of what the command accepts from them", () => {
+    const fn = allSql.slice(allSql.lastIndexOf("create or replace function api.update_collection_task"));
+    expect(fn).toMatch(/not v_manager and p_action not in \('promise','escalate'\)/);
+    expect([...ASSIGNEE_COLLECTION_ACTIONS].sort()).toEqual(["escalate", "promise"]);
+  });
+});
+
+describe("back-dated payments on the confirm screen", () => {
+  it("counts Cairo days between receiving and recording", () => {
+    expect(receivedDaysBeforeRecording("2026-10-30T08:00:00Z", "2026-10-30T15:00:00Z")).toBe(0);
+    expect(receivedDaysBeforeRecording("2026-10-27T10:00:00Z", "2026-10-30T09:00:00Z")).toBe(3);
+  });
+
+  it("uses the Cairo day, not UTC: 23:30 UTC on 29 Oct is 30 Oct in Cairo", () => {
+    expect(cairoDay("2026-10-29T23:30:00Z")).toBe("2026-10-30");
+    expect(receivedDaysBeforeRecording("2026-10-29T23:30:00Z", "2026-10-30T06:00:00Z")).toBe(0);
+    expect(receivedDaysBeforeRecording("2026-10-29T20:00:00Z", "2026-10-30T06:00:00Z")).toBe(1);
+  });
+
+  it("never negative, and tolerant of bad input", () => {
+    expect(receivedDaysBeforeRecording("2026-10-30T10:00:00Z", "2026-10-29T10:00:00Z")).toBe(0);
+    expect(receivedDaysBeforeRecording("not a date", "2026-10-29T10:00:00Z")).toBe(0);
+    expect(cairoDay("nope")).toBeNull();
+  });
+
+  it("the default bounds are seeded as settings", () => {
+    expect(allSql).toMatch(/'finance\.payment\.max_backdate_days_rep', '3'/);
+    expect(allSql).toMatch(/'finance\.payment\.max_backdate_days_finance', '31'/);
   });
 });

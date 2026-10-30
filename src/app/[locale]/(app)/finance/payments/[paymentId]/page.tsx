@@ -22,6 +22,7 @@ import {
   localizedName,
   paymentActions,
   paymentStatusTone,
+  receivedDaysBeforeRecording,
   toNumber,
 } from "@/modules/finance/logic";
 import { getPayment, listAllocationsForPayment, listOpenInvoices } from "@/modules/finance/queries";
@@ -88,7 +89,14 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
 
       {actions.confirm || actions.reject || actions.reverse ? (
         <section className="grid gap-3 sm:grid-cols-2" aria-label={t("payment.actions")}>
-          {actions.confirm ? <ConfirmPaymentForm paymentId={p.id} locale={locale} /> : null}
+          {actions.confirm ? (
+            <ConfirmPaymentForm
+              paymentId={p.id}
+              locale={locale}
+              receivedLabel={format.dateTime(new Date(p.received_at), CAIRO_DATE_TIME)}
+              daysBeforeRecording={receivedDaysBeforeRecording(p.received_at, p.created_at)}
+            />
+          ) : null}
           {actions.reject ? <PaymentReasonForm paymentId={p.id} locale={locale} kind="reject" /> : null}
           {actions.reverse ? <PaymentReasonForm paymentId={p.id} locale={locale} kind="reverse" /> : null}
         </section>

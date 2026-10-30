@@ -13,7 +13,7 @@ import {
   cairoToday,
   canManageCollection,
   COLLECTION_FILTERS,
-  collectionActions,
+  collectionActionsFor,
   collectionStatusTone,
   financeErrorCode,
   localizedName,
@@ -111,7 +111,7 @@ export default async function CollectionsPage({
                   <span className="font-semibold whitespace-nowrap">{task.invoice_open_amount !== null ? money(task.invoice_open_amount) : ""}</span>
                 </div>
                 {canManageCollection(ctx, task) ? (
-                  <CollectionTaskForm taskId={task.id} locale={locale} actions={collectionActions(task.status)} today={today} />
+                  <CollectionTaskForm taskId={task.id} locale={locale} actions={collectionActionsFor(ctx, task)} today={today} />
                 ) : null}
               </li>
             ))}
