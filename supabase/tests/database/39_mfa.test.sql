@@ -43,10 +43,12 @@ select is((select is_nullable || ' ' || column_default from information_schema.c
             where table_schema = 'authz' and table_name = 'permissions' and column_name = 'requires_mfa'),
           'NO false', 'authz.permissions.requires_mfa is NOT NULL DEFAULT false');
 select is((select array_agg(code order by code) from authz.permissions where requires_mfa and code <> 'admin.import.run'),
-          array['admin.override.manage','admin.role.assign','admin.role.manage','admin.user.suspend',
+          array['admin.override.manage','admin.role.assign','admin.role.manage','admin.settings.manage',
+                'admin.user.suspend','admin.workflow.manage','audit.row_image.unmask',
                 'catalog.price.manage','crm.customer.export','finance.credit_limit.change','finance.payment.reverse',
-                'inventory.quarantine.release','sales.order.export'],
-          'the sensitive set requires MFA (admin.import.run too, once it exists)');
+                'inventory.quarantine.release','perf.commission.calculate','sales.order.export','sales.return.credit',
+                'wf.decide.write_off'],
+          'the sensitive set requires MFA (admin.import.run too, once it exists; extended by 20261104000300 and 20261104000710)');
 select is((select count(*)::int from authz.permissions where requires_mfa = false and code in
             ('crm.customer.read','sales.order.create','finance.payment.record','finance.payment.read','admin.user.create')),
           5, 'ordinary permissions do not require MFA');
@@ -144,7 +146,7 @@ select is(pg_temp.try($$select api.create_employee('E-SYN-39', 'Synthetic Employ
 select is((select (api.my_mfa_status() ->> 'enforced')::boolean), true, 'on: my_mfa_status reports the switch on');
 select is((select api.my_mfa_status() ->> 'aal'), null, 'on: a session without an aal claim reports none');
 select is((select api.my_mfa_status() -> 'required_permissions'),
-          '["admin.override.manage","admin.role.assign","admin.role.manage","admin.user.suspend"]'::jsonb,
+          '["admin.override.manage","admin.role.assign","admin.role.manage","admin.settings.manage","admin.user.suspend","admin.workflow.manage"]'::jsonb,
           'on: my_mfa_status lists the gated permissions the admin holds');
 
 select tests.authenticate_as_aal2('00000000-0000-0000-0000-0000000000a7');

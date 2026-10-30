@@ -46,10 +46,3 @@ export type SecurityResult = { ok: true } | { ok: false; messageKey: SecurityErr
 export type EnrolResult =
   | { ok: true; factorId: string; qrCode: string; secret: string }
   | { ok: false; messageKey: SecurityErrorKey };
-
-/**
- * Any action result that can carry the step-up flag. Module actions add
- * `mfaRequired: true` to a failed result (see `withMfaFlag` in logic.ts) and the
- * client hook `useStepUpAction` reacts to it.
- */
-export type StepUpAware = { ok: false; mfaRequired?: boolean } | { ok: true } | null | undefined;

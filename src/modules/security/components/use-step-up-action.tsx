@@ -9,8 +9,10 @@ import { StepUpPrompt } from "./step-up-prompt";
 
 /**
  * `useActionState` with MFA step-up. When the Server Action's result asks for
- * step-up (`mfaRequired: true`, see `withMfaFlag`/`mfaFlag` in ../logic.ts), the
- * prompt opens; after the code is verified the SAME FormData is submitted again.
+ * step-up (`mfaRequired: true` or `code: "MFA_REQUIRED"`, see `needsStepUp` in
+ * ../logic.ts), the prompt opens; after the code is verified the SAME FormData is
+ * submitted again. Used by RemoveFactorButton; other modules show `StepUpLink`
+ * next to their MFA_REQUIRED error instead (one line per module error display).
  *
  * Only wrap actions whose MFA_REQUIRED failure means nothing happened: the
  * database raises it inside authz.require, before any write, and rolls back.

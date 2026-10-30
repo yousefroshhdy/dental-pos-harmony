@@ -25,6 +25,17 @@ describe.each(["ar", "en"])("security messages (%s)", (locale) => {
     expect(typeof m.nav?.account).toBe("string");
   });
 
+  it("tells an MFA_REQUIRED user where to verify (the nav label of the account page)", () => {
+    const core = JSON.parse(readFileSync(join(__dirname, "../../messages", `${locale}.json`), "utf8")) as { errors: Record<string, string> };
+    expect(core.errors.MFA_REQUIRED).toContain(m.nav?.account as string);
+    expect(core.errors.MFA_REQUIRED).not.toContain("{");
+  });
+
+  it("labels the step-up link and the way back", () => {
+    const stepUp = m.stepUp as Record<string, string>;
+    for (const key of ["openAccountPage", "returnHint", "back"]) expect(typeof stepUp[key]).toBe("string");
+  });
+
   it("keeps the {date} placeholder", () => {
     expect((m.factors as Record<string, string>).addedOn).toContain("{date}");
   });

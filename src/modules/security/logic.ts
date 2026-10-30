@@ -1,3 +1,4 @@
+import { safeNextPath } from "@/lib/safe-redirect";
 import type { FactorRow, MfaStatus, SecurityErrorKey } from "./types";
 
 /**
@@ -13,22 +14,41 @@ export function isMfaRequired(error: { code?: string | null } | null | undefined
   return error?.code === MFA_REQUIRED;
 }
 
+/** Path (without locale) of the page where users verify a second factor. */
+export const ACCOUNT_SECURITY_PATH = "/account/security";
+
 /**
- * Error-mapping helper for other modules' Server Actions. Spread it into a failed
- * result so the client can offer the step-up prompt instead of a dead-end error:
+ * The account page that raises this session to aal2, with `next` set to where the user was
+ * so the page can send them back after verifying. Rendered next to an MFA_REQUIRED error by
+ * `StepUpLink` (components/step-up-link.tsx). An unsafe or pointless `currentPath` (another
+ * origin, no locale, the login page, the account page itself) is simply left out.
  *
- *   const failed = (error: AppError) => ({ ok: false, messageKey: error.messageKey, requestId: error.requestId, ...mfaFlag(error) });
+ *   stepUpHref("ar", "/ar/inventory/transfers/new") → "/ar/account/security?next=%2Far%2Finventory%2Ftransfers%2Fnew"
  */
-export function mfaFlag(error: { code?: string | null } | null | undefined): { mfaRequired?: true } {
-  return isMfaRequired(error) ? { mfaRequired: true } : {};
+export function stepUpHref(locale: string, currentPath: string | null | undefined): string {
+  const base = `/${locale}${ACCOUNT_SECURITY_PATH}`;
+  const next = stepUpReturnPath(currentPath, locale);
+  return next ? `${base}?next=${encodeURIComponent(next)}` : base;
 }
 
-/** Adds `mfaRequired: true` to a failed result when `error` is MFA_REQUIRED. */
-export function withMfaFlag<T extends { ok: false }>(result: T, error: { code?: string | null } | null | undefined): T & { mfaRequired?: true } {
-  return { ...result, ...mfaFlag(error) };
+/**
+ * The `next` the account page may return to after a successful step-up: a same-origin,
+ * locale-prefixed path (safeNextPath), never the account page itself or the bare home page.
+ * NULL when there is nowhere useful (or safe) to go back to.
+ */
+export function stepUpReturnPath(next: unknown, locale: string): string | null {
+  const safe = safeNextPath(next, locale);
+  if (safe !== next) return null; // unsafe: safeNextPath fell back to the home page
+  if (/^\/[a-z]{2}\/?(?:[?#]|$)/.test(safe)) return null; // a home page: nothing to go back to
+  if (/^\/[a-z]{2}\/account\/security(?:[/?#]|$)/.test(safe)) return null;
+  return safe;
 }
 
-/** Does an action state ask for step-up? (Client side; accepts any action result shape.) */
+/**
+ * Does an action state ask for step-up? (Client side; accepts any action result shape.)
+ * A failed result with `mfaRequired: true`, `code: "MFA_REQUIRED"` or a nested AppError with
+ * that code all count, so a Server Action can return its AppError's code as is.
+ */
 export function needsStepUp(state: unknown): boolean {
   if (typeof state !== "object" || state === null) return false;
   const s = state as { ok?: unknown; mfaRequired?: unknown; code?: unknown; error?: { code?: unknown } };

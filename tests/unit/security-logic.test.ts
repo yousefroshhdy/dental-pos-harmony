@@ -7,13 +7,13 @@ import {
   isMfaRequired,
   isSafeQrDataUrl,
   isStepUpAuthError,
-  mfaFlag,
   mfaStanding,
   needsStepUp,
   normaliseTotpCode,
   sortFactors,
   stepUpFactor,
-  withMfaFlag,
+  stepUpHref,
+  stepUpReturnPath,
 } from "@/modules/security/logic";
 import type { FactorRow } from "@/modules/security/types";
 
@@ -37,15 +37,13 @@ describe("MFA_REQUIRED error mapping", () => {
   it("a plain permission denial is not a step-up", () => {
     const error = parseDbError({ code: "42501", message: "PERMISSION_DENIED: finance.payment.reverse" });
     expect(isMfaRequired(error)).toBe(false);
-    expect(mfaFlag(error)).toEqual({});
+    expect(isMfaRequired(null)).toBe(false);
   });
 
-  it("mfaFlag / withMfaFlag add mfaRequired only for MFA_REQUIRED", () => {
+  it("an AppError's code is enough for the step-up prompt (no extra flag needed)", () => {
     const error = parseDbError(dbError);
-    expect(mfaFlag(error)).toEqual({ mfaRequired: true });
-    expect(withMfaFlag({ ok: false as const, messageKey: "UNKNOWN" }, error)).toEqual({ ok: false, messageKey: "UNKNOWN", mfaRequired: true });
-    expect(withMfaFlag({ ok: false as const, messageKey: "NOT_FOUND" }, { code: "NOT_FOUND" })).toEqual({ ok: false, messageKey: "NOT_FOUND" });
-    expect(isMfaRequired(null)).toBe(false);
+    expect(needsStepUp({ ok: false, code: error.code, messageKey: error.messageKey })).toBe(true);
+    expect(error.messageKey).toBe("MFA_REQUIRED");
   });
 
   it("needsStepUp recognises the flag, a raw code, or a nested AppError", () => {
@@ -142,5 +140,47 @@ describe("factors", () => {
     expect(mfaStanding({ aal: "aal1", required_permissions: ["x.y.z"] }, [factor("u", "unverified", "2026-10-01T00:00:00Z")])).toBe(
       "enrolNeeded",
     );
+  });
+});
+
+describe("step-up link (MFA_REQUIRED → My security → back)", () => {
+  it("links to the account page of the current locale with the current path as next", () => {
+    expect(stepUpHref("ar", "/ar/inventory/transfers/new")).toBe("/ar/account/security?next=%2Far%2Finventory%2Ftransfers%2Fnew");
+    expect(stepUpHref("en", "/en/admin/settings")).toBe("/en/account/security?next=%2Fen%2Fadmin%2Fsettings");
+  });
+
+  it("keeps a query string in next, encoded", () => {
+    expect(stepUpHref("en", "/en/commissions/periods?period=2026-09")).toBe(
+      "/en/account/security?next=%2Fen%2Fcommissions%2Fperiods%3Fperiod%3D2026-09",
+    );
+  });
+
+  it("leaves next out when there is nothing useful or safe to return to", () => {
+    for (const path of [null, undefined, "", "/ar", "/en", "/ar/account/security", "/ar/account/security?next=%2Far%2Fx", "/en/login?next=/en/x"]) {
+      expect(stepUpHref("ar", path)).toBe("/ar/account/security");
+    }
+  });
+
+  it("never builds an open redirect", () => {
+    for (const path of ["//evil.example/ar", "https://evil.example/ar/x", "/\\evil.example", "/xx/inventory", "inventory", "/ar/x\r\nSet-Cookie:a"]) {
+      expect(stepUpHref("en", path)).toBe("/en/account/security");
+    }
+  });
+});
+
+describe("stepUpReturnPath (the account page's ?next=)", () => {
+  it("accepts a same-origin, locale-prefixed path", () => {
+    expect(stepUpReturnPath("/ar/finance/payments/abc", "ar")).toBe("/ar/finance/payments/abc");
+    expect(stepUpReturnPath("/en/audit?table=crm.customers", "ar")).toBe("/en/audit?table=crm.customers");
+  });
+
+  it("rejects anything else", () => {
+    for (const next of [undefined, null, 42, ["/ar/x"], "", "/ar", "//evil.example", "https://evil.example/ar", "/ar/login", "/en/account/security", "/ar/account/security#x", "x".repeat(600)]) {
+      expect(stepUpReturnPath(next, "ar")).toBeNull();
+    }
+  });
+
+  it("does not mistake a longer path for the account page", () => {
+    expect(stepUpReturnPath("/ar/account/security-log", "ar")).toBe("/ar/account/security-log");
   });
 });
