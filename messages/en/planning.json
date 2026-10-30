@@ -1,1 +1,123 @@
-{}
+{
+  "nav": {
+    "planning": "Visit plan",
+    "coverage": "Coverage"
+  },
+  "class": {
+    "A": "A · weekly",
+    "B": "B · every 2 weeks",
+    "C": "C · monthly"
+  },
+  "status": {
+    "planned": "Planned",
+    "in_progress": "In progress",
+    "completed": "Done",
+    "missed": "Missed"
+  },
+  "errors": {
+    "PAST_DATE": "That day has already passed. Choose today or a later day.",
+    "NOT_ASSIGNED": "This customer is not assigned to this rep.",
+    "DUPLICATE": "This customer is already planned on that day.",
+    "NO_EMPLOYEE_PROFILE": "Your account has no employee profile, so there is no plan to show. Ask an administrator."
+  },
+  "routeError": {
+    "title": "The plan could not be loaded",
+    "body": "Please try again. If it keeps happening, tell your manager.",
+    "retry": "Try again"
+  },
+  "week": {
+    "title": "Visit plan",
+    "subtitleMine": "Your planned customer visits, week by week.",
+    "subtitleFor": "Planned customer visits for {name}.",
+    "employee": "Plan for",
+    "me": "{name} (me)",
+    "show": "Show",
+    "range": "{from} – {to}",
+    "navLabel": "Choose the week",
+    "prev": "Previous week",
+    "thisWeek": "This week",
+    "next": "Next week",
+    "total": "{count, plural, =0 {No visits planned this week} one {# visit planned this week} other {# visits planned this week}}",
+    "today": "Today",
+    "dayCount": "{count} of {cap}",
+    "dayOff": "Not a working day",
+    "noVisits": "No visits",
+    "unknownCustomer": "Customer not visible",
+    "remove": "Remove",
+    "removing": "Removing…",
+    "removeLabel": "Remove the visit to {name}",
+    "actions": "Plan actions",
+    "addVisit": "Add a visit",
+    "generate": "Generate month plan"
+  },
+  "add": {
+    "title": "Add a visit",
+    "customer": "Customer",
+    "chooseCustomer": "Choose a customer",
+    "date": "Day",
+    "submit": "Add to plan",
+    "adding": "Adding…",
+    "added": "The visit was added to the plan.",
+    "noCustomers": "No customers are assigned to this rep yet."
+  },
+  "generate": {
+    "title": "Generate month plan",
+    "subtitle": "Visits are proposed from each customer's visit class and last visit, spread over the working days. Nothing is saved until you review and save.",
+    "month": "Month",
+    "run": "Propose",
+    "heading": "{month} · {name}",
+    "summary": "{proposals} visits proposed for {customers} customers, {from} to {to}, at most {cap} a day.",
+    "empty": "Nothing to propose: every customer is already covered for this month.",
+    "dayLoad": "{existing} already planned · {proposed} proposed · at most {cap}",
+    "reason": {
+      "never_visited": "Never visited",
+      "overdue": "Overdue · last visit {date}",
+      "due": "Due {due}"
+    },
+    "unscheduledTitle": "Did not fit",
+    "unscheduledBody": "These visits are due this month but every working day after their due day already has {cap} visits. Plan them yourself on a lighter day.",
+    "dueOn": "Due {date}",
+    "back": "Back to the week plan",
+    "selected": "{count} of {total} selected",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "tooMany": "Save at most {max} visits at a time.",
+    "saved": "{count, plural, one {# visit saved.} other {# visits saved.}}",
+    "saving": "Saving…",
+    "save": "{count, plural, =0 {Save} one {Save # visit} other {Save # visits}}",
+    "actions": "Save the plan"
+  },
+  "coverage": {
+    "title": "Coverage",
+    "subtitle": "{month}: visits against each customer's visit class. Overdue customers come first.",
+    "subtitleNoPeriod": "Visits against each customer's visit class. Overdue customers come first.",
+    "filterLabel": "Which customers",
+    "showOverdue": "Overdue",
+    "showAll": "All customers",
+    "rep": "Rep",
+    "allReps": "All reps",
+    "empty": "No customers in your scope.",
+    "emptyOverdue": "No overdue customers. Well done.",
+    "count": "{count, plural, one {# customer} other {# customers}}",
+    "countOverdue": "{count, plural, one {# overdue customer} other {# overdue customers}}",
+    "limited": "showing the first {limit}",
+    "unassigned": "No rep",
+    "onTrack": "On track",
+    "neverVisited": "Never visited",
+    "overdueBy": "{count, plural, =0 {Due today} one {# day overdue} other {# days overdue}}",
+    "class": "Visit class",
+    "defaultClass": "(default)",
+    "lastVisit": "Last visit",
+    "lastVisitValue": "{date} ({days} days ago)",
+    "never": "Never",
+    "thisMonth": "This month",
+    "visitsOfTarget": "{actual} of {target} visits",
+    "nextPlanned": "Next planned",
+    "notPlanned": "Not planned",
+    "plan": "Plan a visit",
+    "classFor": "Visit class for {name}",
+    "saving": "Saving…",
+    "saveClass": "Save class",
+    "classSaved": "Visit class saved."
+  }
+}
