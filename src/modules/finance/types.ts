@@ -68,6 +68,47 @@ export interface InvoiceRow {
   eta_status: string | null;
   eta_uuid: string | null;
   created_at: string;
+  /** Approved write-offs (20261103000500); already subtracted from open_amount. */
+  written_off: Numeric;
+}
+
+/** api.v_invoice_write_offs */
+export interface WriteOffRow {
+  id: string;
+  write_off_no: string;
+  invoice_id: string;
+  invoice_no: string | null;
+  customer_id: string;
+  customer_no: string | null;
+  customer_name: string | null;
+  amount: Numeric;
+  reason: string;
+  approval_request_id: string;
+  requested_by: string | null;
+  requested_by_name_en: string | null;
+  requested_by_name_ar: string | null;
+  posted_by: string | null;
+  posted_by_name_en: string | null;
+  posted_by_name_ar: string | null;
+  posted_at: string;
+}
+
+/** api.v_invoice_print_party: the customer block of a printed invoice. */
+export interface PrintPartyRow {
+  invoice_id: string;
+  customer_id: string;
+  customer_no: string | null;
+  customer_name: string | null;
+  clinic_name: string | null;
+  doctor_name: string | null;
+  address_line: string | null;
+  city: string | null;
+  governorate_code: string | null;
+  governorate_name_en: string | null;
+  governorate_name_ar: string | null;
+  phone_primary: string | null;
+  tax_registration_no: string | null;
+  commercial_reg_no: string | null;
 }
 
 export interface InvoiceLineRow {

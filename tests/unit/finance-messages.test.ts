@@ -48,6 +48,19 @@ describe.each(["ar", "en"])("finance messages (%s)", (locale) => {
     }
   });
 
+  it("write-off and print strings exist, with their placeholders", () => {
+    for (const k of ["invalidAmount", "exceedsOpen"]) expect(at(messages, `writeOff.check.${k}`), k).toEqual(expect.any(String));
+    expect(at(messages, "writeOff.check.exceedsOpen")).toContain("{open}");
+    expect(at(messages, "writeOff.amountHelp")).toContain("{open}");
+    expect(at(messages, "writeOff.pending")).toContain("{amount}");
+    expect(at(messages, "writeOff.approvedBy")).toContain("{name}");
+    expect(at(messages, "print.printedAt")).toContain("{at}");
+    expect(at(messages, "invoice.writtenOff")).toEqual(expect.any(String));
+    for (const k of ["invoiceTitle", "receiptTitle", "amountInWords", "billTo", "receivedFrom", "receiptUnavailable"]) {
+      expect(at(messages, `print.${k}`), k).toEqual(expect.any(String));
+    }
+  });
+
   it("UNKNOWN carries the request id placeholder", () => {
     expect(at(messages, "errors.UNKNOWN")).toContain("{requestId}");
   });

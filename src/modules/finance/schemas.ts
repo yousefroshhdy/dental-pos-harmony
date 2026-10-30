@@ -76,6 +76,16 @@ export const creditNoteSchema = z
   });
 export type CreditNoteInput = z.infer<typeof creditNoteSchema>;
 
+/** Request a write-off: the invoice, the amount to write off (≤ open; the server checks) and why. */
+export const writeOffSchema = z.object({
+  invoice_id: id,
+  amount: amountText,
+  reason,
+  idempotency_key: idempotencyKey,
+  locale,
+});
+export type WriteOffInput = z.infer<typeof writeOffSchema>;
+
 export const recordPaymentSchema = z
   .object({
     customer_id: id,

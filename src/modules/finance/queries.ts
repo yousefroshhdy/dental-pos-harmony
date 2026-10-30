@@ -4,7 +4,10 @@ import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
 import type { InvoiceFilter, PaymentFilter, CollectionFilter } from "./logic";
 import { COLLECTION_FILTERS, INVOICE_FILTERS, PAYMENT_FILTERS } from "./logic";
+import { parseCompanyProfile, type CompanyProfile } from "./print";
 import type {
+  PrintPartyRow,
+  WriteOffRow,
   AgingBucket,
   AgingRow,
   AgingTotalsRow,
@@ -49,7 +52,7 @@ export const LIST_LIMIT = 200;
 const INVOICE_COLUMNS =
   "id, invoice_no, order_id, order_no, customer_id, customer_no, customer_name, territory_id, rep_employee_id, " +
   "rep_name_en, rep_name_ar, issue_date, due_date, status, currency, subtotal, discount_total, tax_total, total, " +
-  "allocated, credited, open_amount, days_overdue, is_overdue, aging_bucket, eta_status, eta_uuid, created_at";
+  "allocated, credited, open_amount, days_overdue, is_overdue, aging_bucket, eta_status, eta_uuid, created_at, written_off";
 const PAYMENT_COLUMNS =
   "id, payment_no, client_ref, customer_id, customer_no, customer_name, collected_by, collected_by_name_en, " +
   "collected_by_name_ar, method, amount, allocated, unallocated, received_at, reference, cheque_due_date, status, " +
@@ -130,6 +133,56 @@ export async function listPendingCreditRequests(invoiceId: string): Promise<Resu
       .order("created_at"),
     [],
   );
+}
+
+/** Write-off requests for an invoice still waiting for a decision (workflow finance.write_off). */
+export async function listPendingWriteOffRequests(invoiceId: string): Promise<Result<CreditRequestRow[]>> {
+  const db = await createClient();
+  return run(
+    "v_approval_requests",
+    db
+      .from("v_approval_requests")
+      .select("request_id, status, created_at, payload")
+      .eq("workflow_code", "finance.write_off")
+      .eq("status", "pending")
+      .eq("payload->>invoice_id", invoiceId)
+      .order("created_at"),
+    [],
+  );
+}
+
+const WRITE_OFF_COLUMNS =
+  "id, write_off_no, invoice_id, invoice_no, customer_id, customer_no, customer_name, amount, reason, approval_request_id, " +
+  "requested_by, requested_by_name_en, requested_by_name_ar, posted_by, posted_by_name_en, posted_by_name_ar, posted_at";
+
+/** Approved write-offs of an invoice (visible with the invoice). */
+export async function listInvoiceWriteOffs(invoiceId: string): Promise<Result<WriteOffRow[]>> {
+  const db = await createClient();
+  return run("v_invoice_write_offs", db.from("v_invoice_write_offs").select(WRITE_OFF_COLUMNS).eq("invoice_id", invoiceId).order("posted_at"), []);
+}
+
+/** Customer block of the printed invoice (null when the invoice is not visible). */
+export async function getInvoicePrintParty(invoiceId: string): Promise<Result<PrintPartyRow | null>> {
+  const db = await createClient();
+  return run(
+    "v_invoice_print_party",
+    db
+      .from("v_invoice_print_party")
+      .select(
+        "invoice_id, customer_id, customer_no, customer_name, clinic_name, doctor_name, address_line, city, governorate_code, " +
+          "governorate_name_en, governorate_name_ar, phone_primary, tax_registration_no, commercial_reg_no",
+      )
+      .eq("invoice_id", invoiceId)
+      .maybeSingle(),
+    null,
+  );
+}
+
+/** Company header of printed documents (api.company_profile(): non-secret company.* settings). */
+export async function getCompanyProfile(): Promise<Result<CompanyProfile>> {
+  const db = await createClient();
+  const result = await run<unknown>("company_profile", db.rpc("company_profile"), {});
+  return result.ok ? ok(parseCompanyProfile(result.data)) : result;
 }
 
 const ALLOCATION_COLUMNS =

@@ -10,8 +10,28 @@ import { BackLink, Field } from "@/modules/finance/components/bits";
 import { FinanceError } from "@/modules/finance/components/finance-error";
 import { CreditNoteForm } from "@/modules/finance/components/invoice-forms";
 import { CAIRO_DATE, CAIRO_DATE_TIME, dateOnly, PERCENT, QUANTITY } from "@/modules/finance/format";
-import { canCreditInvoice, financeErrorCode, invoiceStatusTone, isUuid, localizedName, toNumber } from "@/modules/finance/logic";
-import { getInvoice, listAllocationsForInvoice, listCreditNotes, listInvoiceLines, listPendingCreditRequests } from "@/modules/finance/queries";
+import { WriteOffForm } from "@/modules/finance/components/write-off-form";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  canCreditInvoice,
+  canWriteOffInvoice,
+  financeErrorCode,
+  invoiceStatusTone,
+  isUuid,
+  localizedName,
+  toCents,
+  toNumber,
+} from "@/modules/finance/logic";
+import {
+  getInvoice,
+  listAllocationsForInvoice,
+  listCreditNotes,
+  listInvoiceLines,
+  listInvoiceWriteOffs,
+  listPendingCreditRequests,
+  listPendingWriteOffRequests,
+} from "@/modules/finance/queries";
 
 type Params = Promise<{ locale: string; invoiceId: string }>;
 
@@ -28,12 +48,14 @@ export default async function InvoiceDetailPage({ params, searchParams }: { para
   const ctx = await getUserContext();
   if (!can(ctx, "finance.invoice.read")) return <Forbidden />;
 
-  const [invoice, lines, allocations, credits, pending] = await Promise.all([
+  const [invoice, lines, allocations, credits, pending, writeOffs, pendingWriteOffs] = await Promise.all([
     getInvoice(invoiceId),
     listInvoiceLines(invoiceId),
     listAllocationsForInvoice(invoiceId),
     listCreditNotes(invoiceId),
     listPendingCreditRequests(invoiceId),
+    listInvoiceWriteOffs(invoiceId),
+    listPendingWriteOffRequests(invoiceId),
   ]);
   if (!invoice.ok) return <FinanceError code={financeErrorCode(invoice.error)} requestId={invoice.error.requestId} />;
   if (!invoice.data) notFound();
@@ -46,6 +68,12 @@ export default async function InvoiceDetailPage({ params, searchParams }: { para
   const issued = Boolean((await searchParams).issued);
   const pendingRequests = pending.ok ? pending.data : [];
   const showCredit = canCreditInvoice(ctx, inv);
+  const pendingWriteOffRequests = pendingWriteOffs.ok ? pendingWriteOffs.data : [];
+  const postedWriteOffs = writeOffs.ok ? writeOffs.data : [];
+  // Without the pending list we cannot tell whether a request is already waiting; the server refuses a second one anyway.
+  const showWriteOff = pendingWriteOffs.ok && canWriteOffInvoice(ctx, inv, pendingWriteOffRequests.length);
+  const showWriteOffSection =
+    showWriteOff || postedWriteOffs.length > 0 || pendingWriteOffRequests.length > 0 || toCents(inv.written_off) > 0 || !writeOffs.ok;
 
   return (
     <div className="space-y-6 pb-6">
@@ -57,6 +85,9 @@ export default async function InvoiceDetailPage({ params, searchParams }: { para
           </h1>
           <Badge tone={invoiceStatusTone(inv.status, inv.is_overdue)}>{t(`invoiceStatus.${inv.status}`)}</Badge>
           {inv.is_overdue ? <Badge tone="danger">{t("invoices.overdueDays", { count: inv.days_overdue })}</Badge> : null}
+          <Link href={`/finance/invoices/${inv.id}/print`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "ms-auto min-h-11")}>
+            {t("print.printInvoice")}
+          </Link>
         </div>
         <p className="text-sm text-muted-foreground">{inv.customer_name ?? "—"}</p>
       </div>
@@ -142,6 +173,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: { para
         <Row label={t("invoice.total")} value={money(inv.total)} strong />
         <Row label={t("invoice.paid")} value={`− ${money(inv.allocated)}`} />
         <Row label={t("invoice.credited")} value={`− ${money(inv.credited)}`} />
+        {toCents(inv.written_off) > 0 ? <Row label={t("invoice.writtenOff")} value={`− ${money(inv.written_off)}`} /> : null}
         <Row label={t("invoice.open")} value={money(inv.open_amount)} strong />
       </Card>
 
@@ -212,6 +244,47 @@ export default async function InvoiceDetailPage({ params, searchParams }: { para
           </Card>
         ) : null}
       </section>
+
+      {showWriteOffSection ? (
+        <section className="space-y-3" aria-labelledby="invoice-write-offs">
+          <CardTitle id="invoice-write-offs">{t("writeOff.section")}</CardTitle>
+          {!writeOffs.ok ? (
+            <FinanceError code={financeErrorCode(writeOffs.error)} requestId={writeOffs.error.requestId} />
+          ) : postedWriteOffs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("writeOff.none")}</p>
+          ) : (
+            <ul className="space-y-2">
+              {postedWriteOffs.map((w) => (
+                <li key={w.id} className="flex flex-col gap-1 rounded-lg border bg-card p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <span dir="ltr" className="font-medium">
+                    {w.write_off_no}
+                  </span>
+                  <span className="text-muted-foreground">{w.reason}</span>
+                  <span className="text-muted-foreground">
+                    {t("writeOff.approvedBy", { name: localizedName(locale, w.posted_by_name_en, w.posted_by_name_ar) || "—" })}
+                  </span>
+                  <span className="font-medium">{money(w.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {pendingWriteOffRequests.map((r) => (
+            <Alert key={r.request_id} tone="info" role="status" className="flex flex-wrap items-center justify-between gap-2">
+              <span>{t("writeOff.pending", { amount: money(toNumber(r.payload?.amount as number | string | undefined)) })}</span>
+              <Link href={`/approvals/${r.request_id}`} className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+                {t("invoice.openApproval")}
+              </Link>
+            </Alert>
+          ))}
+          {showWriteOff ? (
+            <Card className="space-y-3">
+              <CardTitle>{t("writeOff.title")}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t("writeOff.help")}</p>
+              <WriteOffForm invoiceId={inv.id} locale={locale} openAmount={toNumber(inv.open_amount)} openLabel={money(inv.open_amount)} />
+            </Card>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }

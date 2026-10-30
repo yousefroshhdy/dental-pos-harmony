@@ -17,6 +17,7 @@ import {
   recordPaymentSchema,
   reverseAllocationSchema,
   reversePaymentSchema,
+  writeOffSchema,
 } from "./schemas";
 import type { FinanceActionResult, FinanceActionState } from "./types";
 
@@ -66,6 +67,22 @@ export async function requestCreditNote(_prev: FinanceActionState, form: FormDat
   if (!result.ok) return failed(result.error);
   refresh();
   return { ok: true, message: result.data?.status === "issued" ? "issued" : "pending" };
+}
+
+/** Request a write-off of (part of) an invoice's open amount; it is posted once a second person approves. */
+export async function requestWriteOff(_prev: FinanceActionState, form: FormData): Promise<FinanceActionResult> {
+  const parsed = writeOffSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(invalidFieldsOf(parsed.error));
+  const v = parsed.data;
+  const result = await callCommand<{ status?: string }>("request_invoice_write_off", {
+    p_invoice_id: v.invoice_id,
+    p_amount: v.amount,
+    p_reason: v.reason,
+    p_idempotency_key: v.idempotency_key,
+  });
+  if (!result.ok) return failed(result.error);
+  refresh();
+  return { ok: true, message: result.data?.status === "posted" ? "done" : "pending" };
 }
 
 /** Record money received (reps in the field, or finance). The device generates client_ref once per attempt. */
