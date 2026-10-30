@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { draftLineSchema, formToObject, fulfilSchema, orderReasonSchema, reserveSchema, saveDraftSchema } from "@/modules/orders/schemas";
+import { draftLineSchema, draftPayloadSchema, formToObject, fulfilSchema, orderReasonSchema, reserveSchema } from "@/modules/orders/schemas";
 
 const ORDER = "71000000-0000-0000-0000-00000000000a";
 const CUSTOMER = "40000000-0000-0000-0000-000000000001";
 const VARIANT = "53000000-0000-0000-0000-000000000001";
 
-const draft = (lines: unknown, extra: Record<string, string> = {}) => ({
+const draft = (lines: unknown, extra: Record<string, unknown> = {}) => ({
   order_id: ORDER,
   customer_id: CUSTOMER,
-  lines: JSON.stringify(lines),
-  locale: "ar",
+  lines,
+  notes: null,
+  visit_id: null,
+  version: null,
   ...extra,
 });
 
@@ -31,23 +33,29 @@ describe("draft lines: ids and quantities only", () => {
   });
 });
 
-describe("saveDraftSchema", () => {
-  it("parses the lines JSON and optional version", () => {
-    const parsed = saveDraftSchema.parse(draft([{ variant_id: VARIANT, quantity: 2 }], { version: "3", notes: "deliver Sunday" }));
+describe("draftPayloadSchema", () => {
+  it("accepts a device payload with an optional base version", () => {
+    const parsed = draftPayloadSchema.parse(draft([{ variant_id: VARIANT, quantity: 2 }], { version: 3, notes: "deliver Sunday" }));
     expect(parsed.lines).toEqual([{ variant_id: VARIANT, quantity: 2 }]);
     expect(parsed.version).toBe(3);
+    expect(draftPayloadSchema.parse(draft([{ variant_id: VARIANT, quantity: 2 }])).version).toBeNull();
   });
 
-  it("rejects empty orders, malformed JSON and bad ids", () => {
-    expect(saveDraftSchema.safeParse(draft([])).success).toBe(false);
-    expect(saveDraftSchema.safeParse({ ...draft([]), lines: "not json" }).success).toBe(false);
-    expect(saveDraftSchema.safeParse(draft([{ variant_id: VARIANT, quantity: 1 }], { order_id: "x" })).success).toBe(false);
-    expect(saveDraftSchema.safeParse(draft([{ variant_id: VARIANT, quantity: 1 }], { locale: "fr" })).success).toBe(false);
+  it("rejects empty orders, bad ids and a version below 1", () => {
+    expect(draftPayloadSchema.safeParse(draft([])).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft([{ variant_id: VARIANT, quantity: 1 }], { order_id: "x" })).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft([{ variant_id: VARIANT, quantity: 1 }], { version: 0 })).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft([{ variant_id: VARIANT, quantity: 1 }], { version: "2" })).success).toBe(false);
+  });
+
+  it("is strict: any extra key (a total, a price) is rejected", () => {
+    expect(draftPayloadSchema.safeParse(draft([{ variant_id: VARIANT, quantity: 1 }], { total: 10 })).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft([{ variant_id: VARIANT, quantity: 1, list_price: 1 }])).success).toBe(false);
   });
 
   it("rejects more than 200 lines", () => {
     const many = Array.from({ length: 201 }, () => ({ variant_id: VARIANT, quantity: 1 }));
-    expect(saveDraftSchema.safeParse(draft(many)).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft(many)).success).toBe(false);
   });
 });
 

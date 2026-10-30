@@ -1,4 +1,5 @@
 import type { OrderErrorCode } from "./logic";
+import type { CatalogSnapshot } from "./offline-logic";
 
 /**
  * Row shapes of the views the orders UI reads:
@@ -121,6 +122,10 @@ export type OrderActionResult =
   | { ok: false; errorCode: OrderErrorCode; requestId?: string };
 /** `null` = the form has not been submitted yet (useActionState initial state). */
 export type OrderActionState = OrderActionResult | null;
+
+export type CatalogSnapshotResult =
+  | { ok: true; snapshot: CatalogSnapshot }
+  | { ok: false; errorCode: OrderErrorCode; requestId?: string };
 
 export type VariantSearchResult =
   | { ok: true; items: SellableVariant[] }

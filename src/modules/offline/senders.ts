@@ -1,5 +1,6 @@
 import { clearOtherUsers } from "@/lib/offline/client";
 import { registerFieldSenders } from "@/modules/field/offline";
+import { registerOrderSenders } from "@/modules/orders/offline";
 import { registerTrackingSenders } from "@/modules/tracking/offline";
 
 /**
@@ -16,6 +17,7 @@ import { registerTrackingSenders } from "@/modules/tracking/offline";
  * Senders registered here, each opted in as idempotent (audit #15, F9):
  * - field.visit_check_in, field.visit_check_out, work.complete_task (field module)
  * - tracking.start_shift, tracking.end_shift, tracking.record_pings (tracking module, D-14)
+ * - orders.save_order_draft (orders module; drafts only, submit stays online, A-05)
  */
 
 let registered = false;
@@ -25,6 +27,7 @@ export function ensureSendersRegistered(): void {
   registered = true;
   registerFieldSenders();
   registerTrackingSenders();
+  registerOrderSenders();
 }
 
 const started = new Set<string>();

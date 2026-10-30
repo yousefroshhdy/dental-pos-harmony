@@ -4,6 +4,7 @@ import { useActionState, useId, useRef } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
+import { useOnline } from "@/modules/offline/use-offline-queue";
 import type { OrderActionResult, OrderActionState } from "../types";
 import { OrderActionMessage } from "./order-error";
 
@@ -39,6 +40,45 @@ export function CommandForm({
         {label}
       </Button>
       <OrderActionMessage state={state} success={success} />
+    </form>
+  );
+}
+
+/**
+ * Submit: online only (docs/ARCHITECTURE.md §6, A-05). The server prices the
+ * order and checks stock, discount authority and credit at submission, so the
+ * button is disabled while the device is offline, with the reason next to it.
+ * Never queued.
+ */
+export function OnlineOnlyCommandForm({
+  action,
+  orderId,
+  locale,
+  label,
+  offlineHint,
+}: {
+  action: Action;
+  orderId: string;
+  locale: string;
+  label: string;
+  offlineHint: string;
+}) {
+  const [state, formAction, pending] = useActionState(action, null);
+  const online = useOnline();
+  const hintId = useId();
+  return (
+    <form action={formAction} className="flex flex-col gap-2">
+      <input type="hidden" name="order_id" value={orderId} />
+      <input type="hidden" name="locale" value={locale} />
+      <Button type="submit" disabled={pending || !online} aria-describedby={online ? undefined : hintId}>
+        {label}
+      </Button>
+      {!online ? (
+        <p id={hintId} role="status" className="text-sm text-muted-foreground">
+          {offlineHint}
+        </p>
+      ) : null}
+      <OrderActionMessage state={state} />
     </form>
   );
 }

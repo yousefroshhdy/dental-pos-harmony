@@ -162,5 +162,33 @@
     "DUPLICATE": "That already exists.",
     "UNAVAILABLE": "The service is temporarily unavailable. Please try again.",
     "UNKNOWN": "Something went wrong. Reference: {requestId}"
+  },
+  "offline": {
+    "offlineBanner": "You're offline. Saving keeps this draft on this device and sends it when the connection returns. Submitting needs a connection.",
+    "restored": "Restored the draft kept on this device.",
+    "startOver": "Start a new order",
+    "replaced": "This draft was changed on the server since this device saved it, so the newer saved version is shown. Your unsaved changes on this device were not kept.",
+    "attention": "A save of this draft could not be applied (for example, someone else changed it). Resolve it on the sync screen.",
+    "openSync": "Open the sync screen",
+    "savedTitle": "Saved on this device.",
+    "sending": "Sending now…",
+    "willSync": "It will be sent automatically when you're online.",
+    "synced": "Draft synced with the server.",
+    "syncedThenChanged": "The last save is synced. You have changes since then that are not saved yet.",
+    "openOrder": "Open the order to see the server's prices and submit it",
+    "noPrice": "No indicative price on this device",
+    "linePrice": "≈ {price} each · ≈ {total} (indicative)",
+    "unitPrice": "≈ {price} (indicative)",
+    "indicativeTotal": "Indicative list total: ≈ {total}",
+    "missingPrices": "({count, plural, one {# line without a price} other {# lines without a price}})",
+    "indicativeLabel": "Indicative — final price is set by the server on submit. List prices before discounts and VAT.",
+    "pricesFrom": "Product list and prices saved on this device {time}.",
+    "submitNeedsConnection": "Submitting needs a connection.",
+    "saveOnDevice": "Save draft on this device",
+    "localSearch": "Offline: searching the product list saved on this device {time}.",
+    "noSnapshot": "No product list is saved on this device yet. Open the order builder once while online.",
+    "truncated": "Only part of the catalogue is saved on this device.",
+    "localFallback": "The server can't be reached; showing the product list saved on this device.",
+    "submitOffline": "You're offline. Submitting needs a connection: the server sets the final prices and checks stock, discounts and credit."
   }
 }
