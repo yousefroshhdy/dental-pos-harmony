@@ -1,1 +1,82 @@
-{}
+{
+  "nav": {
+    "account": "My security"
+  },
+  "title": "Account security",
+  "intro": "Protect your account with an authenticator app (two-step verification). Sensitive actions such as reversing a payment, changing roles or changing prices ask for a code from the app.",
+  "status": {
+    "title": "Status",
+    "enforcement": "Company policy",
+    "enforcedOn": "Required for sensitive actions",
+    "enforcedOff": "Not yet required",
+    "session": "This session",
+    "sessionVerified": "Verified with your app",
+    "sessionNotVerified": "Password only",
+    "standing": {
+      "protected": "Your account is protected and this session is verified.",
+      "verifyNow": "Your authenticator app is set up. Sensitive actions will ask for a code; you can verify this session now.",
+      "enrolNeeded": "Your role includes sensitive actions. Set up an authenticator app now so you are not blocked when the company turns the requirement on.",
+      "optional": "None of your actions needs two-step verification yet, but setting it up protects your account."
+    },
+    "requiredTitle": "Your actions that need a code",
+    "requiredNone": "None for your current roles.",
+    "loadFailed": "Could not load your security status. Refresh to try again."
+  },
+  "factors": {
+    "title": "Authenticator apps",
+    "empty": "No authenticator app is set up yet.",
+    "verified": "Active",
+    "unverified": "Not finished",
+    "addedOn": "Added {date}",
+    "unnamed": "Authenticator app",
+    "remove": "Remove",
+    "removeConfirm": "Remove this authenticator app? You will need another one before you can do sensitive actions.",
+    "removed": "Authenticator app removed.",
+    "loadFailed": "Could not load your authenticator apps. Refresh to try again."
+  },
+  "enrol": {
+    "title": "Add an authenticator app",
+    "intro": "Use any TOTP authenticator app on your phone (for example Google Authenticator, Microsoft Authenticator or 1Password).",
+    "nameLabel": "Name (optional)",
+    "namePlaceholder": "e.g. My phone",
+    "start": "Set up authenticator app",
+    "starting": "Preparing…",
+    "scan": "1. Scan this QR code with your authenticator app.",
+    "qrAlt": "QR code to add Honest OS to your authenticator app",
+    "secretLabel": "Can't scan it? Enter this key in the app instead:",
+    "codeStep": "2. Enter the 6-digit code the app shows.",
+    "codeLabel": "6-digit code",
+    "confirm": "Confirm",
+    "confirming": "Checking…",
+    "cancel": "Cancel",
+    "done": "Your authenticator app is set up. This session is now verified."
+  },
+  "stepUp": {
+    "title": "Confirm it's you",
+    "body": "This action needs a code from your authenticator app.",
+    "codeLabel": "6-digit code",
+    "verify": "Verify",
+    "verifying": "Checking…",
+    "cancel": "Cancel",
+    "cancelled": "This action needs a code from your authenticator app.",
+    "retry": "Enter code",
+    "noFactor": "You have not set up an authenticator app yet.",
+    "enrolLink": "Set up an authenticator app",
+    "verifyNow": "Verify this session",
+    "verified": "This session is verified."
+  },
+  "errors": {
+    "INVALID_CODE": "That code is not correct. Check the app and try again.",
+    "CODE_EXPIRED": "That code expired. Enter the newest code from the app.",
+    "NO_FACTOR": "You have not set up an authenticator app yet.",
+    "FACTOR_NOT_FOUND": "That authenticator app no longer exists. Refresh the page.",
+    "TOO_MANY_FACTORS": "You already have the maximum number of authenticator apps. Remove one first.",
+    "NAME_TAKEN": "You already use that name for another app. Choose a different name.",
+    "TOTP_DISABLED": "Authenticator apps are not enabled for this system yet. Ask the administrator.",
+    "STEP_UP_FIRST": "Verify this session with your authenticator app first.",
+    "RATE_LIMITED": "Too many attempts. Wait a minute and try again.",
+    "VALIDATION": "Check the highlighted field and try again.",
+    "UNAVAILABLE": "The service is unavailable. Check your connection and try again.",
+    "UNKNOWN": "Something went wrong. Try again."
+  }
+}

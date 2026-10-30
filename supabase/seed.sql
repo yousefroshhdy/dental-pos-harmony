@@ -17,6 +17,17 @@ begin
   execute 'set local role authenticated';
 end $$;
 
+-- Same as tests.authenticate_as, but the session has verified a second factor (JWT aal = aal2),
+-- as after supabase.auth.mfa.challengeAndVerify(). Used by the MFA step-up suite (39).
+create or replace function tests.authenticate_as_aal2(p_user uuid) returns void
+language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+  perform set_config('request.jwt.claim.sub', coalesce(p_user::text, ''), true);
+  execute 'set local role authenticated';
+end $$;
+
 create or replace function tests.authenticate_anon() returns void
 language plpgsql as $$
 begin
