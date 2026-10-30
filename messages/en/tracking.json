@@ -1,1 +1,166 @@
-{}
+{
+  "nav": {
+    "tracking": "Tracking"
+  },
+  "indicator": {
+    "on": "Tracking on",
+    "label": "Tracking is on. Your location is recorded about every {minutes} minutes while this app is open. Open my day.",
+    "problem": "Tracking is on, but your location is unavailable. Open my day.",
+    "pending": "Tracking is on; your day start is waiting to sync. Open my day."
+  },
+  "notice": {
+    "title": "Location tracking during working hours",
+    "intro": "Please read this before your first working day. You only need to acknowledge it once per version.",
+    "version": "Notice version {version}",
+    "legalPending": "Draft text, pending the company's legal review.",
+    "accept": "I have read and understood this notice",
+    "accepting": "Saving…",
+    "offline": "Connect to the internet to acknowledge the notice.",
+    "show": "Read the tracking notice",
+    "hide": "Hide the notice",
+    "acknowledged": "You acknowledged this notice on {date}.",
+    "missing": "Work-hours tracking is not set up yet. Ask your manager."
+  },
+  "shift": {
+    "title": "My working day",
+    "off": "Not started",
+    "on": "On shift",
+    "pending": "Waiting to sync",
+    "start": "Start my day",
+    "starting": "Getting your location…",
+    "end": "End my day",
+    "ending": "Ending your day…",
+    "confirmEnd": "End your working day now? Tracking stops.",
+    "confirm": "Yes, end my day",
+    "cancel": "Keep working",
+    "since": "Since {time}",
+    "elapsed": "On shift for {duration}",
+    "lastPoint": "Last point recorded at {time}",
+    "noPoint": "No point recorded yet",
+    "lastSent": "Last points sent at {time}",
+    "waiting": "{count, plural, =0 {All points sent} one {One point waiting to send} other {# points waiting to send}}",
+    "browserLimit": "Points are only collected while this app is open with the screen on. Keep it open during your working day. A company app that also works in the background will follow.",
+    "offHours": "Your location is not collected now. It is collected only between Start my day and End my day.",
+    "overdue": "Your day passed the {hours}-hour maximum. It will be closed automatically and tracking has stopped.",
+    "queuedStart": "No connection: your day start is saved on this device and will be sent when you are back online.",
+    "queuedEnd": "No connection: your day end is saved on this device and will be sent when you are back online.",
+    "ended": "Your day has ended ({duration}).",
+    "todayTotal": "Today so far: {duration}",
+    "myDay": "See my day",
+    "startFailed": "Your saved day start could not be applied. Start your day again.",
+    "summaryStart": "Start my day",
+    "summaryEnd": "End my day",
+    "geo": {
+      "denied": "Location access is blocked. Allow location for this site in the browser settings, then try again.",
+      "unsupported": "This browser cannot share its location. Use the company phone's browser.",
+      "insecure": "Location needs a secure (https) connection.",
+      "timeout": "Your location could not be found in time. Your day starts without it.",
+      "unavailable": "Your location is unavailable right now. Your day starts without it."
+    }
+  },
+  "duration": {
+    "hm": "{h} h {m} min",
+    "m": "{m} min"
+  },
+  "km": "{value} km",
+  "errors": {
+    "NOTICE_REQUIRED": "Please acknowledge the tracking notice before you start your day.",
+    "NOTICE_OUTDATED": "The tracking notice was updated. Reload the page and read the new version.",
+    "SHIFT_OPEN": "Your working day is already started.",
+    "NO_OPEN_SHIFT": "Your working day was already closed.",
+    "NO_EMPLOYEE_PROFILE": "Your account is not linked to an employee record. Ask an administrator."
+  },
+  "team": {
+    "title": "Field tracking",
+    "subtitle": "Working-hours location, visits and stops of your team. These are signals to review with the rep, never automatic penalties.",
+    "date": "Day",
+    "show": "Show",
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "today": "Today",
+    "empty": "Nobody to show for this day.",
+    "count": "{count, plural, =0 {No reps} one {One rep} other {# reps}}",
+    "flaggedCount": "{count, plural, =0 {Nothing flagged} one {One rep to review} other {# reps to review}}",
+    "rep": "Rep",
+    "onShift": "On shift",
+    "shiftTime": "Shift time",
+    "visits": "Visits",
+    "visitTime": "Visit time",
+    "idle": "Idle stops",
+    "gaps": "Gaps",
+    "distance": "Distance",
+    "lastSeen": "Last seen",
+    "yes": "Yes",
+    "no": "No",
+    "notStarted": "Not started",
+    "review": "Review",
+    "summaryOnly": "Summary (points deleted)",
+    "gapsValue": "{count} · {duration}",
+    "none": "—",
+    "open": "Open the day of {name}"
+  },
+  "day": {
+    "title": "{name}",
+    "back": "Back to the team",
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "shiftTime": "Shift time",
+    "visits": "Visits",
+    "visitTime": "Visit time",
+    "idle": "Idle-stop time",
+    "gaps": "Gap time",
+    "distance": "Distance",
+    "points": "Location points",
+    "pointsCount": "{count, plural, =0 {No points} one {One point} other {# points}}",
+    "showPoints": "Show the point list",
+    "timeline": "Timeline",
+    "empty": "No shift, visit or point on this day.",
+    "purged": "The detailed points of this day were deleted after the retention period. Only the daily summary is kept.",
+    "openMap": "Open in Google Maps",
+    "accuracy": "± {metres} m",
+    "unusable": "Not counted",
+    "flags": "Flags",
+    "time": "Time",
+    "position": "Position",
+    "notFound": "No such day or rep.",
+    "explain": "Stops are 30 minutes or more within 150 m. A stop is flagged when it is away from every visit and every customer location. Gaps are 20 minutes or more without a point during the shift."
+  },
+  "timeline": {
+    "shiftStart": "Day started",
+    "shiftEnd": "Day ended",
+    "shiftAutoClosed": "Day closed automatically",
+    "visit": "Visit",
+    "visitOpen": "Visit (still open)",
+    "stop": "Stop",
+    "stopFlagged": "Stop away from customers and visits",
+    "gap": "No location",
+    "gapOngoing": "No location (ongoing)",
+    "inVisit": "During a visit",
+    "nearCustomer": "At a customer location",
+    "range": "{from} – {to}",
+    "unnamedCustomer": "Customer visit"
+  },
+  "flags": {
+    "idle_stop": "Idle stop",
+    "gap": "Gap",
+    "auto_closed": "Closed automatically",
+    "anomaly": "Location anomaly",
+    "overdue_shift": "Shift past the maximum"
+  },
+  "pingFlags": {
+    "low_accuracy": "Low accuracy",
+    "impossible_travel": "Impossible travel",
+    "duplicate_fix": "Duplicate",
+    "clock_skew": "Device clock ahead"
+  },
+  "shiftStatus": {
+    "open": "Open",
+    "closed": "Closed",
+    "auto_closed": "Closed automatically"
+  },
+  "routeError": {
+    "title": "This page could not be loaded",
+    "body": "Please try again. If it keeps happening, tell your administrator.",
+    "retry": "Try again"
+  }
+}
