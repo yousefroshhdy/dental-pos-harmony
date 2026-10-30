@@ -1,18 +1,18 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import {
+  API_CONTENT_SECURITY_POLICY,
+  OFFLINE_PAGE_CONTENT_SECURITY_POLICY,
+  staticSecurityHeaders,
+} from "./src/lib/security-headers";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-// Baseline security headers. A nonce-based Content-Security-Policy is added in
-// Phase 8 hardening (it needs per-request nonces wired through the proxy).
-const securityHeaders = [
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "DENY" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-  // Geolocation only for our own origin (visit check-ins); camera for later document scans.
-  { key: "Permissions-Policy", value: "geolocation=(self), camera=(self), microphone=(), payment=()" },
-];
+// Static security headers for every response. headers() is read at build time,
+// so a production build carries HSTS and `next dev` does not. The page
+// Content-Security-Policy needs a per-request nonce, so src/proxy.ts sets it.
+// Never add a CSP for page routes here: browsers enforce every CSP header they get.
+const securityHeaders = staticSecurityHeaders({ isProduction: process.env.NODE_ENV === "production" });
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // The proxy skips API routes; they return JSON and need to run or embed nothing.
+      { source: "/api/:path*", headers: [{ key: "Content-Security-Policy", value: API_CONTENT_SECURITY_POLICY }] },
+      // Offline fallback served by the service worker: one inline <style>, no scripts.
+      { source: "/offline.html", headers: [{ key: "Content-Security-Policy", value: OFFLINE_PAGE_CONTENT_SECURITY_POLICY }] },
       {
         source: "/sw.js",
         headers: [
