@@ -28,7 +28,14 @@ export const canSetFrequency = (ctx: UserContext) => can(ctx, "crm.customer.upda
 // Errors
 // ---------------------------------------------------------------------------
 /** Codes with their own text under planning.errors.* (the rest use the shared errors.*). */
-export const PLANNING_ERROR_CODES = ["PAST_DATE", "NOT_ASSIGNED", "DUPLICATE", "NO_EMPLOYEE_PROFILE"] as const;
+export const PLANNING_ERROR_CODES = [
+  "PAST_DATE",
+  "NOT_ASSIGNED",
+  "DUPLICATE",
+  "NO_EMPLOYEE_PROFILE",
+  "DAILY_CAP",
+  "TIMEOUT",
+] as const;
 export type PlanningErrorCode = (typeof PLANNING_ERROR_CODES)[number];
 
 export function planningErrorCode(code: string | undefined): PlanningErrorCode | null {

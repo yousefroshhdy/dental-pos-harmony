@@ -39,7 +39,8 @@ export const COVERAGE_LIMIT = 300;
 const PLAN_COLUMNS =
   "id, employee_id, employee_name_en, employee_name_ar, customer_id, customer_no, customer_name, visit_class, " +
   "planned_for, week_start, day_of_week, status, verification_status, check_in_at, check_out_at, outcome, " +
-  "can_unplan, is_missed, created_at";
+  // "Remove" is offered only when the caller may remove it (who planned it counts), not just when its state allows it.
+  "can_unplan:may_unplan, is_missed, created_at";
 const COVERAGE_COLUMNS =
   "customer_id, customer_no, customer_name, territory_id, lifecycle_stage, employee_id, employee_name_en, " +
   "employee_name_ar, visit_class, class_is_default, interval_days, period_start, period_end, target_visits, " +

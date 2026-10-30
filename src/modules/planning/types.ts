@@ -38,6 +38,7 @@ export interface PlanRow {
   check_in_at: string | null;
   check_out_at: string | null;
   outcome: string | null;
+  /** Read from the view's may_unplan: the state allows removal and the caller may remove it (planner rule). */
   can_unplan: boolean;
   is_missed: boolean;
   created_at: string;
@@ -120,6 +121,8 @@ export interface GeneratedPlan {
   daily_cap: number;
   work_days: WeekDay[];
   customers: number;
+  /** Customers left out because one call plans at most 1,000 (the most due are kept). */
+  customers_skipped: number;
   days: { date: string; existing: number; proposed: number }[];
   proposals: Proposal[];
   unscheduled: {
