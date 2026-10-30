@@ -17,6 +17,7 @@ begin
     when 'finance.credit_note'   then perform wf.on_decided_finance_credit_note(p_request_id, p_approved);
     when 'finance.write_off'     then perform wf.on_decided_finance_write_off(p_request_id, p_approved);
     when 'sales.return'          then perform wf.on_decided_sales_return(p_request_id, p_approved);
+    when 'perf.commission_adjustment' then perform wf.on_decided_perf_commission_adjustment(p_request_id, p_approved);
     else null;                                -- workflows without side effects
   end case;
 end $$;

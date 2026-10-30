@@ -154,7 +154,8 @@
         "employee_territory_ended": "Territory assignment ended",
         "territory_moved": "Territory moved",
         "territory_deactivated": "Territory deactivated",
-        "territory_reactivated": "Territory reactivated"
+        "territory_reactivated": "Territory reactivated",
+        "audit_row_image_read": "Audit row images read"
       }
     },
     "forbidden": {
@@ -495,6 +496,7 @@
     "CONFLICT": "Someone else changed this record. Reload and try again.",
     "REASON_REQUIRED": "Please give a reason.",
     "UNAVAILABLE": "The service is temporarily unavailable. Please try again.",
-    "UNKNOWN": "Something went wrong. Reference: {requestId}"
+    "UNKNOWN": "Something went wrong. Reference: {requestId}",
+    "MFA_REQUIRED": "This action needs a code from your authenticator app."
   }
 }

@@ -102,7 +102,9 @@
     "openOrder": "فتح الطلبية",
     "openCustomer": "فتح العميل",
     "openVisit": "فتح الزيارة",
-    "openStock": "فتح المخزون"
+    "openStock": "فتح المخزون",
+    "openReturn": "فتح المرتجع",
+    "openInvoice": "فتح الفاتورة"
   },
   "detail": {
     "metaTitle": "طلب موافقة",

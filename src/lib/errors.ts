@@ -21,6 +21,7 @@ export const TRANSLATED_CODES = [
   "CONFLICT",
   "REASON_REQUIRED",
   "UNAVAILABLE",
+  "MFA_REQUIRED",
   "UNKNOWN",
 ] as const;
 export type TranslatedCode = (typeof TRANSLATED_CODES)[number];

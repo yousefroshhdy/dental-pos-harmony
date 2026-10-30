@@ -126,7 +126,7 @@ export function isOverdue(fromIso: string, now: Date, hours = OVERDUE_HOURS): bo
 export interface SubjectLink {
   href: string;
   /** Key under `approvals.subject.*`. */
-  labelKey: "openOrder" | "openCustomer" | "openVisit" | "openStock";
+  labelKey: "openOrder" | "openCustomer" | "openVisit" | "openStock" | "openReturn" | "openInvoice";
 }
 
 /**
@@ -142,6 +142,8 @@ export function subjectLink(row: Pick<ApprovalRequestRow, "entity_type" | "entit
       return isUuid(row.entity_id) ? { href: `/customers/${row.entity_id}`, labelKey: "openCustomer" } : null;
     case "field.visit":
       return isUuid(row.entity_id) ? { href: `/visits/${row.entity_id}`, labelKey: "openVisit" } : null;
+    case "sales.return":
+      return isUuid(row.entity_id) ? { href: `/returns/${row.entity_id}`, labelKey: "openReturn" } : null;
     case "inventory.adjustment": {
       // The entity id is a synthetic key (md5 of the idempotency key); link to the stock it changes:
       // the SKU's lot drill-down /inventory/stock/[variantId]?warehouse=…, else the stock overview /inventory.
@@ -151,6 +153,8 @@ export function subjectLink(row: Pick<ApprovalRequestRow, "entity_type" | "entit
       return { href: isUuid(variant) ? `/inventory/stock/${variant}${query}` : `/inventory${query}`, labelKey: "openStock" };
     }
     default:
+      // Credit notes and write-offs carry the invoice they change.
+      if (isUuid(payload.invoice_id)) return { href: `/finance/invoices/${payload.invoice_id}`, labelKey: "openInvoice" };
       if (isUuid(payload.order_id)) return { href: `/orders/${payload.order_id}`, labelKey: "openOrder" };
       if (isUuid(payload.customer_id)) return { href: `/customers/${payload.customer_id}`, labelKey: "openCustomer" };
       return null;

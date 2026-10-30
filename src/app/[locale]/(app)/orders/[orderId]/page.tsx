@@ -193,6 +193,13 @@ export default async function OrderDetailPage({ params, searchParams }: { params
           </Link>
         </div>
       ) : null}
+      {["partially_fulfilled", "fulfilled", "invoiced", "closed"].includes(o.status) && can(ctx, "sales.return.request") ? (
+        <div>
+          <Link href={`/returns/new?order=${o.id}`} className={buttonVariants({ variant: "outline" })}>
+            {t("detail.requestReturn")}
+          </Link>
+        </div>
+      ) : null}
 
       {anyAction ? (
         <Card className="space-y-4">

@@ -85,7 +85,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
           <Link href="/" className="font-bold">
             {app("name")}

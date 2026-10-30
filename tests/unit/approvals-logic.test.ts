@@ -154,8 +154,16 @@ describe("subject links", () => {
     const row = requestRow({ entity_type: "inventory.adjustment", payload: { warehouse_id: "x?y=1", variant_id: "../x" } });
     expect(subjectLink(row)?.href).toBe("/inventory");
   });
+  it("links a return to its own page", () => {
+    expect(subjectLink(requestRow({ entity_type: "sales.return", entity_id: ID }))?.href).toBe(`/returns/${ID}`);
+  });
+
+  it("links credit notes and write-offs to the invoice in the payload", () => {
+    expect(subjectLink(requestRow({ entity_type: "finance.invoice", payload: { invoice_id: ID, customer_id: ID } }))?.href).toBe(`/finance/invoices/${ID}`);
+  });
+
   it("falls back to an order or customer in the payload, else no link", () => {
-    expect(subjectLink(requestRow({ entity_type: "sales.return", payload: { order_id: ID } }))?.href).toBe(`/orders/${ID}`);
+    expect(subjectLink(requestRow({ entity_type: "perf.other", payload: { order_id: ID } }))?.href).toBe(`/orders/${ID}`);
     expect(subjectLink(requestRow({ entity_type: "finance.credit_note", payload: { customer_id: ID } }))?.href).toBe(`/customers/${ID}`);
     expect(subjectLink(requestRow({ entity_type: "perf.commission_period", payload: null }))).toBeNull();
   });

@@ -117,7 +117,8 @@
     "bySystem": "By the system",
     "coversAll": "covers all lines",
     "shortLines": "{count, plural, one {short on # line} other {short on # lines}}",
-    "issueInvoice": "Issue invoice"
+    "issueInvoice": "Issue invoice",
+    "requestReturn": "Request return"
   },
   "actions": {
     "submit": "Submit order",

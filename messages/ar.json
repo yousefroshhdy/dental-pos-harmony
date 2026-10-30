@@ -154,7 +154,8 @@
         "employee_territory_ended": "إنهاء تعيين منطقة",
         "territory_moved": "نقل منطقة",
         "territory_deactivated": "إيقاف منطقة",
-        "territory_reactivated": "إعادة تفعيل منطقة"
+        "territory_reactivated": "إعادة تفعيل منطقة",
+        "audit_row_image_read": "قراءة قيم سجل التدقيق"
       }
     },
     "forbidden": {
@@ -495,6 +496,7 @@
     "CONFLICT": "قام شخص آخر بتعديل هذا السجل. أعد التحميل وحاول مرة أخرى.",
     "REASON_REQUIRED": "يرجى ذكر السبب.",
     "UNAVAILABLE": "الخدمة غير متاحة مؤقتاً. حاول مرة أخرى.",
-    "UNKNOWN": "حدث خطأ ما. المرجع: {requestId}"
+    "UNKNOWN": "حدث خطأ ما. المرجع: {requestId}",
+    "MFA_REQUIRED": "هذا الإجراء يحتاج إلى رمز من تطبيق المصادقة."
   }
 }

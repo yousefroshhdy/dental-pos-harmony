@@ -102,7 +102,9 @@
     "openOrder": "Open the order",
     "openCustomer": "Open the customer",
     "openVisit": "Open the visit",
-    "openStock": "Open the stock"
+    "openStock": "Open the stock",
+    "openReturn": "Open the return",
+    "openInvoice": "Open the invoice"
   },
   "detail": {
     "metaTitle": "Approval request",
