@@ -1,6 +1,6 @@
 # Dashboards, KPIs & Reporting — Honest OS
 
-> Status: **Specified** · Phase 1 deliverable #7 (+ KPI engine rules from §7 of the brief) · Last updated: 2026-10-28
+> Status: **Specified; KPIs, dashboards, commissions and exports implemented** · Phase 1 deliverable #7 (+ KPI engine rules from §7 of the brief) · Last updated: 2026-10-30
 
 Every metric has: **id, definition, formula, data source, period, attribution and edge-case rules**. Dashboards read registered metric functions (`perf.metric_*`) or `api` views. They never use ad-hoc client calculations, so one number means the same thing on every screen, in every report and in the AI assistant.
 
@@ -55,17 +55,27 @@ Every metric has: **id, definition, formula, data source, period, attribution an
 | Basis | **Collected** revenue: commission is earned when a payment allocation lands on an invoice line, pro-rated by line, **excluding VAT** |
 | Rate | Most specific rule wins: variant > category > brand > plan default. Seed: category IMPLANT 5.00%, BUR 1.50%, INSTRUMENT 1.50% |
 | Earner | Rep on the original order (not the current customer owner) |
-| Returns | A credit note within the clawback window (default 90 days after collection) creates a negative entry in the current period |
-| Allocation reversal / bounced cheque | Negative entry in the current period |
-| Eligibility threshold | Optional `min_achievement_pct` per plan (e.g. no commission below 60% revenue achievement); evaluated at period calculation |
+| Returns | A credit note within the clawback window (90 days, measured from the invoice's latest standing collection) creates a negative entry in the period of the credit note. **As built:** it claws back only the part of a line's credit above that line's uncollected amount, and the money freed re-allocates to the invoice's other open lines. Goodwill (amount-only) credits never claw back. A return on a paid invoice is credited in full; the excess is released from the invoice's allocations as customer credit, and those **release rows (`payment_allocations.credit_note_id`) are not commission events**: the credit note alone carries the clawback, so nothing is clawed back twice |
+| Allocation reversal / bounced cheque | Negative entry in the period of the event; always claws back, whatever the age |
+| Eligibility threshold | Optional `min_achievement_pct` per plan (e.g. no commission below 60% revenue achievement). **As built: ignored** (D-05: no threshold) |
 | Adjustments | Bonus, clawback or correction rows, each with a reason and an approval |
-| Lifecycle | `open → calculated → approved → paid → locked`. Recalculating an approved period is blocked; corrections go to the next period |
+| Lifecycle | `open → calculated → approved → paid → locked`. Recalculating an approved period is blocked; corrections go to the next period. **Close rule (as built):** a month closes to `approved` either automatically (daily cron, once `perf.period_close_at`, day 6 Cairo, has passed; `approved_by` NULL) or manually and early, oldest open month first, by a `perf.commission.calculate` holder with an aal2 session when MFA is enforced. The freeze is the approval; the `perf.commission_period` workflow is not used. A late event in a closed month posts in the first open month |
 | Statement | Per rep: lines (invoice, customer, product, collected base, rate, amount), adjustments, total |
+
+**As built (2026-10-30):** `20261103000400_commissions.sql`, suites 37, 46 and 48; Implemented and Tested. The rate in force on the event day applies; the earner is `sales.orders.employee_id` (an invoice without an order earns nothing). Plan `STD-2026` ships `draft`, so nothing earns until the owner activates it. Statements: `/commissions` (my statement), `/commissions/team`, `/commissions/periods`, `/commissions/adjustments`.
 
 Worked example:
 - An implant order of 2 × EGP 1,000 with a 2% discount gives an invoice net of 1,960 + 14% VAT = 2,234.40.
 - The customer pays 1,117.20 (half).
 - Commission base = 1,117.20 ÷ 1.14 = 980.00, so commission at 5% = **49.00**. The second half earns another 49.00 when it is collected.
+
+### 3.1 AR overdue history
+
+`perf.overdue_invoices(as_of)` (AR_OVERDUE and the dashboards) subtracts write-offs, credits and allocations posted by `as_of`. It **no longer filters on the invoice's current status** (audit 2026-11-03 M-4), so a later full write-off does not remove an invoice from past overdue figures.
+
+### 3.2 Visit coverage (planning)
+
+Coverage per customer: target = max(1, round(period days ÷ class interval)), with intervals A/B/C = 7/14/30 days. Completed visits by any employee count, several on one Cairo day count once. Overdue = never visited, or the last completed visit is more than one interval ago (`api.coverage`).
 
 ## 4. Dashboards by role
 
@@ -96,5 +106,7 @@ Worked example:
 | Weekly KPI summary | Dept managers | Sun 08:00 | Scorecards, at-risk reps, follow-up compliance | Email |
 | Monthly performance | Executives | 1st 09:00 (after close on day 5, a final version) | Full KPI pack, AR aging, inventory risk, commissions summary | Email + PDF in Storage |
 | Rep weekly digest | Each rep | Sat 18:00 | My KPIs, next week's planned visits, overdue customers | WhatsApp utility template / in-app |
+
+**On-demand CSV exports (Implemented, Tested):** `/reports` and `GET /api/export/[kind]` for orders, order lines, invoices, payments, aging, visits, customers, stock and tracking, under the user's own session (RLS and view masking apply). **Every export is logged in `audit.security_events`** (`export` with kind, filters and request id, then `export_result` with the row count, truncation or failure) by `api.log_export`, which also enforces the kind's permissions, MFA for customers and orders, and at most 20 exports per user per 10 minutes. Rows are capped by `REPORTS_EXPORT_MAX_ROWS` (default 50,000).
 
 Exports to Google Sheets and Looker Studio come only from **reporting views** (`report.*`, Phase 5) that contain aggregated, permission-appropriate data, refreshed nightly. Looker Studio never connects to base tables or with an owner credential.

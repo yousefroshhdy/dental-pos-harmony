@@ -1,6 +1,6 @@
 # System Architecture — Honest OS
 
-> Status: **Proposed, awaiting approval** · Phase 1 deliverables #2 (architecture), #3 (data flow), #5 (module dependency map), #9 (error handling) · Last updated: 2026-10-28
+> Status: **Proposed, awaiting approval** · Phase 1 deliverables #2 (architecture), #3 (data flow), #5 (module dependency map), #9 (error handling) · Last updated: 2026-10-30
 
 ---
 
@@ -100,7 +100,8 @@ honest-os/
 │  │  ├─ [locale]/(admin)/users | roles | workflows | settings | audit | integrations
 │  │  └─ api/
 │  │     ├─ webhooks/{paymob,shopify,whatsapp}/route.ts
-│  │     └─ cron/{outbox,kpi-snapshot,overdue-scan}/route.ts
+│  │     ├─ cron/{outbox,kpi-snapshot,overdue,tracking,commissions,escalations}/route.ts
+│  │     └─ export/[kind]/route.ts   # CSV exports (as built)
 │  ├─ modules/                   # one folder per domain; no cross-module imports of internals
 │  │  └─ <module>/
 │  │     ├─ server/commands.ts   # 'use server' actions → api.* RPC
@@ -117,7 +118,8 @@ honest-os/
 ├─ tests/
 │  ├─ unit/                      # Vitest
 │  └─ e2e/                       # Playwright (mobile + desktop projects)
-└─ .github/workflows/ci.yml
+├─ mobile/                       # Android shell (Capacitor, D-14 phase 2; §2.8)
+└─ .github/workflows/{ci,android}.yml
 ```
 
 ### 2.2 Frontend
@@ -141,7 +143,8 @@ There are two layers with a strict division of labour:
 
 ### 2.4 Authentication
 
-- Supabase Auth with email + password and magic link. MFA (TOTP) is **required** for owner, admin and finance roles, enforced by checking the session's `aal2` level in `authz.is_active_user()` for sensitive permissions (Phase 2 task).
+- Supabase Auth with email + password, magic link, and an email sign-in code (8 digits, valid 10 minutes; used inside the Android app, where the magic link would open outside it). Code entry accepts 6–8 digits while the hosted projects switch to 8.
+- **MFA (TOTP) step-up:** permissions flagged `requires_mfa` need an `aal2` session once the owner turns `security.mfa_enforced` on. The check lives in `authz.require` (via `authz.require_mfa`), not in `authz.is_active_user()`; see `docs/AUTHORIZATION.md` §6.7. Users enrol and verify on `/account/security`; all MFA calls run in server actions with the user's session, and no browser Supabase client is used.
 - **No public sign-up.** Users are created by an admin, linked to an `employees` row, and given roles.
 - Session lives in an httpOnly cookie via `@supabase/ssr`. Access token about 1 h, refresh token rotation.
 - Suspension sets `core.user_profiles.status='suspended'`. Every permission check fails immediately, because permissions are read from the DB on each request, not baked into the JWT (ADR-008). Sign-out of all sessions goes through the Auth admin API.
@@ -165,6 +168,38 @@ flowchart LR
 - Environments: `local` (Supabase CLI in Docker), `staging` (separate Supabase project, seeded with anonymised data), `production`.
 - Migrations: forward-only SQL in `supabase/migrations`, applied by CI to staging and then, through a manual approval gate, to production. **Destructive migrations (drop/rename/narrowing types) need written owner approval** (CLAUDE.md rule 9) and an expand → migrate → contract sequence.
 - Secrets: Vercel encrypted env vars (`SUPABASE_SERVICE_ROLE_KEY`, `PAYMOB_HMAC_SECRET`, `WHATSAPP_TOKEN`, `OUTBOX_SIGNING_SECRET`, `ANTHROPIC_API_KEY`), plus Supabase Vault for secrets that DB jobs need. None in Git. `.env.example` lists names only.
+- **Scheduled jobs (as built, `vercel.json`).** Staging is on Vercel **Hobby**, which allows only daily cron jobs, so every job runs once a day. Each route checks `Authorization: Bearer $CRON_SECRET` and calls a `service.*` function with the service role.
+
+  | Route | UTC | Job | Target on Pro / before go-live |
+  |-------|-----|-----|-------------------------------|
+  | `/api/cron/tracking` | `41 0 * * *` | auto-close shifts, 90-day point purge | daily is fine |
+  | `/api/cron/commissions` | `47 1 * * *` | close months past day 6 (Cairo), recalculate open months | daily is fine |
+  | `/api/cron/overdue` | `7 3 * * *` | overdue scan → collection tasks | daily is fine |
+  | `/api/cron/outbox` | `17 3 * * *` | outbox dispatch | `*/2 * * * *` (or pg_cron + pg_net) |
+  | `/api/cron/escalations` | `47 4 * * *` | approval escalation, one level per run | `*/15 * * * *` |
+  | `/api/cron/kpi-snapshot` | `23 22 * * *` | KPI snapshots | daily is fine |
+
+  With a daily schedule a request escalates at most one level a day, and outbox events wait up to a day.
+
+### 2.7 Web security headers and the proxy (as built)
+
+- **`src/proxy.ts`** (Next.js 16's renamed middleware) runs on every page. It refreshes the Supabase session, applies the locale, and makes a **per-request nonce** (16 random bytes, base64). It sets `content-security-policy`, `x-nonce` and `x-csp-meta` on the forwarded request (overwriting anything the client sent) and the same CSP on the response. next-intl copies the request headers forward, and Next.js stamps its scripts with the nonce. Every page must stay **dynamically rendered**; a static page would have no nonce.
+- **Page CSP (production):** `default-src 'self'; script-src 'self' 'nonce-…' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' <supabase origin> <wss origin>; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`. Development adds `'unsafe-eval'`. `upgrade-insecure-requests` only in production over HTTPS. `worker-src 'self'` is needed because `'strict-dynamic'` would otherwise block `/sw.js`. Inline styles are allowed because React `style={}` attributes cannot carry nonces.
+- **Matcher rule:** the proxy skips only `api`, `_next` and paths that **end in a static file extension** (`js|mjs|css|map|json|webmanifest|html|txt|xml|ico|png|jpe?g|gif|svg|webp|avif|woff2?|ttf|otf`). Pages whose path contains a dot, such as `/audit/crm.customers/<id>`, therefore get the CSP and the session refresh (audit 2026-11-03 A-LM1). `tests/unit/proxy-matcher.test.ts` compiles the literal matcher with Next's own matcher code and checks every file in `public/`.
+- **Meta copy of the CSP:** the root layout (`src/app/[locale]/layout.tsx`) also renders `<meta http-equiv="Content-Security-Policy">` with the header policy minus the directives a meta tag cannot carry (`frame-ancestors`, `report-uri`, `sandbox`) and the same nonce. It exists for the Android shell (§2.8), in case a WebView drops response headers. It is **not literally the first child of `<head>`**: React writes charset, viewport, stylesheets and scripts first, then Next's metadata tags; none of those runs code or holds page content.
+- **Other headers (`next.config.ts`, `src/lib/security-headers.ts`):** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()`, `Cross-Origin-Opener-Policy: same-origin`, and HSTS (2 years, preload) in production builds only. `/api/*` has `default-src 'none'`; `/offline.html` has its own fixed CSP. There is no CSP reporting endpoint yet.
+
+### 2.8 Android shell (D-14 phase 2, as built)
+
+- **What it is:** `mobile/` is a Capacitor 8.5.3 **remote-URL** shell. The WebView loads the deployed Next.js app from `server.url` (`CAP_SERVER_URL` at sync time; https only; default the staging URL); nothing of the app is bundled. `allowNavigation` is that one host, `androidScheme: 'https'`, no cleartext, no mixed content, `errorPath: offline.html`. `loggingBehavior: "none"` and `webContentsDebuggingEnabled: false`.
+- **Native feature:** only background location during an open shift, through `@capacitor-community/background-geolocation` 1.3.1. The web app detects the shell (`window.Capacitor.isNativePlatform()`), and `useTrackingCollector` runs exactly one collector: native in the app, browser otherwise. Points go into the same buffer, offline queue and sender as browser points, with `source: "native"`. The watcher runs with a permanent notification and is removed on End my day, server auto-close, the maximum shift length, sign-out, the login page and the inactive-user screen; any page that is not collecting removes a leftover watcher (`releaseIdleNativeWatcher`). The watcher id survives reloads in localStorage.
+- **Guarded bridge:** `android.useLegacyBridge: true` is kept, because without it location callbacks stop after about 5 minutes in the background. Its inbound path is replaced: `HonestWebView` (inflated through an overridden `capacitor_bridge_layout_main.xml`) registers Capacitor's `androidBridge` with `WebViewCompat.addWebMessageListener` for the `server.url` origin only, and every message passes `BridgePolicy` first. The policy accepts only top-frame messages from exactly that origin that are plugin calls to BackgroundGeolocation `addWatcher`, `removeWatcher` or `openSettings`. Every other JavaScript interface (Capacitor cookies and HTTP) is refused. It fails closed: no bridge without `WEB_MESSAGE_LISTENER` and `DOCUMENT_START_SCRIPT` support or without an https `server.url`, and `MainActivity` refuses to start if the WebView is not `HonestWebView`. Tested by the JVM suite `BridgePolicyTest`.
+- **Manifest:** `INTERNET`, fine and coarse location, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `POST_NOTIFICATIONS`; no `ACCESS_BACKGROUND_LOCATION`. The plugin's service is `exported="false"` with type `location`. `allowBackup="false"` plus `fullBackupContent` and `dataExtractionRules` that exclude everything (cloud backup and device transfer).
+- **Builds (`.github/workflows/android.yml`, actions pinned by commit SHA, `npm ci --ignore-scripts`):** one job runs `testDebugUnitTest assembleDebug`, then `assembleRelease`, checks the pilot APK (`apksigner verify`, not debuggable, merged manifest has the backup rules) and uploads two artifacts:
+  - `honest-os-android-pilot` (`app-release.apk`): non-debuggable, signed with the SDK debug key. **This is the APK for pilot phones.** Each CI run makes a new key, so the old APK must be uninstalled first.
+  - `honest-os-android-debug` (`app-debug.apk`): development only; never install it on a rep's phone.
+  Production needs a real keystore from GitHub secrets (`mobile/README.md`).
+- **Known limits:** on an outdated Android System WebView the app has no native features; Android throttles WebView uploads after about 5 minutes in the background, so points may wait until the app is in front (the server accepts them for 24 h after the shift); OEM battery savers can stop the service (guidance in the app and the README); Vercel Authentication on staging blocks reps who have no Vercel account.
 
 ---
 
@@ -397,7 +432,16 @@ Queue rules: max age 7 days (older items are flagged for review, not silently ap
 - **Not queued:** a visit exception request stays online-only. It has no client ref, and once a manager decides, a late replay would fail even though it was applied.
 - **Retry rule:** a sender is auto-retried after an ambiguous failure only if it is registered as idempotent (audit 2026-10-30, F9).
 - **Shared devices:** sign-out wipes the user's queue, and on start the app wipes every other user's queue on the device (F9). This needs `indexedDB.databases()`; on older Firefox (before 126) it does nothing.
-- **Limits:** pages are never cached, so the field page must be open before signal is lost. An unplanned check-in saved offline and tapped again after a reload can create a second visit. Orders, leads, payments and the read cache are still to come.
+- **Limits:** pages are never cached, so the field page must be open before signal is lost. An unplanned check-in saved offline and tapped again after a reload can create a second visit. Leads and payments are still to come.
+
+**Offline order drafts (as built, 2026-10-30; `20261103000300`, suites 36 and 47):**
+- **Queued:** `orders.save_order_draft` is an idempotent sender with `versionArg: "version"`, so "keep mine" works on `/sync`. The queue item id is a name-based uuid of (order, base version); the next base version is worked out from the queue. A save already queued is not sent again, and a save behind an unfinished earlier save of the same draft waits for it.
+- **Send or queue (`submitOrderDraft`):** offline → queued; online → sent directly; a thrown request or a retryable / unknown-outcome failure → queued. Business errors and version conflicts are shown in the builder and never queued.
+- **Server replay:** `sales.order_draft_saves` records each (order, base version) save with who saved and a request fingerprint. The same caller with the same key and request gets the current draft back with `replayed: true`, even after later edits or submit, but only while the caller still passes the customer and owner scope checks (audit 2026-11-03 M-3).
+- **Builder:** lines, customer and notes are kept in per-user localStorage (`honest.orders.v1:<userId>`) and restored on reload; if the server draft moved on, the server copy wins and the user is told. The page shows the draft's queue state.
+- **Catalogue snapshot:** `v_sellable_variants` plus the DEFAULT list price (`v_catalog_variants.default_price`), cached per user and refreshed online every 30 minutes; offline search runs on it. Prices are shown as "≈ …, indicative; the final price is set by the server on submit". The payload never carries prices.
+- **Submit is online-only** (A-05): the button is disabled offline with the reason next to it.
+- **Wipe:** sign-out clears the user's order data; every app start clears other users' order data on the device (`clearOtherUsersOrders`).
 
 ---
 

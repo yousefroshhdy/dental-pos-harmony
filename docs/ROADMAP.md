@@ -1,6 +1,6 @@
 # Roadmap & Execution Plan — Honest OS
 
-> Status: **Accepted** (owner delegated, 2026-10-28) · Phase 1 deliverables #6 (MVP scope), #7 (phased roadmap), #10 (execution checklist) · Last updated: 2026-10-28
+> Status: **Accepted** (owner delegated, 2026-10-28) · Phase 1 deliverables #6 (MVP scope), #7 (phased roadmap), #10 (execution checklist) · Last updated: 2026-10-30
 >
 > Durations are **rough estimates for 1 full-time developer working with Claude Code**. They are not commitments and are re-estimated at each phase gate.
 
@@ -17,18 +17,18 @@ Definitions are in `docs/TESTING.md` §4.
 | 0 Discovery | ✅ | n/a | n/a | ⏳ owner review | n/a |
 | 1 Architecture | ✅ | ✅ docs + draft schema | ✅ draft smoke test 45/45 | ✅ owner delegated decisions | n/a |
 | 2 Foundation | ✅ | ✅ (see detail) | ✅ (see detail) | — needs staging | — |
-| 3 Core operations | ✅ | 🟡 DB commands + first UI for every area (see detail); offline field check-in/out and tasks; migration tooling and pilot not started | 🟡 DB, unit and route-protection e2e; no live click-through | — | — |
-| 4 Financial operations | ✅ | 🟡 AR core (invoices, credit notes, payments, allocation, statement, aging, collections) | 🟡 DB + unit | — | — |
-| 5 Management intelligence | ✅ | 🟡 KPI metric functions, role dashboards, targets, snapshots | 🟡 DB + unit | — | — |
+| 3 Core operations | ✅ | 🟡 DB commands + UI for every area incl. returns, planning, workflow admin, imports, admin v2 (see detail); offline check-in/out, tasks and order drafts; Android shell; pilot not started | 🟡 DB, unit and route-protection e2e; no live click-through | — | — |
+| 4 Financial operations | ✅ | 🟡 AR core, write-off, invoice and receipt print, return credits, commissions | 🟡 DB + unit | — | — |
+| 5 Management intelligence | ✅ | 🟡 KPI metric functions, role dashboards, targets, snapshots, CSV exports | 🟡 DB + unit | — | — |
 | 6 Integrations | ✅ | — | — | — | — |
 | 7 Advanced modules | ✅ | — | — | — | — |
-| 8 Production hardening | ✅ | — | — | — | — |
+| 8 Production hardening | ✅ | 🟡 CSP and security headers, MFA step-up (enforcement off), FK and hot-filter indexes, audit-4 fixes | 🟡 DB + unit | — | — |
 
 ### Detail (as of 2026-10-30)
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Migrations (35 files) + reference data | Implemented, Tested; **all 35 applied to Supabase staging** | `pnpm test:db`: 1346 assertions in 31 suites, all also passing on staging with real pgTAP (rolled back) |
+| Migrations (65 files) + reference data | Implemented, Tested; 35 earlier files applied to Supabase staging; **wave-2 and audit-4 migrations partly applied, the lead is finishing them** | `pnpm test:db` on `0ba1acf`: 2687 assertions in 52 suites, 0 failing files. 1346 (suites 01–32) also pass on staging with real pgTAP (rolled back); 33–53 not yet run there |
 | Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
 | Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
 | Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
@@ -39,7 +39,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Independent security audit (15 findings) | All fixed, Tested | `docs/security/audit-2026-10-29.md`, suite 17 |
 | Phase 3 audit (10 findings + 1 follow-up) | All fixed, Tested | `docs/security/audit-2026-10-30.md`, suites 25, 26 |
 | Finance, dashboards and tracking audit (10 findings) | All fixed, Tested | `docs/security/audit-2026-11-01.md`, suites 31, 32 |
-| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 763 unit tests + 214 Playwright (Chromium) |
+| Next.js shell, i18n (ar RTL / en), login, magic link, proxy, PWA shell | Implemented, Tested | 1442 unit tests + 318 Playwright (Chromium) on `0ba1acf` |
 | Admin console v1 (users, invite, roles editor, security events) | Implemented, unit-tested | never clicked through against a live database |
 | CI pipeline | Implemented | has not run on GitHub yet |
 | WebKit (iOS) end-to-end tests | Implemented | not run (no WebKit in the build sandbox) |
@@ -49,12 +49,45 @@ Definitions are in `docs/TESTING.md` §4.
 | Phase 3 UI: stock, ledger, receipts, transfers, adjustments, reorder/expiry alerts | Implemented, Tested | `src/modules/inventory`, suite 22 |
 | Phase 3 UI: approvals inbox and detail, notifications, header bell | Implemented, Tested | `src/modules/approvals`, suite 23 |
 | Catalogue maintenance commands and admin UI (products, SKUs, price lists, promotions) | Implemented, Tested | `src/modules/catalog`, suite 24 |
-| Offline queue (IndexedDB), sync engine, /sync screen, header indicator; check-in, check-out and task completion queue offline and sync exactly once; per-user wipe on shared devices | Implemented, unit-tested | `src/lib/offline`, `src/modules/offline`, `src/modules/field/offline.ts`. Offline Playwright flow and order drafts not done yet |
+| Offline queue (IndexedDB), sync engine, /sync screen, header indicator; check-in, check-out and task completion queue offline and sync exactly once; per-user wipe on shared devices | Implemented, unit-tested | `src/lib/offline`, `src/modules/offline`, `src/modules/field/offline.ts`. Offline Playwright flow not done yet; order drafts below |
 | Every Phase 3 screen redirects signed-out visitors to login | Tested | `tests/e2e/phase3-routes.spec.ts` (116 checks) |
-| Data migration tooling, rep pilot | Not started | Needs U-01/U-02 data and D-03 clearance |
-| AR core: invoices from fulfilled orders (VAT per line, gapless numbers, immutable), credit notes via approval, payments (pending → confirm/reject, reverse/bounce), allocation (manual or oldest-first, lock-safe), statement, aging, overdue scan → collection tasks | Implemented, Tested | `src/modules/finance`, suites 27, 28. Not done: PDF, ETA (D-02), opening-AR import, MFA on reversals |
+| Rep pilot | Not started | Needs U-01/U-02 data and D-03 clearance |
+| AR core: invoices from fulfilled orders (VAT per line, gapless numbers, immutable), credit notes via approval, payments (pending → confirm/reject, reverse/bounce), allocation (manual or oldest-first, lock-safe), statement, aging, overdue scan → collection tasks | Implemented, Tested | `src/modules/finance`, suites 27, 28. Not done: ETA (D-02). Opening-AR import, MFA on reversals, write-off and print: see wave 2 below |
 | Dashboards: rep, manager and owner views; KPI functions (ADR-015) with Cairo days, no double counting, DB-enforced scope; targets; daily snapshots | Implemented, Tested | `src/modules/dashboards`, suite 29 |
-| Work-hours tracking (D-14 phase 1): notice, shifts, 5-min points, stops, gaps, distance, team and day views, 90-day purge | Implemented, Tested | `src/modules/tracking`, suite 30. Browser collects only with the app open; the native Android collector is phase 2 |
+| Work-hours tracking (D-14 phase 1): notice, shifts, 5-min points, stops, gaps, distance, team and day views, 90-day purge | Implemented, Tested | `src/modules/tracking`, suite 30. Browser collects only with the app open; the native Android collector (phase 2) is below |
+
+**Wave 2 (14 modules, merged in `d6243c2`) and audit 4 (fixes merged in `0ba1acf`).** "Tested" = DB and unit tests pass on `0ba1acf`; nothing has been clicked through on a live database, so nothing is Verified. The e2e checks the reports recommend are listed as Planned in `docs/TESTING.md` §6.
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Security headers: per-request nonce CSP, meta copy for the Android app, proxy on dotted page paths | Tested | `src/proxy.ts`, `src/lib/security-headers.ts`; e2e `security-headers.spec.ts`, unit `security-headers-*`, `proxy-*`. HSTS and `upgrade-insecure-requests` not yet seen over HTTPS |
+| CSV exports of lists (`/reports`, `/api/export/[kind]`), DB gate and audit (`api.log_export`), rate limit | Tested | `src/modules/reports`, suite 52, unit `reports-*`. List pages do not show the export button yet |
+| MFA step-up (TOTP enrol, verify, step-up link in every module), 17 gated permissions, enforcement off | Tested | `src/modules/security`, suites 39, 48, 49, 50. Rollout is an owner step (runbook §2) |
+| Audit row-image reader (`/audit`), masked and logged | Tested | `src/modules/audit`, suites 44, 52 |
+| Android tracking app (D-14 phase 2): Capacitor shell, native collector, guarded bridge, email-code login | Tested (web side and `BridgePolicy` policy); native shell Implemented | suite 33, unit `native-*`, `tracking-native`, `login-otp`, JVM `BridgePolicyTest` (local javac). Not run on a phone |
+| Android builds | **Debug APK built by CI run 2.** Pilot APK: **not yet built in CI with the new workflow** (non-debuggable pilot, unit tests, SHA-pinned actions) | `.github/workflows/android.yml`, `mobile/README.md` |
+| Offline order drafts (queued, replay-safe saves, indicative prices, submit online-only) | Tested | `src/modules/orders`, suites 36, 47, unit `orders-offline` |
+| Invoice write-off through approval; printable invoice and receipt (ar/en, amount in words) | Tested | `src/modules/finance`, suite 38, unit `finance-print`, `finance-amount-words` |
+| Sales returns: request with approval, receive into quarantine, credit; paid invoices credited as customer credit; cancel | Tested | `src/modules/returns`, suites 35, 46. Partial receipt not built |
+| Data migration imports (customers, products, customer prices, opening stock, opening AR) | Tested | `src/modules/imports`, suites 34, 47. First dry-run on staging pending (D-03: synthetic data only) |
+| Workflow administration: rules editor, delegation, escalation job | Tested | `src/modules/workflow`, suites 43, 51 |
+| Visit planning and coverage | Tested | `src/modules/planning`, suites 42, 53 |
+| Database performance: FK and hot-filter indexes, plan guards | Tested | suite 40. JIT setting on staging is an owner decision |
+| Admin console v2: settings, employees, territories and coverage | Tested | `src/modules/admin`, suites 41, 49, 50 |
+| Commissions: engine, statements, period close, adjustments, daily cron | Tested | `src/modules/commissions`, suites 37, 46, 48. Plan `STD-2026` is still draft; no plan or rate editor |
+| Consolidated approval-hook dispatch | Tested | `20261103009900`, suite 45 |
+| Wave-2 audit (26 findings: M money and stock, A access and security, F field and mobile) | All fixed; DB and app fixes Tested; Android fixes (F1 native, F3, F8) Implemented | `docs/security/audit-2026-11-03.md`, suites 17, 46–53 |
+| Audit 4 M-1, M-3 (returns), M-4: returns on paid invoices, `cancel_return`, replay scope, overdue history | Tested | suite 46 |
+| Audit 4 M-2, M-3 (orders), M-6: import commit lock, one opening balance per customer, draft replay scope, `import` sweep | Tested | suites 47, 17 |
+| Audit 4 A-M1, A-L2, M-5: wider gated set, quarantine release step-up, step-up link | Tested | suite 48, unit `security-*` |
+| Audit 4 A-M2, A-M3, A-M1 (employees/territories): definer employment guard, effective owner, owner-set lock | Tested | suite 50 |
+| Audit 4 A-M4, A-L1: owner-only auto-approve rules, live escalation authority | Tested | suite 51 |
+| Audit 4 A-H1, A-L3: settings hardening | Tested | suite 49, unit `admin-settings-errors` |
+| Audit 4 A-LM2, A-L4: audit masking, export controls in the DB | Tested | suite 52, unit `reports-export-log` |
+| Audit 4 A-LM1, F1 (web), F7: proxy matcher, meta CSP, 8-digit email codes | Tested (hosted OTP settings are an owner step) | unit `proxy-matcher`, `proxy-csp-meta`, `security-headers-meta`, `login-otp` |
+| Audit 4 F1 (native), F3, F4, F8: guarded bridge, non-debuggable pilot APK, idle watcher release, pinned actions | F4 Tested (unit); F1 native, F3, F8 Implemented | unit `native-idle-watcher`, JVM `BridgePolicyTest`; waits on the next Android CI run |
+| Audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, planner rule, fast coverage | Tested | suite 53, unit `planning-audit4` |
+| **Staging deploy of wave 2 and audit 4** | **In progress** | Wave-2 migrations partly applied to staging; the lead is finishing them. Then suites 33–53 on staging, the runbook owner steps (§2 OTP, template, rate limit, TOTP) and a human click-through before anything is Verified |
 
 ## 2. MVP scope (prioritised)
 

@@ -7,6 +7,7 @@ Working rules and context for AI-assisted development of **Honest OS**, the busi
 - **Phase 2 (foundation) in progress.** The owner delegated the open decisions on 2026-10-28; working decisions are in `docs/DECISIONS.md` Part A. D-01, D-02, D-03, D-05 and D-12 still need facts and gate later phases. **No real personal data until D-03 legal review clears it.**
 - Schema source of truth is now `supabase/migrations/`. `docs/database/draft/` is the historical Phase 1 artefact; do not edit it.
 - Progress is tracked in `docs/ROADMAP.md` §1.
+- As of 2026-10-30, Phases 3–5 are Implemented and Tested in part: the wave-2 modules and the audit-4 fixes (`docs/security/audit-2026-11-03.md`) pass 2687 DB assertions and 1442 unit tests on `0ba1acf`. Nothing is Verified; the staging deploy is in progress, and MFA enforcement ships off.
 
 ## Document map (keep in sync with code, in the same PR)
 
@@ -81,5 +82,8 @@ supabase test db              # same DB tests with real pgTAP on a Supabase stac
 - Never grant `authenticated` anything on `auth.users`; Supabase applies no RLS there.
 - RLS policies that reference each other recurse infinitely. Use `SECURITY DEFINER` helpers such as `authz.assigned_customer_ids`.
 - Deferred constraint triggers (owner guard) fire at commit. Use `set constraints all immediate` in rolled-back tests.
+- Deferred constraint triggers run at COMMIT as the caller's role (`authenticated`), so their functions must be `SECURITY DEFINER`. Test them with `set constraints all immediate` issued while still authenticated, not inside the definer command (suite 50).
+- A function-level `SET statement_timeout` does not limit that function's own call (PostgreSQL arms the timer when the top-level statement starts). Use an in-function `clock_timestamp()` budget instead.
+- Suites 39 and 48 pin the exact MFA-gated permission set. When you flag a permission `requires_mfa`, update both.
 - Next.js 16 renamed `middleware.ts` to `proxy.ts`. Its bundled docs are in `node_modules/next/dist/docs`.
 - Agent worktrees live in `.claude/worktrees/`; lint, tsc and git ignore them.
