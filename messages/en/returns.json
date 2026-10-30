@@ -1,1 +1,168 @@
-{}
+{
+  "nav": {
+    "returns": "Returns",
+    "toReceive": "Returns to receive",
+    "toCredit": "Returns to credit"
+  },
+  "loading": "Loading returns…",
+  "retry": "Try again",
+  "list": {
+    "title": "Customer returns",
+    "new": "Request a return",
+    "filterLabel": "Filter returns by status",
+    "empty": "No returns yet.",
+    "emptyFiltered": "No returns with this status.",
+    "units": "{count, plural, one {{formatted} unit} other {{formatted} units}}",
+    "estimate": "estimate",
+    "limited": "Showing the latest {count} returns."
+  },
+  "filters": {
+    "all": "All",
+    "open": "Open",
+    "pending_approval": "Awaiting approval",
+    "approved": "To receive",
+    "received": "To credit",
+    "credited": "Credited",
+    "rejected": "Rejected"
+  },
+  "status": {
+    "requested": "Requested",
+    "pending_approval": "Awaiting approval",
+    "approved": "Approved",
+    "received": "Received",
+    "credited": "Credited",
+    "rejected": "Rejected"
+  },
+  "approvalStatus": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "expired": "Expired"
+  },
+  "reasons": {
+    "damaged": "Damaged",
+    "defective": "Defective",
+    "wrong_item": "Wrong item",
+    "expired": "Expired",
+    "near_expiry": "Near expiry",
+    "not_ordered": "Not ordered",
+    "customer_request": "Customer request",
+    "other": "Other (explain in notes)"
+  },
+  "conditions": {
+    "resaleable": "Looks resaleable",
+    "damaged": "Damaged",
+    "expired": "Expired"
+  },
+  "next": {
+    "approval": "Next: an approver decides this return.",
+    "receive": "Next: the warehouse receives the goods into quarantine.",
+    "credit": "Next: finance issues the credit note.",
+    "done": "Done: the goods are in quarantine and the customer was credited.",
+    "closed": "This return was rejected; nothing was received or credited."
+  },
+  "request": {
+    "title": "Request a return",
+    "back": "Back to returns",
+    "backToOrder": "Back to the order",
+    "pickOrder": "Choose the delivered order the goods come from.",
+    "noOrders": "No delivered orders to return from.",
+    "openReturns": "This order already has open returns:",
+    "orderNotReturnable": "Only delivered orders take returns.",
+    "nothingReturnable": "Nothing on this order can be returned: everything delivered and invoiced is already returned or requested.",
+    "lines": "What comes back",
+    "help": "Enter the quantity for each line and lot that comes back, with a reason. Leave a line empty to keep it.",
+    "lot": "Lot {lot}",
+    "lotExpiry": "Lot {lot} · expires {date}",
+    "invoicedOnly": "Only invoiced goods can be returned for now. Goods delivered but not yet invoiced need their invoice first.",
+    "returnable": "Up to {count}",
+    "quantity": "Quantity",
+    "reason": "Reason",
+    "chooseReason": "Choose a reason",
+    "notes": "Notes",
+    "notesPlaceholder": "Example: outer box crushed in transit",
+    "notesHelp": "Optional, unless the reason is Other. No patient data.",
+    "submit": "Send for approval",
+    "submitting": "Sending…",
+    "check": {
+      "noLines": "Enter a quantity on at least one line.",
+      "invalidQuantity": "Quantities are whole numbers.",
+      "tooMany": "A quantity is more than can be returned on that line.",
+      "missingReason": "Choose a reason for every line you return.",
+      "notesRequired": "Explain the reason Other in the notes."
+    }
+  },
+  "detail": {
+    "metaTitle": "Return",
+    "back": "Back to returns",
+    "requestedOk": "Return requested. It now waits for approval.",
+    "order": "Order",
+    "openOrder": "Open the order",
+    "customer": "Customer",
+    "orderTotal": "Order total",
+    "rep": "Representative",
+    "requestedBy": "Requested by",
+    "requestedAt": "Requested",
+    "decidedAt": "Decided",
+    "approval": "Approval",
+    "openApproval": "Open the approval",
+    "warehouse": "Quarantine warehouse",
+    "receivedAt": "Received",
+    "creditedAt": "Credited",
+    "notes": "Notes",
+    "lines": "Returned lines",
+    "noLines": "No lines.",
+    "estimateHelp": "Estimates use the order line price. The credit note is computed from the invoice lines, with VAT, when finance credits the return.",
+    "creditNotes": "Credit notes",
+    "noCredits": "No credit note yet.",
+    "openInvoice": "Open the invoice",
+    "creditSplit": "{amount} + VAT {vat}"
+  },
+  "lines": {
+    "sku": "Item",
+    "lot": "Lot",
+    "qty": "Qty",
+    "reason": "Reason",
+    "estimate": "Estimate",
+    "credited": "{count} credited"
+  },
+  "receive": {
+    "title": "Receive into quarantine",
+    "intro": "Count the goods, then receive them. Returned stock stays in quarantine and is not sellable until an inventory manager releases it.",
+    "warehouse": "Quarantine warehouse",
+    "chooseWarehouse": "Choose a quarantine warehouse",
+    "help": "Only quarantine warehouses are listed.",
+    "submit": "Receive the goods",
+    "submitting": "Receiving…",
+    "noQuarantine": "There is no active quarantine warehouse. Ask an administrator to create one."
+  },
+  "credit": {
+    "title": "Credit the customer",
+    "intro": "Issues the credit note for the returned lines at their invoiced prices, with VAT. Estimate: {amount}.",
+    "submit": "Issue the credit note",
+    "submitting": "Issuing…"
+  },
+  "messages": {
+    "requested": "Return requested.",
+    "received": "Goods received into quarantine.",
+    "credited": "Credit note issued."
+  },
+  "errors": {
+    "QTY_EXCEEDS_RETURNABLE": "A quantity is more than was delivered and invoiced, minus earlier returns. Reload and check the lines.",
+    "WAREHOUSE_NOT_QUARANTINE": "Returned goods can only be received into a quarantine warehouse.",
+    "CREDIT_QTY_EXCEEDED": "Part of this return is already credited on the invoice by another credit note.",
+    "EXCEEDS_INVOICE_OPEN_AMOUNT": "The credit is more than what is still open on the invoice. Finance must reverse a payment allocation first.",
+    "IDEMPOTENCY_CONFLICT": "This request was already used for another record. Reload the page and try again.",
+    "SELF_APPROVAL": "You cannot decide your own request.",
+    "REASON_REQUIRED": "Explain the reason in the notes.",
+    "INVALID_STATE": "This return or order is not in a state that allows this. Reload the page.",
+    "PERMISSION_DENIED": "You do not have permission for this.",
+    "NOT_FOUND": "Not found, or you cannot see it.",
+    "VALIDATION": "Some values are not valid. Check the form.",
+    "DUPLICATE": "This already exists.",
+    "CONFLICT": "Someone changed this at the same time. Reload the page.",
+    "UNAVAILABLE": "The service is unavailable. Try again. (ref {requestId})",
+    "UNKNOWN": "Something went wrong. (ref {requestId})"
+  }
+}
