@@ -21,6 +21,7 @@ import {
   type PaymentFilter,
 } from "@/modules/finance/logic";
 import { LIST_LIMIT, listPayments } from "@/modules/finance/queries";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -55,11 +56,14 @@ export default async function PaymentsPage({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{t("payments.title")}</h1>
-        {can(ctx, "finance.payment.record") ? (
-          <Link href={withQuery("/finance/payments/new", { customer: customerId })} className={buttonVariants()}>
-            {t("payments.record")}
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <ExportCsvButton ctx={ctx} kind="payments" filters={{ status: filter, customer: customerId }} label={t("payments.export")} />
+          {can(ctx, "finance.payment.record") ? (
+            <Link href={withQuery("/finance/payments/new", { customer: customerId })} className={buttonVariants()}>
+              {t("payments.record")}
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <FilterLinks

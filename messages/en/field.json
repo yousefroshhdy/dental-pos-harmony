@@ -203,7 +203,8 @@
     "plannedFor": "Planned for {date}",
     "distance": "{distance} away",
     "flagged": "{count, plural, one {# flag} other {# flags}}",
-    "limited": "Showing the latest {limit}."
+    "limited": "Showing the latest {limit}.",
+    "export": "Export visits (CSV)"
   },
   "visit": {
     "metaTitle": "Visit",

@@ -98,7 +98,8 @@
     "summaryOnly": "Summary (points deleted)",
     "gapsValue": "{count} · {duration}",
     "none": "—",
-    "open": "Open the day of {name}"
+    "open": "Open the day of {name}",
+    "export": "Export day summary (CSV)"
   },
   "day": {
     "title": "{name}",

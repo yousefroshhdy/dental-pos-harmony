@@ -13,7 +13,9 @@
     "filterLabel": "Filter by status",
     "empty": "No orders yet.",
     "emptyFiltered": "No orders with this status.",
-    "limited": "Showing the latest {count} orders."
+    "limited": "Showing the latest {count} orders.",
+    "exportOrders": "Export orders (CSV)",
+    "exportLines": "Export order lines (CSV)"
   },
   "filters": {
     "all": "All",

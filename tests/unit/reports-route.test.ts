@@ -249,7 +249,7 @@ describe("GET /api/export/[kind]: filters mirror the list pages", () => {
 
   it("invoices: the overdue rules of the invoices page, plus customer", async () => {
     const customer = "11111111-2222-3333-4444-555555555555";
-    const { response, mock } = run("invoices", `?status=overdue&customer=${customer}`, ctx({ "finance.invoice.read": "own" }), () => []);
+    const { response, mock } = run("invoices", `?status=overdue&customer=${customer}`, ctx({ "finance.invoice.read": "own", "finance.invoice.export": "own" }), () => []);
     await body(await response);
     const calls = callsOf(mock, "v_invoices");
     expect(calls).toEqual(
@@ -263,11 +263,11 @@ describe("GET /api/export/[kind]: filters mirror the list pages", () => {
   });
 
   it("visits: an own-scope user asking for everyone still gets their own visits", async () => {
-    const user = ctx({ "field.visit.read": "own" });
+    const user = ctx({ "field.visit.read": "own", "field.visit.export": "own" });
     const { response, mock } = run("visits", "?who=all", user, () => []);
     await body(await response);
     expect(callsOf(mock, "v_visits")).toContainEqual(["eq", "employee_id", user.employee?.id]);
-    const { response: r2, mock: m2 } = run("visits", "?who=all", ctx({ "field.visit.read": "team" }), () => []);
+    const { response: r2, mock: m2 } = run("visits", "?who=all", ctx({ "field.visit.read": "team", "field.visit.export": "team" }), () => []);
     await body(await r2);
     expect(callsOf(m2, "v_visits").some((c) => c[0] === "eq" && c[1] === "employee_id")).toBe(false);
   });
@@ -286,17 +286,17 @@ describe("GET /api/export/[kind]: filters mirror the list pages", () => {
   });
 
   it("stock: reps read sellable availability, inventory roles the full view", async () => {
-    const { response, mock } = run("stock", "", ctx({ "inventory.stock.read": "all" }), () => []);
+    const { response, mock } = run("stock", "", ctx({ "inventory.stock.read": "all", "inventory.stock.export": "all" }), () => []);
     await body(await response);
     expect(mock.raw.from).toHaveBeenCalledWith("v_stock_available");
-    const { response: r2, mock: m2 } = run("stock", "", ctx({ "inventory.stock.read": "all", "inventory.module.access": "all" }), () => []);
+    const { response: r2, mock: m2 } = run("stock", "", ctx({ "inventory.stock.read": "all", "inventory.stock.export": "all", "inventory.module.access": "all" }), () => []);
     await body(await r2);
     expect(m2.raw.from).toHaveBeenCalledWith("v_inventory_stock");
   });
 
   it("tracking: calls the team-day RPC for the requested day and converts units", async () => {
     const rows = [{ employee_no: "E-TEST", full_name_en: "Test Rep", full_name_ar: "مندوب تجريبي", business_date: "2026-10-29", shift_seconds: 3600, distance_m: 12345, flags: ["long_idle", "gap"], on_shift: false }];
-    const { response, mock } = run("tracking", "?date=2026-10-29&locale=en", ctx({ "field.tracking.read": "team" }), () => rows);
+    const { response, mock } = run("tracking", "?date=2026-10-29&locale=en", ctx({ "field.tracking.read": "team", "field.tracking.export": "team" }), () => rows);
     const res = await response;
     expect(res.headers.get("content-disposition")).toContain("honest-tracking-2026-10-29.csv");
     const { lines } = await body(res);

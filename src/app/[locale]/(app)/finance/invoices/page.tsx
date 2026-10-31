@@ -21,6 +21,7 @@ import {
   type InvoiceFilter,
 } from "@/modules/finance/logic";
 import { LIST_LIMIT, listCustomers, listInvoices } from "@/modules/finance/queries";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -51,11 +52,14 @@ export default async function InvoicesPage({ params, searchParams }: { params: P
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{t("invoices.title")}</h1>
-        {can(ctx, "finance.invoice.issue") ? (
-          <Link href="/finance/invoices/new" className={buttonVariants()}>
-            {t("invoices.toInvoice")}
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <ExportCsvButton ctx={ctx} kind="invoices" filters={{ status: filter, bucket, customer: customerId }} label={t("invoices.export")} />
+          {can(ctx, "finance.invoice.issue") ? (
+            <Link href="/finance/invoices/new" className={buttonVariants()}>
+              {t("invoices.toInvoice")}
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <FilterLinks

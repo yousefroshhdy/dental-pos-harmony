@@ -40,7 +40,7 @@ flowchart LR
 | 1. Module access | `<module>.module.access` (e.g. `inventory.module.access`). Navigation and route guards read it, and every page's data is also RLS-protected. |
 | 2. Page access | `<module>.page.<name>` for pages that aggregate sensitive data (e.g. `finance.page.aging`, `exec.page.overview`). |
 | 3–6. Read / create / edit / delete | `<module>.<resource>.read|create|update|delete` with scope. Hard delete of transactional data does not exist; "delete" means archive/cancel through a command. |
-| 7. Export | `<module>.<resource>.export` where one exists (`crm.customer.export`, `sales.order.export`, both MFA-gated); the other export kinds need only their read permission. Every export is gated and audited in the database by `api.log_export`: whitelisted kind, the kind's permissions through `authz.require` (so MFA step-up applies), at most 20 exports per user per 10 minutes. It writes `security_events.export` with kind, filters (free-text search redacted) and request id; `api.log_export_result` then writes `security_events.export_result` with the final row count, truncation and failure. The route fails closed. A `data.export` approval workflow for large exports is not built. |
+| 7. Export | Every CSV export kind has its own `<module>.<resource>.export` permission, sensitive and MFA-gated, required **together with** the list's read permission (owner decision 2026-10-31, `20261104001100`): orders and order lines `sales.order.export`, customers `crm.customer.export`, invoices `finance.invoice.export`, payments `finance.payment.export`, aging `finance.aging.export` (with `finance.page.aging` or `finance.ledger.read`), visits `field.visit.export`, stock `inventory.stock.export`, team day summary `field.tracking.export`. Every export is gated and audited in the database by `api.log_export`: whitelisted kind, the kind's permissions through `authz.require` (so MFA step-up applies), at most 20 exports per user per 10 minutes. It writes `security_events.export` with kind, filters (free-text search redacted) and request id; `api.log_export_result` then writes `security_events.export_result` with the final row count, truncation and failure. The route fails closed. A `data.export` approval workflow for large exports is not built. |
 | 8. Approval | `wf.approval.decide.<workflow>` with a limit (e.g. max EGP). Workflow stages name the permission an approver needs. |
 | 9. Field-level visibility | Table split for secrets (e.g. `catalog.cost.read` for `product_costs`). Column masking in `api` views for moderately sensitive fields (e.g. `crm.customer.balance.read`, `core.employee.phone.read`). |
 | 10. Record-level visibility | Scope on the read permission + RLS policies. |
@@ -76,6 +76,17 @@ flowchart LR
 | wf | `wf.decide.write_off` (MFA, limit = EGP) | any (default set) | ✅ | finance officer all, no limit | `20261103000500` |
 
 Existing codes newly flagged (MFA): `admin.role.assign`, `admin.role.manage`, `admin.override.manage`, `admin.user.suspend`, `admin.settings.manage`, `admin.workflow.manage`, `catalog.price.manage`, `crm.customer.export`, `finance.credit_limit.change`, `finance.payment.reverse`, `inventory.quarantine.release`, `perf.commission.calculate`, `sales.order.export`. `sales.return.create` stays because the order state machine names it; the returns commands use the three `sales.return.*` codes above. New grants of an existing code: `wf.delegation.manage` to the sales director (team), area manager, inventory manager and finance officer (own).
+
+**Per-kind export permissions (`20261104001100`, 2026-10-31).** All (MFA) and sensitive, no limit. Each is granted to exactly the roles that held the paired read permission, at the same scope, so nobody gained or lost an export (suite 54 checks every fixture user against the previous rule). Active per-user grant overrides of the read permission were copied the same way.
+
+| Module | Permission | Pairs with | Scopes | Default holders |
+|--------|------------|-----------|--------|-----------------|
+| finance | `finance.invoice.export` (MFA) | `finance.invoice.read` | default set | sales director A, area manager Te, rep O, finance A, collection officer A |
+| finance | `finance.payment.export` (MFA) | `finance.payment.read` | default set | sales director A, area manager T, rep O, finance A, collection officer O |
+| finance | `finance.aging.export` (MFA) | `finance.page.aging` or `finance.ledger.read` | default set | finance A, collection officer A |
+| field | `field.visit.export` (MFA) | `field.visit.read` | default set | sales director A, area manager T, rep O |
+| inventory | `inventory.stock.export` (MFA) | `inventory.stock.read` | default set | sales director A, area manager A, rep O, inventory manager A, quality manager A |
+| field | `field.tracking.export` (MFA) | `field.tracking.read` | own, team, territory, all | sales director T, area manager T |
 
 ## 4. Default role matrix (starting point, all editable by the owner)
 
@@ -120,6 +131,16 @@ Legend:
 | perf.commission.calculate | A | — | — | — | — | — | A | — | — | — |
 | admin.import.run | A | — | — | — | — | — | — | — | — | — |
 | audit.row_image.read / unmask | A | — | — | — | — | — | — | — | — | — |
+| crm.customer.export (MFA) | A | — | A | — | — | — | — | — | — | A |
+| sales.order.export (MFA) | A | — | A | — | — | — | — | — | — | — |
+| finance.invoice.export (MFA) | A | — | A | Te | O | — | A | A | — | — |
+| finance.payment.export (MFA) | A | — | A | T | O | — | A | O | — | — |
+| finance.aging.export (MFA) | A | — | — | — | — | — | A | A | — | — |
+| field.visit.export (MFA) | A | — | A | T | O | — | — | — | — | — |
+| inventory.stock.export (MFA) | A | — | A | A | O | A | — | — | A | — |
+| field.tracking.export (MFA) | A | — | T | T | — | — | — | — | — | — |
+
+The export rows are the seeded grants (suite 54 pins them); each mirrors the read permission the kind needs. The read rows above are the brief's starting point and differ in places from the seeded grants (for example `inventory.stock.read`).
 
 \* Admin can assign only roles whose every permission the admin holds at an equal or wider scope (anti-escalation). Admin cannot grant the owner role, cannot edit their own roles, and holds no finance or commission permissions by default, so an IT admin cannot quietly change money.
 
@@ -157,7 +178,7 @@ The rep restrictions requested in the brief map as follows:
 
 ### 6.7 MFA step-up
 
-**Status:** Implemented and Tested (suites 39, 48, 49, 50, 52); enforcement ships **off**. Migrations `20261103000600_mfa_step_up`, `20261104000300_audit4_mfa_gated_set`, `20261104000400_settings_hardening`, `20261104000500_audit4_owner_guards`, `20261104000710_audit4_export_log`.
+**Status:** Implemented and Tested (suites 39, 48, 49, 50, 52, 54); enforcement ships **off**. Migrations `20261103000600_mfa_step_up`, `20261104000300_audit4_mfa_gated_set`, `20261104000400_settings_hardening`, `20261104000500_audit4_owner_guards`, `20261104000710_audit4_export_log`, `20261104001100_export_permissions`.
 
 **Rule.** A permission flagged `authz.permissions.requires_mfa` can be exercised only from a session whose JWT claim `aal` is exactly `aal2` (a TOTP factor verified in this session), while `core.system_settings` `security.mfa_enforced` is `true`. Owners are included.
 
@@ -167,7 +188,7 @@ The rep restrictions requested in the brief map as follows:
 - `api.my_mfa_status()` returns `{enforced, aal, required_permissions}` for the caller; `api.v_permissions.requires_mfa` exposes the flag.
 - Service-role jobs (the commission cron, the escalation job) never pass through `authz.require` and are unaffected.
 
-**Gated set** (17 codes; suites 39 and 48 pin it exactly):
+**Gated set** (23 codes; suites 39 and 48 pin it exactly):
 
 | Area | Codes |
 |------|-------|
@@ -175,7 +196,7 @@ The rep restrictions requested in the brief map as follows:
 | Configuration | `admin.settings.manage`, `admin.workflow.manage`, `admin.import.run` |
 | Money | `finance.payment.reverse` (reversal, bounce, allocation reversal), `finance.credit_limit.change` (no command yet), `catalog.price.manage`, `wf.decide.write_off`, `sales.return.credit`, `perf.commission.calculate` |
 | Stock | `inventory.quarantine.release` |
-| Data | `audit.row_image.unmask`, `crm.customer.export`, `sales.order.export` |
+| Data | `audit.row_image.unmask`; every export permission: `crm.customer.export`, `sales.order.export`, `finance.invoice.export`, `finance.payment.export`, `finance.aging.export`, `field.visit.export`, `inventory.stock.export`, `field.tracking.export` (`20261104001100`) |
 
 **Paths that call `authz.require_mfa` themselves**, because they use a gated permission without `authz.require` on it, or change access without checking the flagged permission:
 
@@ -196,7 +217,7 @@ The rep restrictions requested in the brief map as follows:
 
 **UI.** Every module's error display shows `MFA_REQUIRED` with a step-up link to `/{locale}/account/security?next=<page>`. After verifying, the security page returns to a safe `next` (off-site paths, the login page, home pages and the security page itself are refused). `useStepUpAction` / `StepUpPrompt` remain for in-place prompts (used by factor removal). A refused export returns JSON (`403 mfa_required`) with no prompt.
 
-**Rollout** (owner; steps in `docs/runbooks/supabase-vercel-setup.md` §2): enable TOTP in Supabase; the owners enrol first, then admin, finance, sales director, inventory manager and catalogue manager; try it on staging; then set the switch on. Rollback is setting it to `false` from an aal2 session. With enforcement on, DB suites that run sensitive steps through `tests.authenticate_as` at aal1 fail by design; use `tests.authenticate_as_aal2`.
+**Rollout** (owner; steps in `docs/runbooks/supabase-vercel-setup.md` §2): enable TOTP in Supabase; the owners enrol first, then admin, finance, sales director, inventory manager and catalogue manager; try it on staging; then set the switch on. Rollback is setting it to `false` from an aal2 session. With enforcement on, DB suites that run sensitive steps through `tests.authenticate_as` at aal1 fail by design; use `tests.authenticate_as_aal2`. Since every export is gated, every role that exports (reps, area managers, collection officers and quality managers included) needs a TOTP factor to download a CSV once enforcement is on; their account page lists the export codes under "requires MFA". Pages and reads are not gated.
 
 **Not covered:** no "verified within N minutes" recency check (any aal2 session counts); MFA enrol and removal are logged only in Supabase Auth's audit log, not in `audit.security_events`.
 

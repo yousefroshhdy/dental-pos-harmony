@@ -3,8 +3,8 @@
 > Status: **In use** · Last updated: 2026-10-30
 >
 > **Current suite (all passing locally; run by the lead on `0ba1acf`, 2026-10-30):**
-> - Database: **2687 assertions in 52 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). All 52 suites (2687 assertions) also pass on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
-> - Unit: **1442 Vitest tests** (`pnpm test`)
+> - Database: **2736 assertions in 53 pgTAP-format suites, 0 failing files** locally after the per-kind export permissions (suite 54, 2026-10-31; `pnpm test:db`; list in §5). Before that change, all 52 suites (2687 assertions) also passed on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
+> - Unit: **1476 Vitest tests** (`pnpm test`; 1442 before the per-kind export permissions)
 > - End-to-end: **318 Playwright tests** (159 specs × 2 Chromium projects; `pnpm e2e:chromium`; set `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). The WebKit project has not been run yet.
 > - Android JVM: `mobile/android/app/src/test/java/eg/honest/os/BridgePolicyTest.java` (6 tests), run by `.github/workflows/android.yml` (`testDebugUnitTest`). Locally it passed with javac 21 and JUnit 4.13.2; it has not yet run in CI with the new workflow.
 > - CI (`.github/workflows/ci.yml`) has not run on GitHub yet.
@@ -77,7 +77,7 @@
 - Rate limits on auth and AI endpoints.
 - Headers: CSP (no `unsafe-inline` scripts), HSTS, frame-ancestors none. **As built:** `tests/e2e/security-headers.spec.ts` (headers on a page and `/api/health`, a fresh nonce per request, every script carries it, the service worker registers, no CSP violations, an injected `<img onerror>` is blocked, `offline.html` under its own CSP); unit `security-headers-builder`, `security-headers-proxy`, `security-headers-meta` (the meta policy = header policy minus meta-invalid directives), `proxy-csp-meta` (same nonce in header and meta), `proxy-matcher` (dotted page paths run the proxy; every file in `public/` is skipped).
 - MFA step-up: suites 39 and 48 (gated set, real commands at aal1 and aal2 with enforcement on and off), 49 (settings), 50 (employee and territory step-up); unit `security-logic` (`stepUpHref`, safe `next`).
-- Exports: suite 52 (`log_export` whitelist, permissions, MFA, rate limit, result rows), unit `reports-route`, `reports-export-log` (the SQL whitelist matches `EXPORT_PERMISSIONS` and the filter schemas).
+- Exports: suite 52 (`log_export` whitelist, permissions, MFA, rate limit, result rows), suite 54 (per-kind export permissions), unit `reports-route`, `reports-export-log` (the latest SQL whitelist matches `EXPORT_PERMISSIONS` and the filter schemas), `reports-export-permissions` (the map, nav and `ExportCsvButton` visibility, and the list pages that render it).
 - Android bridge: JVM `BridgePolicyTest`; unit `native-bridge`, `native-idle-watcher`, `tracking-native`.
 - Uploaded files: type and size checks; private buckets; signed URLs with short expiry.
 
@@ -104,7 +104,7 @@
 
 ## 5. Database suites (`supabase/tests/database/`)
 
-Plan counts are the `select plan(N)` lines; all 52 files declare one. Total **2687** assertions on `0ba1acf`, 0 failing files. There is no suite 20.
+Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **2736** assertions with suite 54 (2687 on `0ba1acf`), 0 failing files. There is no suite 20.
 
 | Suite | Covers | Plan |
 |-------|--------|-----:|
@@ -160,6 +160,7 @@ Plan counts are the `select plan(N)` lines; all 52 files declare one. Total **26
 | 51_audit4_workflow | audit 4 A-M4, A-L1 | 42 |
 | 52_audit4_audit_exports | audit 4 A-LM2, A-L4 | 66 |
 | 53_audit4_planning | audit 4 F2, F5, F6, F9 | 51 |
+| 54_export_permissions | per-kind export permissions: catalogue, same roles and scopes as before (user by user), refusal per kind without its export permission, MFA at aal1/aal2, whitelist | 49 |
 
 **Pinned sets:** suites 39 and 48 compare the exact MFA-gated permission set; flagging a permission means updating both.
 

@@ -98,9 +98,11 @@ select is((select count(*)::int from authz.permissions p join gated g using (cod
 select is((select array_agg(code order by code) from authz.permissions where requires_mfa and code <> 'admin.import.run'),
           array['admin.override.manage','admin.role.assign','admin.role.manage','admin.settings.manage',
                 'admin.user.suspend','admin.workflow.manage','audit.row_image.unmask','catalog.price.manage',
-                'crm.customer.export','finance.credit_limit.change','finance.payment.reverse','inventory.quarantine.release',
+                'crm.customer.export','field.tracking.export','field.visit.export','finance.aging.export',
+                'finance.credit_limit.change','finance.invoice.export','finance.payment.export','finance.payment.reverse',
+                'inventory.quarantine.release','inventory.stock.export',
                 'perf.commission.calculate','sales.order.export','sales.return.credit','wf.decide.write_off'],
-          'the full gated set (admin.import.run too, once it exists; exports gated by 20261104000710)');
+          'the full gated set (admin.import.run too, once it exists; exports gated by 20261104000710 and 20261104001100)');
 select ok((select bool_and(p.is_sensitive) from authz.permissions p where p.requires_mfa),
           'every gated permission is also marked sensitive');
 select is((select requires_mfa from api.v_permissions where code = 'perf.commission.calculate'), true,
@@ -293,8 +295,8 @@ select tests.authenticate_as('00000000-0000-0000-0000-0000000000a6');
 select ok((api.my_mfa_status() -> 'required_permissions') @> '["perf.commission.calculate","sales.return.credit","wf.decide.write_off"]'::jsonb,
           'on: finance sees its newly gated permissions on the account page');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a8');
-select is((api.my_mfa_status() -> 'required_permissions'), '["inventory.quarantine.release"]'::jsonb,
-          'on: the inventory manager sees the quarantine gate');
+select is((api.my_mfa_status() -> 'required_permissions'), '["inventory.quarantine.release","inventory.stock.export"]'::jsonb,
+          'on: the inventory manager sees the quarantine gate (and the stock export gate, 20261104001100)');
 select tests.clear_authentication();
 
 -- ===========================================================================

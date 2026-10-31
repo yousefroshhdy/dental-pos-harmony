@@ -10,6 +10,7 @@ import { CustomerFilters, CustomerList, Pagination } from "@/modules/crm/compone
 import { localizedName, totalPages } from "@/modules/crm/logic";
 import { listCustomers, listGovernorates, listSpecialties, listTerritories } from "@/modules/crm/queries";
 import { customerListParamsSchema, firstValues } from "@/modules/crm/schemas";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 type Props = { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -48,14 +49,22 @@ export default async function CustomersPage({ params, searchParams }: Props) {
     <div className="space-y-4 pb-20 md:pb-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        {can(ctx, "crm.customer.create") ? (
-          // Bottom of the screen on phones (thumb reach), inline from `sm` up.
-          <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
-            <Link href="/customers/new" className={buttonVariants({ className: "w-full sm:w-auto" })}>
-              {t("new")}
-            </Link>
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportCsvButton
+            ctx={ctx}
+            kind="customers"
+            filters={{ q: filters.q, stage: filters.stage, territory: filters.territory, specialty: filters.specialty }}
+            label={t("export")}
+          />
+          {can(ctx, "crm.customer.create") ? (
+            // Bottom of the screen on phones (thumb reach), inline from `sm` up.
+            <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
+              <Link href="/customers/new" className={buttonVariants({ className: "w-full sm:w-auto" })}>
+                {t("new")}
+              </Link>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <CustomerFilters params={filters} territories={territoryOptions} specialties={specialtyOptions} />

@@ -12,6 +12,7 @@ import { CAIRO_DATE_LONG, CAIRO_TIME, dayAsDate, formatDuration, formatKm } from
 import { addDays, cairoToday, canReadTracking, dayFlags, isRowFlagged, parseDay, sortTeamRows, trackingErrorCode } from "@/modules/tracking/logic";
 import { getTeamDay } from "@/modules/tracking/queries";
 import type { TeamDayRow } from "@/modules/tracking/types";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -64,9 +65,12 @@ export default async function TrackingTeamPage({ params, searchParams }: { param
 
   return (
     <PageBody>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("team.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("team.subtitle")}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold">{t("team.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("team.subtitle")}</p>
+        </div>
+        <ExportCsvButton ctx={ctx} kind="tracking" filters={{ date: day }} label={t("team.export")} />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

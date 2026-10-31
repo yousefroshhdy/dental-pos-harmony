@@ -13,7 +13,9 @@
     "filterLabel": "التصفية حسب الحالة",
     "empty": "لا توجد طلبات بعد.",
     "emptyFiltered": "لا توجد طلبات بهذه الحالة.",
-    "limited": "يتم عرض أحدث {count} طلب."
+    "limited": "يتم عرض أحدث {count} طلب.",
+    "exportOrders": "تصدير الطلبات (CSV)",
+    "exportLines": "تصدير بنود الطلبات (CSV)"
   },
   "filters": {
     "all": "الكل",

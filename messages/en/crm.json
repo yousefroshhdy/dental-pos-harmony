@@ -87,7 +87,8 @@
     "previous": "Previous",
     "next": "Next",
     "empty": "No customers yet.",
-    "emptyFiltered": "No customers match these filters."
+    "emptyFiltered": "No customers match these filters.",
+    "export": "Export customers (CSV)"
   },
   "form": {
     "newTitle": "New customer",

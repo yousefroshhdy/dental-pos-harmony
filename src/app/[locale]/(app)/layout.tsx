@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
-import type { NavItem } from "@/lib/nav";
+import { navVisible, type NavItem } from "@/lib/nav";
 import { NotificationBadge } from "@/modules/approvals/components/notification-badge";
 import { importsNav } from "@/modules/imports/nav";
 import { returnsNav } from "@/modules/returns/nav";
@@ -84,7 +84,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
     );
   }
 
-  const items = NAV.filter((item) => item.permission === null || can(ctx, item.permission));
+  const items = NAV.filter((item) => navVisible(ctx, item));
 
   return (
     <div className="flex min-h-dvh flex-col">

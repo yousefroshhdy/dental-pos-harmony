@@ -8,6 +8,7 @@ import { getUserContext } from "@/lib/authz/context";
 import { FinanceError } from "@/modules/finance/components/finance-error";
 import { financeErrorCode, localizedName, toNumber, withQuery } from "@/modules/finance/logic";
 import { getAgingTotals, listAging } from "@/modules/finance/queries";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 import { AGING_BUCKETS, type AgingBucket, type AgingRow } from "@/modules/finance/types";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -39,7 +40,11 @@ export default async function AgingPage({ params }: { params: Promise<{ locale: 
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">{t("aging.title")}</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold">{t("aging.title")}</h1>
+        {/* The aging has no list filters: the file covers what the page shows. */}
+        <ExportCsvButton ctx={ctx} kind="aging" label={t("aging.export")} />
+      </div>
       <p className="text-sm text-muted-foreground">{t("aging.help")}</p>
 
       {totals.ok && totals.data ? (

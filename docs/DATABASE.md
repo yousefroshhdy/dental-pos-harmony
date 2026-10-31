@@ -74,6 +74,7 @@
 | `20261104000710_audit4_export_log` | audit 4 A-L4: `api.log_export`, `api.log_export_result`, export permissions gated, `security_events` index; suite 52 |
 | `20261104000800_audit4_planning` | audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, `field.visits.planned_by`, faster coverage; suite 53 |
 | `20261104000900_import_fk_indexes` | covering indexes for `import.batches.committed_by` / `discarded_by` (Supabase performance advisor); suite 40 now sweeps the `import` schema |
+| `20261104001100_export_permissions` | owner decision 2026-10-31: one sensitive, MFA-gated `<module>.<resource>.export` permission per export kind (invoice, payment, aging, visit, stock, tracking), granted to the holders of the paired read permission at the same scope; `audit.export_kinds()` requires read + export per kind; suite 54 |
 
 **Local test harness.** This build environment has no Docker and cannot install pgTAP, so `scripts/db-test.sh` runs the migrations on plain PostgreSQL 16 with two test-only files:
 - `scripts/db/local_supabase_stub.sql` provides the Supabase roles, `auth.users` and `auth.uid()`.

@@ -106,7 +106,8 @@
     "empty": "No invoices here.",
     "overdueDays": "{count, plural, one {# day overdue} other {# days overdue}}",
     "due": "Due {date}",
-    "openAmount": "Open {amount}"
+    "openAmount": "Open {amount}",
+    "export": "Export invoices (CSV)"
   },
   "issue": {
     "title": "Issue invoice",
@@ -212,7 +213,8 @@
       "all": "All"
     },
     "empty": "No payments here.",
-    "unallocated": "{amount} not allocated"
+    "unallocated": "{amount} not allocated",
+    "export": "Export payments (CSV)"
   },
   "record": {
     "title": "Record a payment",
@@ -323,7 +325,8 @@
     "unapplied": "Unapplied credit",
     "empty": "No open receivables.",
     "statement": "Statement",
-    "customer": "Customer"
+    "customer": "Customer",
+    "export": "Export aging (CSV)"
   },
   "collections": {
     "title": "Collections",
