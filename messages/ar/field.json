@@ -203,7 +203,8 @@
     "plannedFor": "مخططة ليوم {date}",
     "distance": "على بعد {distance}",
     "flagged": "{count, plural, one {علامة واحدة} two {علامتان} few {# علامات} many {# علامة} other {# علامة}}",
-    "limited": "يتم عرض أحدث {limit}."
+    "limited": "يتم عرض أحدث {limit}.",
+    "export": "تصدير الزيارات (CSV)"
   },
   "visit": {
     "metaTitle": "زيارة",

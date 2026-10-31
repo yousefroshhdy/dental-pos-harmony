@@ -98,7 +98,8 @@
     "summaryOnly": "ملخص (حُذفت النقاط)",
     "gapsValue": "{count} · {duration}",
     "none": "—",
-    "open": "افتح يوم {name}"
+    "open": "افتح يوم {name}",
+    "export": "تصدير ملخص اليوم (CSV)"
   },
   "day": {
     "title": "{name}",

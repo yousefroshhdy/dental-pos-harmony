@@ -61,7 +61,8 @@ Definitions are in `docs/TESTING.md` §4.
 | Item | Status | Evidence |
 |------|--------|----------|
 | Security headers: per-request nonce CSP, meta copy for the Android app, proxy on dotted page paths | Tested | `src/proxy.ts`, `src/lib/security-headers.ts`; e2e `security-headers.spec.ts`, unit `security-headers-*`, `proxy-*`. HSTS and `upgrade-insecure-requests` not yet seen over HTTPS |
-| CSV exports of lists (`/reports`, `/api/export/[kind]`), DB gate and audit (`api.log_export`), rate limit | Tested | `src/modules/reports`, suite 52, unit `reports-*`. List pages do not show the export button yet |
+| CSV exports of lists (`/reports`, `/api/export/[kind]`), DB gate and audit (`api.log_export`), rate limit | Tested | `src/modules/reports`, suite 52, unit `reports-*` |
+| Per-kind export permissions, all MFA-gated (owner decision 2026-10-31); export buttons on the orders, customers, invoices, payments, aging, visits, stock and tracking list pages | Tested | `20261104001100`, suites 39, 48, 52, 54, unit `reports-export-permissions`. Not Verified on staging |
 | MFA step-up (TOTP enrol, verify, step-up link in every module), 17 gated permissions, enforcement off | Tested | `src/modules/security`, suites 39, 48, 49, 50. Rollout is an owner step (runbook §2) |
 | Audit row-image reader (`/audit`), masked and logged | Tested | `src/modules/audit`, suites 44, 52 |
 | Android tracking app (D-14 phase 2): Capacitor shell, native collector, guarded bridge, email-code login | Tested (web side and `BridgePolicy` policy, in CI); native shell built by CI | suite 33, unit `native-*`, `tracking-native`, `login-otp`, JVM `BridgePolicyTest` (Android CI run 3). Not run on a phone |

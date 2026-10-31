@@ -3,7 +3,7 @@ import type { Grant, Scope, UserContext } from "@/lib/authz/can";
 import { columnsFor } from "@/modules/reports/columns";
 import { dynamicSourcesFor, fieldSpecs } from "@/modules/reports/forms";
 import { availableExports, canExport, EXPORT_KINDS, EXPORT_PERMISSIONS, exportHref } from "@/modules/reports/kinds";
-import { reportsNav } from "@/modules/reports/nav";
+import { EXPORT_PERMISSION_CODES, reportsNav } from "@/modules/reports/nav";
 
 function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}): UserContext {
   const permissions: Record<string, Grant> = Object.fromEntries(Object.entries(perms).map(([p, scope]) => [p, { scope, limit: null }]));
@@ -11,17 +11,20 @@ function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}
 }
 
 describe("export permission mapping", () => {
-  it("each export uses the permission its list page checks", () => {
+  it("each export uses the permission its list page checks plus its own export permission", () => {
     expect(EXPORT_PERMISSIONS).toEqual({
       orders: [["sales.order.read", "sales.order.export"]],
       order_lines: [["sales.order.read", "sales.order.export"]],
-      invoices: [["finance.invoice.read"]],
-      payments: [["finance.payment.read"]],
-      aging: [["finance.page.aging"], ["finance.ledger.read"]],
-      visits: [["field.visit.read"]],
+      invoices: [["finance.invoice.read", "finance.invoice.export"]],
+      payments: [["finance.payment.read", "finance.payment.export"]],
+      aging: [
+        ["finance.page.aging", "finance.aging.export"],
+        ["finance.ledger.read", "finance.aging.export"],
+      ],
+      visits: [["field.visit.read", "field.visit.export"]],
       customers: [["crm.customer.read", "crm.customer.export"]],
-      stock: [["inventory.stock.read"]],
-      tracking: [["field.tracking.read"]],
+      stock: [["inventory.stock.read", "inventory.stock.export"]],
+      tracking: [["field.tracking.read", "field.tracking.export"]],
     });
   });
 
@@ -33,19 +36,29 @@ describe("export permission mapping", () => {
     expect(canExport(ctx({ "crm.customer.read": "territory", "crm.customer.export": "all" }), "customers")).toBe(true);
   });
 
-  it("aging accepts either the aging page permission or the ledger permission", () => {
-    expect(canExport(ctx({ "finance.page.aging": "all" }), "aging")).toBe(true);
-    expect(canExport(ctx({ "finance.ledger.read": "all" }), "aging")).toBe(true);
-    expect(canExport(ctx({ "finance.invoice.read": "all" }), "aging")).toBe(false);
+  it("aging accepts either the aging page permission or the ledger permission, with finance.aging.export", () => {
+    expect(canExport(ctx({ "finance.page.aging": "all", "finance.aging.export": "all" }), "aging")).toBe(true);
+    expect(canExport(ctx({ "finance.ledger.read": "all", "finance.aging.export": "all" }), "aging")).toBe(true);
+    expect(canExport(ctx({ "finance.page.aging": "all", "finance.ledger.read": "all" }), "aging")).toBe(false);
+    expect(canExport(ctx({ "finance.invoice.read": "all", "finance.aging.export": "all" }), "aging")).toBe(false);
   });
 
   it("denies by default, and denies inactive users", () => {
     expect(availableExports(ctx())).toEqual([]);
-    expect(availableExports(ctx({ "field.visit.read": "own" }, { active: false }))).toEqual([]);
+    expect(availableExports(ctx({ "field.visit.read": "own", "field.visit.export": "own" }, { active: false }))).toEqual([]);
   });
 
   it("a field rep sees only the exports of their own lists", () => {
-    const rep = ctx({ "sales.order.read": "own", "field.visit.read": "own", "crm.customer.read": "own", "inventory.stock.read": "all", "finance.invoice.read": "own" });
+    const rep = ctx({
+      "sales.order.read": "own",
+      "field.visit.read": "own",
+      "field.visit.export": "own",
+      "crm.customer.read": "own",
+      "inventory.stock.read": "all",
+      "inventory.stock.export": "all",
+      "finance.invoice.read": "own",
+      "finance.invoice.export": "own",
+    });
     expect(availableExports(rep)).toEqual(["invoices", "visits", "stock"]);
   });
 
@@ -81,7 +94,7 @@ describe("permission-dependent columns and fields", () => {
   });
 
   it("the page reads only the pickers its exports need", () => {
-    const rep = ctx({ "inventory.stock.read": "all", "field.visit.read": "own" });
+    const rep = ctx({ "inventory.stock.read": "all", "inventory.stock.export": "all", "field.visit.read": "own", "field.visit.export": "own" });
     expect([...dynamicSourcesFor(availableExports(rep), rep)]).toEqual(["warehouses"]);
   });
 });
@@ -94,6 +107,8 @@ describe("exportHref and nav", () => {
   });
 
   it("nav entry lives in the reports namespace", () => {
-    expect(reportsNav).toEqual([{ href: "/reports", labelKey: "reports.nav.reports", permission: null }]);
+    expect(reportsNav).toEqual([
+      { href: "/reports", labelKey: "reports.nav.reports", permission: null, anyPermission: EXPORT_PERMISSION_CODES },
+    ]);
   });
 });

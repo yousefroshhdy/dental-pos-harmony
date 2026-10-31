@@ -71,7 +71,8 @@
     "cardTotals": "On hand {onHand} · reserved {reserved} · available {available}",
     "earliestExpiry": "Earliest expiry",
     "flags": "Alerts",
-    "truncated": "Showing the first {n} rows. Narrow the filters to see the rest."
+    "truncated": "Showing the first {n} rows. Narrow the filters to see the rest.",
+    "export": "Export stock (CSV)"
   },
   "detail": {
     "metaTitle": "Stock by lot",

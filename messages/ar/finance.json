@@ -106,7 +106,8 @@
     "empty": "لا توجد فواتير هنا.",
     "overdueDays": "{count, plural, one {متأخرة يومًا واحدًا} two {متأخرة يومين} few {متأخرة # أيام} many {متأخرة # يومًا} other {متأخرة # يوم}}",
     "due": "تستحق {date}",
-    "openAmount": "المتبقي {amount}"
+    "openAmount": "المتبقي {amount}",
+    "export": "تصدير الفواتير (CSV)"
   },
   "issue": {
     "title": "إصدار فاتورة",
@@ -212,7 +213,8 @@
       "all": "الكل"
     },
     "empty": "لا توجد مدفوعات هنا.",
-    "unallocated": "{amount} غير موزع"
+    "unallocated": "{amount} غير موزع",
+    "export": "تصدير المدفوعات (CSV)"
   },
   "record": {
     "title": "تسجيل دفعة",
@@ -323,7 +325,8 @@
     "unapplied": "رصيد دائن غير مطبق",
     "empty": "لا توجد ذمم مفتوحة.",
     "statement": "كشف الحساب",
-    "customer": "العميل"
+    "customer": "العميل",
+    "export": "تصدير أعمار الديون (CSV)"
   },
   "collections": {
     "title": "التحصيل",

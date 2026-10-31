@@ -13,6 +13,7 @@ import { CAIRO_DATE, CAIRO_DATE_TIME, METRES, dateOnly } from "@/modules/field/f
 import { localizedName, toMetres } from "@/modules/field/logic";
 import { LIST_LIMIT, listVisits } from "@/modules/field/queries";
 import { VISIT_STATUSES, type VisitStatus } from "@/modules/field/types";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -58,13 +59,16 @@ export default async function VisitsPage({ params, searchParams }: { params: Pro
     <PageBody>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        {can(ctx, "field.visit.create") && ctx.employee ? (
-          <BottomActions label={t("actions")}>
-            <Link href="/visits/new" className={buttonVariants()}>
-              {t("checkInUnplanned")}
-            </Link>
-          </BottomActions>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportCsvButton ctx={ctx} kind="visits" filters={{ status, who }} label={t("export")} />
+          {can(ctx, "field.visit.create") && ctx.employee ? (
+            <BottomActions label={t("actions")}>
+              <Link href="/visits/new" className={buttonVariants()}>
+                {t("checkInUnplanned")}
+              </Link>
+            </BottomActions>
+          ) : null}
+        </div>
       </div>
 
       <nav aria-label={t("filters")} className="space-y-2">

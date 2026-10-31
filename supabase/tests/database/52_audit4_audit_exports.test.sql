@@ -131,8 +131,9 @@ select is((select details -> 'revealed' from audit.security_events
 -- ===========================================================================
 -- A-L4: catalogue, privileges
 -- ===========================================================================
-select is((select array_agg(code order by code) from authz.permissions where requires_mfa and code like '%.export'),
-  array['crm.customer.export', 'sales.order.export'], 'A-L4: both export permissions require MFA');
+-- 20261104001100 added one export permission per kind; suite 54 pins the full export set.
+select ok((select array_agg(code order by code) from authz.permissions where requires_mfa and code like '%.export')
+          @> array['crm.customer.export', 'sales.order.export'], 'A-L4: both export permissions require MFA');
 select is((select count(*)::int from authz.permissions where requires_mfa
              and code in ('crm.customer.read', 'sales.order.read', 'finance.invoice.read', 'finance.page.aging')),
   0, 'A-L4: list read permissions are not MFA-gated');
@@ -217,7 +218,7 @@ reset role;
 select is((select details - 'export_id' from audit.security_events where event_type = 'export_result' and user_id = '00000000-0000-0000-0000-0000000000a2'),
   '{"kind":"customers","rows":42,"truncated":false,"failed":false}'::jsonb, 'A-L4: the result event has the kind and final count');
 
--- Alternatives: finance holds finance.page.aging; invoices need no export permission.
+-- Alternatives: finance holds finance.page.aging; finance holds the invoice and aging export permissions.
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a6');
 select is(pg_temp.try($$select api.log_export('aging', '{}')$$), 'OK', 'A-L4: finance may export aging');
 select is(pg_temp.try($$select api.log_export('invoices', '{"status":"open","from":"2026-10-01","customer":"40000000-0000-0000-0000-000000000001"}')$$),
@@ -238,9 +239,10 @@ select is(pg_temp.try($$select api.log_export('customers', '{}')$$), 'OK', 'A-L4
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select is(pg_temp.try($$select api.log_export('customers', '{}')$$), 'ERROR 42501 PERMISSION_DENIED',
   'A-L4: MFA on: a non-holder still sees PERMISSION_DENIED');
-select tests.authenticate_as('00000000-0000-0000-0000-0000000000a6');
+-- Since 20261104001100 every export kind is MFA-gated (suite 54 covers aal1 per kind).
+select tests.authenticate_as_aal2('00000000-0000-0000-0000-0000000000a6');
 select is(pg_temp.try($$select api.log_export('invoices', '{}')$$), 'OK',
-  'A-L4: MFA on, aal1: an export without an MFA-flagged permission is unaffected');
+  'A-L4: MFA on, aal2: finance may export invoices');
 reset role;
 update core.system_settings set value = 'false'::jsonb where key = 'security.mfa_enforced';
 

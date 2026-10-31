@@ -2,15 +2,16 @@ import { can, type UserContext } from "@/lib/authz/can";
 
 /**
  * The on-demand CSV exports (docs/DASHBOARDS.md §5, on-demand part), and who
- * may run each one. Each export checks the permission its list page checks;
- * where the catalogue has a dedicated `<module>.<resource>.export` permission
- * (docs/AUTHORIZATION.md §2, level 7) that is required as well.
+ * may run each one. Each export needs the permission its list page checks AND
+ * the kind's own `<module>.<resource>.export` permission (docs/AUTHORIZATION.md
+ * §2, level 7; owner decision of 2026-10-31). Every export permission is
+ * sensitive and MFA-gated (§6.7).
  *
  * Here it is UX and an early 403. The database enforces the same rule in
- * api.log_export (migration 20261104000710, its `export-kinds` whitelist;
- * tests/unit/reports-export-log.test.ts keeps the two in step), adding the MFA
- * step-up and the rate limit. Rows come from the api.v_* views through the
- * user's own session, so RLS decides what is in the file.
+ * api.log_export (the `export-kinds` whitelist, latest in migration
+ * 20261104001100; tests/unit/reports-export-log.test.ts keeps the two in
+ * step), adding the MFA step-up and the rate limit. Rows come from the api.v_*
+ * views through the user's own session, so RLS decides what is in the file.
  */
 export const EXPORT_KINDS = ["orders", "order_lines", "invoices", "payments", "aging", "visits", "customers", "stock", "tracking"] as const;
 export type ExportKind = (typeof EXPORT_KINDS)[number];
@@ -23,13 +24,29 @@ export function isExportKind(value: unknown): value is ExportKind {
 export const EXPORT_PERMISSIONS: Record<ExportKind, readonly (readonly string[])[]> = {
   orders: [["sales.order.read", "sales.order.export"]],
   order_lines: [["sales.order.read", "sales.order.export"]],
-  invoices: [["finance.invoice.read"]],
-  payments: [["finance.payment.read"]],
-  aging: [["finance.page.aging"], ["finance.ledger.read"]],
-  visits: [["field.visit.read"]],
+  invoices: [["finance.invoice.read", "finance.invoice.export"]],
+  payments: [["finance.payment.read", "finance.payment.export"]],
+  aging: [
+    ["finance.page.aging", "finance.aging.export"],
+    ["finance.ledger.read", "finance.aging.export"],
+  ],
+  visits: [["field.visit.read", "field.visit.export"]],
   customers: [["crm.customer.read", "crm.customer.export"]],
-  stock: [["inventory.stock.read"]],
-  tracking: [["field.tracking.read"]],
+  stock: [["inventory.stock.read", "inventory.stock.export"]],
+  tracking: [["field.tracking.read", "field.tracking.export"]],
+};
+
+/** The dedicated export permission of each kind (the MFA-gated half of its rule). */
+export const EXPORT_PERMISSION: Record<ExportKind, string> = {
+  orders: "sales.order.export",
+  order_lines: "sales.order.export",
+  invoices: "finance.invoice.export",
+  payments: "finance.payment.export",
+  aging: "finance.aging.export",
+  visits: "field.visit.export",
+  customers: "crm.customer.export",
+  stock: "inventory.stock.export",
+  tracking: "field.tracking.export",
 };
 
 export function canExport(ctx: UserContext, kind: ExportKind): boolean {
@@ -60,7 +77,7 @@ export const FILTER_FIELDS: Record<ExportKind, readonly string[]> = {
   tracking: ["date"],
 };
 
-export type ExportFilters = Record<string, string | undefined>;
+export type ExportFilters = Record<string, string | null | undefined>;
 
 /**
  * Link to an export. Empty values are dropped, so a list page can pass its

@@ -25,6 +25,7 @@ import {
   type SearchParams,
 } from "@/modules/inventory/logic";
 import { listAvailable, listReorderAlerts, listStock, listVariants, listWarehouses, STOCK_LIMIT } from "@/modules/inventory/queries";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -90,6 +91,13 @@ export default async function StockPage({ params, searchParams }: { params: Prom
         <p className="text-sm text-muted-foreground">{full ? t("introFull") : t("introSellable")}</p>
       </div>
       <div className="flex flex-wrap gap-2">
+        {/* The stock alert view is page-only; the file takes the warehouse, brand and product filters. */}
+        <ExportCsvButton
+          ctx={ctx}
+          kind="stock"
+          filters={{ warehouse: filters.warehouse, brand: filters.brand, product: filters.product }}
+          label={t("export")}
+        />
         {can(ctx, "inventory.receipt.post") ? (
           <Link href="/inventory/receipts/new" className={buttonVariants({ variant: "outline" })}>
             {t("newReceipt")}

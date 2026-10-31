@@ -11,6 +11,7 @@ import { OrderError } from "@/modules/orders/components/order-error";
 import { CAIRO_DATE_TIME } from "@/modules/orders/format";
 import { orderErrorCode, parseStatusFilter, STATUS_FILTERS, statusTone, toNumber, type StatusFilter } from "@/modules/orders/logic";
 import { listOrders, ORDER_LIST_LIMIT } from "@/modules/orders/queries";
+import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -41,11 +42,15 @@ export default async function OrdersPage({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{t("list.title")}</h1>
-        {can(ctx, "sales.order.create") ? (
-          <Link href="/orders/new" className={buttonVariants()}>
-            {t("list.new")}
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <ExportCsvButton ctx={ctx} kind="orders" filters={{ status: filter }} label={t("list.exportOrders")} />
+          <ExportCsvButton ctx={ctx} kind="order_lines" filters={{ status: filter }} label={t("list.exportLines")} />
+          {can(ctx, "sales.order.create") ? (
+            <Link href="/orders/new" className={buttonVariants()}>
+              {t("list.new")}
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <nav aria-label={t("list.filterLabel")} className="flex flex-wrap gap-2">

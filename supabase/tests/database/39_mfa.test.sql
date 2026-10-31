@@ -45,10 +45,11 @@ select is((select is_nullable || ' ' || column_default from information_schema.c
 select is((select array_agg(code order by code) from authz.permissions where requires_mfa and code <> 'admin.import.run'),
           array['admin.override.manage','admin.role.assign','admin.role.manage','admin.settings.manage',
                 'admin.user.suspend','admin.workflow.manage','audit.row_image.unmask',
-                'catalog.price.manage','crm.customer.export','finance.credit_limit.change','finance.payment.reverse',
-                'inventory.quarantine.release','perf.commission.calculate','sales.order.export','sales.return.credit',
-                'wf.decide.write_off'],
-          'the sensitive set requires MFA (admin.import.run too, once it exists; extended by 20261104000300 and 20261104000710)');
+                'catalog.price.manage','crm.customer.export','field.tracking.export','field.visit.export',
+                'finance.aging.export','finance.credit_limit.change','finance.invoice.export','finance.payment.export',
+                'finance.payment.reverse','inventory.quarantine.release','inventory.stock.export',
+                'perf.commission.calculate','sales.order.export','sales.return.credit','wf.decide.write_off'],
+          'the sensitive set requires MFA (admin.import.run too, once it exists; extended by 20261104000300, 20261104000710 and 20261104001100)');
 select is((select count(*)::int from authz.permissions where requires_mfa = false and code in
             ('crm.customer.read','sales.order.create','finance.payment.record','finance.payment.read','admin.user.create')),
           5, 'ordinary permissions do not require MFA');
@@ -183,7 +184,9 @@ select is(pg_temp.try($$select api.reverse_payment(gen_random_uuid(), 'synthetic
           'on: finance at aal2 passes the reversal gate');
 
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
-select is((select api.my_mfa_status() -> 'required_permissions'), '[]'::jsonb, 'on: a rep holds no gated permission');
+select is((select api.my_mfa_status() -> 'required_permissions'),
+          '["field.visit.export","finance.invoice.export","finance.payment.export","inventory.stock.export"]'::jsonb,
+          'on: a rep holds only the gated export permissions of their own lists (20261104001100)');
 select is(pg_temp.try($$select api.reverse_payment(gen_random_uuid(), 'synthetic test')$$), 'ERROR 42501 PERMISSION_DENIED',
           'on: a rep is denied the reversal, not asked for MFA');
 select tests.clear_authentication();
