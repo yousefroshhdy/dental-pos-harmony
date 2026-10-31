@@ -30,8 +30,8 @@
    - **URL Configuration:** set the Site URL to `https://honest-os-staging.vercel.app`, and add the redirects `https://honest-os-staging.vercel.app/ar/auth/confirm` and `https://honest-os-staging.vercel.app/en/auth/confirm`.
    - **Email template:** as in §2 below.
 3. **Owner login:** Supabase → Authentication → Users → **Add user** (your email). Then, in the SQL editor: `select core.bootstrap_owner('<your email>', '<Your Name>');`
-4. **Optional cleanup:** in the SQL editor run `drop extension if exists http;`. The `http` extension was used only to load migrations.
-5. **Vercel → honest-os-staging → Settings → Environments → Production → Branch Tracking:** set the branch to `ccr-cd8ec6c2-y28xig`, so each push goes live. Until then pushes create previews, and production stays on the last manual deploy (commit `a80cf8c`).
+4. **Optional cleanup, later:** `drop extension if exists http;` in the SQL editor. The `http` extension is used only to load migrations into staging from pinned GitHub commits; keep it while that is how staging is updated, and drop it once you switch to `supabase db push` (§2 step 4).
+5. **Vercel → honest-os-staging → Settings → Environments → Production → Branch Tracking:** set the branch to `ccr-cd8ec6c2-y28xig`, so each push goes live. Until then pushes create previews, and production stays on the last manual deploy (commit `e669a0d`, 2026-10-31).
 6. **Wave 2 (2026-10-30):** in Supabase → Authentication, set the email OTP length (8) and expiry (600), add `{{ .Token }}` to the Magic Link template, set token verifications to 30 and enable TOTP (all in §2 step 3). Then follow the MFA rollout in §2a. The Android pilot APK steps are in §2b.
 
 ## 0. Before you start
