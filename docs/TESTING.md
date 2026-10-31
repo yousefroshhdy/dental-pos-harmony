@@ -3,7 +3,7 @@
 > Status: **In use** · Last updated: 2026-10-30
 >
 > **Current suite (all passing locally; run by the lead on `0ba1acf`, 2026-10-30):**
-> - Database: **2736 assertions in 53 pgTAP-format suites, 0 failing files** locally after the per-kind export permissions (suite 54, 2026-10-31; `pnpm test:db`; list in §5). Before that change, all 52 suites (2687 assertions) also passed on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
+> - Database: **2737 assertions in 53 pgTAP-format suites, 0 failing files** locally after the per-kind export permissions and the duplicate-index guard (2026-10-31; `pnpm test:db`; list in §5). Before that change, all 52 suites (2687 assertions) also passed on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
 > - Unit: **1476 Vitest tests** (`pnpm test`; 1442 before the per-kind export permissions)
 > - End-to-end: **318 Playwright tests** (159 specs × 2 Chromium projects; `pnpm e2e:chromium`; set `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). The WebKit project has not been run yet.
 > - Android JVM: `mobile/android/app/src/test/java/eg/honest/os/BridgePolicyTest.java` (6 tests), run by `.github/workflows/android.yml` (`testDebugUnitTest`). Locally it passed with javac 21 and JUnit 4.13.2; it has not yet run in CI with the new workflow.
@@ -104,7 +104,7 @@
 
 ## 5. Database suites (`supabase/tests/database/`)
 
-Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **2736** assertions with suite 54 (2687 on `0ba1acf`), 0 failing files. There is no suite 20.
+Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **2737** assertions on `a4457b7` (2687 on `0ba1acf`), 0 failing files. There is no suite 20.
 
 | Suite | Covers | Plan |
 |-------|--------|-----:|
@@ -146,7 +146,7 @@ Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **27
 | 37_commissions | DASHBOARDS §3 golden example, clawbacks, close, adjustments, cron | 100 |
 | 38_finance_writeoff | write-off approval, open amounts, print reads | 81 |
 | 39_mfa | MFA step-up: flag, switch, `authz.require`, real commands, exact gated set | 64 |
-| 40_performance | FK index coverage, plans on synthetic data, authz helper call counts | 25 |
+| 40_performance | FK index coverage, no duplicate indexes, plans on synthetic data, authz helper call counts | 26 |
 | 41_admin_v2 | settings whitelist, employees, territories, cycles | 113 |
 | 42_planning | plan, unplan, generator, coverage | 101 |
 | 43_workflow_admin | rules editor, delegation, escalation | 94 |

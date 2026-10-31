@@ -84,7 +84,7 @@
 
 The switch ships **off**; behaviour is unchanged until the owner turns it on.
 1. Enable TOTP (§2 step 3). The Supabase **organisation** owner account (D-08) turns on its own MFA under Account → Security; that is separate from app MFA.
-2. **Owners enrol first**, on `/ar/account/security`. Then, about two weeks ahead: admin, finance officer, sales director, inventory manager and catalogue manager (anyone holding a gated permission sees "Set up an authenticator app now"). Check enrolment in Supabase → Authentication → Users. Each owner keeps a second factor or the break-glass procedure (§6).
+2. **Owners enrol first**, on `/ar/account/security`. Then, about two weeks ahead: admin, finance officer, sales director, inventory manager and catalogue manager (anyone holding a gated permission sees "Set up an authenticator app now"). **Since 2026-10-31 every CSV export permission is gated too**, so sales reps, area managers, collection officers and quality managers who export lists also need a TOTP factor before enforcement; otherwise they can still use every screen but cannot download CSVs. Check enrolment in Supabase → Authentication → Users. Each owner keeps a second factor or the break-glass procedure (§6).
 3. **Staging first:** turn it on and run the MFA e2e checks (`docs/TESTING.md` §6).
 4. **Production:** an owner turns it on from **Admin → Settings** during business hours. **Turning it on at aal1 is allowed.** It takes effect on the next request. Watch for `MFA_REQUIRED` in the `command.failed` logs.
 5. **Every later change** to any `security.*` setting, including switching it off (rollback), **needs an aal2 session** (verify on `/account/security` first). An aal1 session gets `MFA_REQUIRED`.
