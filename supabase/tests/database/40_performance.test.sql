@@ -16,7 +16,7 @@
 -- Plans are read from EXPLAIN (FORMAT JSON) without ANALYZE: no timing, so no flakiness.
 -- Synthetic data is obviously fake ("Synthetic Clinic 00042") and never committed.
 begin;
-select plan(25);
+select plan(26);
 
 -- ---------------------------------------------------------------------------
 -- 1. Foreign-key coverage
@@ -50,6 +50,25 @@ select is(
        and (i.indkey::int2[])[0:cardinality(fk.conkey) - 1] <@ fk.conkey)),
   '',
   'every foreign key in the domain schemas has a covering index'
+);
+
+-- No two indexes on a table are identical (same columns, opclasses, expressions, predicate and
+-- uniqueness): a duplicate only slows writes. 20261104001000 dropped four.
+select is(
+  (select coalesce(string_agg(format('%s.%s: %s', n.nspname, t.relname, d.names), E'\n#     ' order by n.nspname, t.relname), '')
+   from (
+     select i.indrelid, string_agg(i.indexrelid::regclass::text, ' = ' order by i.indexrelid::regclass::text) as names
+     from pg_index i
+     group by i.indrelid, i.indkey::text, i.indclass::text, coalesce(pg_get_expr(i.indexprs, i.indrelid), ''),
+              coalesce(pg_get_expr(i.indpred, i.indrelid), ''), i.indisunique
+     having count(*) > 1
+   ) d
+   join pg_class t on t.oid = d.indrelid
+   join pg_namespace n on n.oid = t.relnamespace
+   where n.nspname in ('core','authz','catalog','inventory','crm','field','work','sales','finance',
+                       'perf','wf','audit','notify','integration','import')),
+  '',
+  'no duplicate indexes in the domain schemas'
 );
 
 -- ---------------------------------------------------------------------------

@@ -74,6 +74,7 @@
 | `20261104000710_audit4_export_log` | audit 4 A-L4: `api.log_export`, `api.log_export_result`, export permissions gated, `security_events` index; suite 52 |
 | `20261104000800_audit4_planning` | audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, `field.visits.planned_by`, faster coverage; suite 53 |
 | `20261104000900_import_fk_indexes` | covering indexes for `import.batches.committed_by` / `discarded_by` (Supabase performance advisor); suite 40 now sweeps the `import` schema |
+| `20261104001000_drop_duplicate_indexes` | drops four duplicate indexes left by `20261103000700` (owner-approved); suite 40 now fails on any duplicate index |
 
 **Local test harness.** This build environment has no Docker and cannot install pgTAP, so `scripts/db-test.sh` runs the migrations on plain PostgreSQL 16 with two test-only files:
 - `scripts/db/local_supabase_stub.sql` provides the Supabase roles, `auth.users` and `auth.uid()`.

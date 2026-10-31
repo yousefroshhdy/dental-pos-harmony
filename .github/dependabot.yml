@@ -1,0 +1,9 @@
+# Weekly update PRs for the SHA-pinned GitHub Actions (audit 4 F8). npm dependencies are updated
+# deliberately, not by bot, because pnpm-lock.yaml and mobile/package-lock.json are reviewed by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

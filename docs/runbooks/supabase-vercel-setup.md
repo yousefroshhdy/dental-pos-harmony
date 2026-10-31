@@ -10,7 +10,7 @@
 | Supabase project | `honest-os-staging`, ref `hhdctubhbdqriyqwjgfk`, eu-central-1, Free plan |
 | Database | All 66 migrations applied (2026-10-31, each fetched from GitHub at a pinned commit with an md5 check). All 52 suites, 2687 pgTAP assertions, pass there in a rolled-back transaction; nothing persisted. Advisors: no security findings beyond the documented ones; performance shows only expected unused indexes on an empty database, 4 duplicate indexes (dropping them needs owner approval, rule 9) and 4 intentional multi-policy tables |
 | Vercel project | `honest-os-staging` (Hobby), linked to `yousefroshhdy/dental-pos-harmony`, region fra1, Node 22 |
-| URL | https://honest-os-staging.vercel.app (behind Vercel Authentication: you must be signed in to Vercel) |
+| URL | https://honest-os-staging.vercel.app (open; the app's own login applies). Preview deployments stay behind Vercel Authentication |
 | Deployed branch | `ccr-cd8ec6c2-y28xig` (Vercel serves it as production for this project) |
 | Env vars set | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key), `NEXT_PUBLIC_APP_URL` |
 | Cron | six daily jobs in `vercel.json` (outbox, overdue, kpi-snapshot, tracking, commissions, escalations; Hobby limit; see ARCHITECTURE §2.6) |
@@ -95,7 +95,7 @@ Build, signing and install steps are in [`mobile/README.md`](../../mobile/README
 - Install only the **`honest-os-android-pilot`** artifact (`app-release.apk`, non-debuggable) from the GitHub Actions "Android" run; never `honest-os-android-debug`.
 - Each CI run signs with a new SDK debug key, so uninstall the previous APK first (after the rep taps "End my day").
 - Turn USB debugging off after installing. Production needs a real keystore in GitHub secrets.
-- Set the repository variable `CAP_SERVER_URL` if the app should load anything other than the staging URL. Reps without a Vercel account cannot pass staging's Vercel Authentication (owner decision: protect previews only, or use a custom domain).
+- Set the repository variable `CAP_SERVER_URL` if the app should load anything other than the staging URL. Vercel Authentication protects preview deployments only (owner decision 2026-10-31), so the app works for reps without a Vercel account.
 - D-03: synthetic data only until the legal review clears real use.
 
 ## 3. Bootstrap the first owner (once per project)

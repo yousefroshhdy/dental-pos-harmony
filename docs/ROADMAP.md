@@ -72,7 +72,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Data migration imports (customers, products, customer prices, opening stock, opening AR) | Tested | `src/modules/imports`, suites 34, 47. First dry-run on staging pending (D-03: synthetic data only) |
 | Workflow administration: rules editor, delegation, escalation job | Tested | `src/modules/workflow`, suites 43, 51 |
 | Visit planning and coverage | Tested | `src/modules/planning`, suites 42, 53 |
-| Database performance: FK and hot-filter indexes, plan guards | Tested | suite 40. JIT setting on staging is an owner decision |
+| Database performance: FK and hot-filter indexes, plan guards | Tested | suite 40. JIT is off on Supabase (checked on staging); suite 40 also rejects duplicate indexes |
 | Admin console v2: settings, employees, territories and coverage | Tested | `src/modules/admin`, suites 41, 49, 50 |
 | Commissions: engine, statements, period close, adjustments, daily cron | Tested | `src/modules/commissions`, suites 37, 46, 48. Plan `STD-2026` is still draft; no plan or rate editor |
 | Consolidated approval-hook dispatch | Tested | `20261103009900`, suite 45 |
