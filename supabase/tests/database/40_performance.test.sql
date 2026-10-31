@@ -36,7 +36,7 @@ select is(
      join pg_namespace n on n.oid = t.relnamespace
      where c.contype = 'f'
        and n.nspname in ('core','authz','catalog','inventory','crm','field','work','sales','finance',
-                         'perf','wf','audit','notify','integration')
+                         'perf','wf','audit','notify','integration','import')
    ) fk
    where not exists (
      select 1 from pg_index i
@@ -338,8 +338,11 @@ select ok(pg_temp.uses_index('today_rep', 'idx_visits_employee_id_planned_for')
 -- Aging (finance)
 select is(pg_temp.seq_scans('aging_finance', array['invoices','customer_ledger','payment_allocations','payments']), '',
   'aging (finance): no seq scan on invoices / ledger / allocations / payments');
-select ok(pg_temp.uses_index('aging_finance', 'invoices_due_date_idx'),
-  'aging (finance): open invoices through the partial open-invoice index');
+-- PG16 picks the partial open-invoice index; PG17 (Supabase) reaches the same rows through the
+-- per-customer status index. Either is an index path; the seq-scan check above is the guard.
+select ok(pg_temp.uses_index('aging_finance', 'invoices_due_date_idx')
+          or pg_temp.uses_index('aging_finance', 'invoices_customer_id_status_idx'),
+  'aging (finance): open invoices through an open-invoice index (partial, or customer + status)');
 select is(pg_temp.per_row_authz('aging_finance'), '', 'aging (finance): authz helpers are InitPlans');
 
 -- Invoice, payment and movement lists
