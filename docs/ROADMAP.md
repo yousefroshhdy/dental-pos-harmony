@@ -64,8 +64,8 @@ Definitions are in `docs/TESTING.md` §4.
 | CSV exports of lists (`/reports`, `/api/export/[kind]`), DB gate and audit (`api.log_export`), rate limit | Tested | `src/modules/reports`, suite 52, unit `reports-*`. List pages do not show the export button yet |
 | MFA step-up (TOTP enrol, verify, step-up link in every module), 17 gated permissions, enforcement off | Tested | `src/modules/security`, suites 39, 48, 49, 50. Rollout is an owner step (runbook §2) |
 | Audit row-image reader (`/audit`), masked and logged | Tested | `src/modules/audit`, suites 44, 52 |
-| Android tracking app (D-14 phase 2): Capacitor shell, native collector, guarded bridge, email-code login | Tested (web side and `BridgePolicy` policy); native shell Implemented | suite 33, unit `native-*`, `tracking-native`, `login-otp`, JVM `BridgePolicyTest` (local javac). Not run on a phone |
-| Android builds | **Debug APK built by CI run 2.** Pilot APK: **not yet built in CI with the new workflow** (non-debuggable pilot, unit tests, SHA-pinned actions) | `.github/workflows/android.yml`, `mobile/README.md` |
+| Android tracking app (D-14 phase 2): Capacitor shell, native collector, guarded bridge, email-code login | Tested (web side and `BridgePolicy` policy, in CI); native shell built by CI | suite 33, unit `native-*`, `tracking-native`, `login-otp`, JVM `BridgePolicyTest` (Android CI run 3). Not run on a phone |
+| Android builds | **Pilot APK `honest-os-android-pilot` and debug APK built by Android CI run 3** (0ba1acf, 2026-10-30): `BridgePolicyTest` passed; the pilot APK verified signed, not debuggable, `allowBackup=false` and `dataExtractionRules` in the merged manifest. Artifacts expire after 14 days; re-run the workflow for a fresh one | `.github/workflows/android.yml`, `mobile/README.md` |
 | Offline order drafts (queued, replay-safe saves, indicative prices, submit online-only) | Tested | `src/modules/orders`, suites 36, 47, unit `orders-offline` |
 | Invoice write-off through approval; printable invoice and receipt (ar/en, amount in words) | Tested | `src/modules/finance`, suite 38, unit `finance-print`, `finance-amount-words` |
 | Sales returns: request with approval, receive into quarantine, credit; paid invoices credited as customer credit; cancel | Tested | `src/modules/returns`, suites 35, 46. Partial receipt not built |
@@ -76,7 +76,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Admin console v2: settings, employees, territories and coverage | Tested | `src/modules/admin`, suites 41, 49, 50 |
 | Commissions: engine, statements, period close, adjustments, daily cron | Tested | `src/modules/commissions`, suites 37, 46, 48. Plan `STD-2026` is still draft; no plan or rate editor |
 | Consolidated approval-hook dispatch | Tested | `20261103009900`, suite 45 |
-| Wave-2 audit (26 findings: M money and stock, A access and security, F field and mobile) | All fixed; DB and app fixes Tested; Android fixes (F1 native, F3, F8) Implemented | `docs/security/audit-2026-11-03.md`, suites 17, 46–53 |
+| Wave-2 audit (26 findings: M money and stock, A access and security, F field and mobile) | All fixed and Tested (DB, app and Android CI); nothing Verified on a device yet | `docs/security/audit-2026-11-03.md`, suites 17, 46–53 |
 | Audit 4 M-1, M-3 (returns), M-4: returns on paid invoices, `cancel_return`, replay scope, overdue history | Tested | suite 46 |
 | Audit 4 M-2, M-3 (orders), M-6: import commit lock, one opening balance per customer, draft replay scope, `import` sweep | Tested | suites 47, 17 |
 | Audit 4 A-M1, A-L2, M-5: wider gated set, quarantine release step-up, step-up link | Tested | suite 48, unit `security-*` |
@@ -85,7 +85,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Audit 4 A-H1, A-L3: settings hardening | Tested | suite 49, unit `admin-settings-errors` |
 | Audit 4 A-LM2, A-L4: audit masking, export controls in the DB | Tested | suite 52, unit `reports-export-log` |
 | Audit 4 A-LM1, F1 (web), F7: proxy matcher, meta CSP, 8-digit email codes | Tested (hosted OTP settings are an owner step) | unit `proxy-matcher`, `proxy-csp-meta`, `security-headers-meta`, `login-otp` |
-| Audit 4 F1 (native), F3, F4, F8: guarded bridge, non-debuggable pilot APK, idle watcher release, pinned actions | F4 Tested (unit); F1 native, F3, F8 Implemented | unit `native-idle-watcher`, JVM `BridgePolicyTest`; waits on the next Android CI run |
+| Audit 4 F1 (native), F3, F4, F8: guarded bridge, non-debuggable pilot APK, idle watcher release, pinned actions | Tested: F4 by unit tests; F1 native by `BridgePolicyTest` in CI; F3 by the CI pilot-APK checks; F8 by CI running on the pinned SHAs | unit `native-idle-watcher`, Android CI run 3. Device checks in `docs/TESTING.md` §6 are still Planned |
 | Audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, planner rule, fast coverage | Tested | suite 53, unit `planning-audit4` |
 | **Staging deploy of wave 2 and audit 4** | **Database done; owner steps pending** | All 66 migrations are on staging and all 52 suites pass there (2026-10-31). Still needed before anything is Verified: the runbook owner steps (§2 secrets, exposed schemas, OTP, template, rate limit, TOTP, owner login) and a human click-through |
 
