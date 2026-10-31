@@ -8,7 +8,7 @@
 | Item | Value |
 |------|-------|
 | Supabase project | `honest-os-staging`, ref `hhdctubhbdqriyqwjgfk`, eu-central-1, Free plan |
-| Database | 35 earlier migrations applied; all 1346 pgTAP assertions pass there (run in a rolled-back transaction, nothing persisted). **Wave-2 and audit-4 migrations are partly applied; the lead is finishing them** (65 files in all) |
+| Database | All 66 migrations applied (2026-10-31, each fetched from GitHub at a pinned commit with an md5 check). All 52 suites, 2687 pgTAP assertions, pass there in a rolled-back transaction; nothing persisted. Advisors: no security findings beyond the documented ones; performance shows only expected unused indexes on an empty database, 4 duplicate indexes (dropping them needs owner approval, rule 9) and 4 intentional multi-policy tables |
 | Vercel project | `honest-os-staging` (Hobby), linked to `yousefroshhdy/dental-pos-harmony`, region fra1, Node 22 |
 | URL | https://honest-os-staging.vercel.app (behind Vercel Authentication: you must be signed in to Vercel) |
 | Deployed branch | `ccr-cd8ec6c2-y28xig` (Vercel serves it as production for this project) |

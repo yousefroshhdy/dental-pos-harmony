@@ -3,7 +3,7 @@
 > Status: **In use** · Last updated: 2026-10-30
 >
 > **Current suite (all passing locally; run by the lead on `0ba1acf`, 2026-10-30):**
-> - Database: **2687 assertions in 52 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). The first 1346 (suites 01–32) also pass on the real Supabase staging project with pgTAP 1.3.3, run inside a rolled-back transaction (2026-10-30). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suites 33–53 have not run on staging yet.
+> - Database: **2687 assertions in 52 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). All 52 suites (2687 assertions) also pass on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
 > - Unit: **1442 Vitest tests** (`pnpm test`)
 > - End-to-end: **318 Playwright tests** (159 specs × 2 Chromium projects; `pnpm e2e:chromium`; set `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). The WebKit project has not been run yet.
 > - Android JVM: `mobile/android/app/src/test/java/eg/honest/os/BridgePolicyTest.java` (6 tests), run by `.github/workflows/android.yml` (`testDebugUnitTest`). Locally it passed with javac 21 and JUnit 4.13.2; it has not yet run in CI with the new workflow.

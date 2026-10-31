@@ -28,7 +28,7 @@ Definitions are in `docs/TESTING.md` §4.
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Migrations (65 files) + reference data | Implemented, Tested; 35 earlier files applied to Supabase staging; **wave-2 and audit-4 migrations partly applied, the lead is finishing them** | `pnpm test:db` on `0ba1acf`: 2687 assertions in 52 suites, 0 failing files. 1346 (suites 01–32) also pass on staging with real pgTAP (rolled back); 33–53 not yet run there |
+| Migrations (66 files) + reference data | Implemented, Tested; **all 66 applied to Supabase staging** (2026-10-31) | `pnpm test:db` on `648f993`: 2687 assertions in 52 suites, 0 failing files. All 52 suites (2687 assertions) also pass on staging with real pgTAP 1.3.3, rolled back |
 | Authorization engine, owner safeguards, grant ceiling | Implemented, Tested | suites 01, 05, 07, 08 |
 | Inventory ledger, receipts, transfers, adjustments + approval | Implemented, Tested | suites 02, 13 |
 | Orders: draft → submit (server pricing, discount and credit approval) → approve → reserve (FEFO) → fulfil, cancel | Implemented, Tested | suites 03, 12 |
@@ -87,7 +87,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Audit 4 A-LM1, F1 (web), F7: proxy matcher, meta CSP, 8-digit email codes | Tested (hosted OTP settings are an owner step) | unit `proxy-matcher`, `proxy-csp-meta`, `security-headers-meta`, `login-otp` |
 | Audit 4 F1 (native), F3, F4, F8: guarded bridge, non-debuggable pilot APK, idle watcher release, pinned actions | F4 Tested (unit); F1 native, F3, F8 Implemented | unit `native-idle-watcher`, JVM `BridgePolicyTest`; waits on the next Android CI run |
 | Audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, planner rule, fast coverage | Tested | suite 53, unit `planning-audit4` |
-| **Staging deploy of wave 2 and audit 4** | **In progress** | Wave-2 migrations partly applied to staging; the lead is finishing them. Then suites 33–53 on staging, the runbook owner steps (§2 OTP, template, rate limit, TOTP) and a human click-through before anything is Verified |
+| **Staging deploy of wave 2 and audit 4** | **Database done; owner steps pending** | All 66 migrations are on staging and all 52 suites pass there (2026-10-31). Still needed before anything is Verified: the runbook owner steps (§2 secrets, exposed schemas, OTP, template, rate limit, TOTP, owner login) and a human click-through |
 
 ## 2. MVP scope (prioritised)
 
