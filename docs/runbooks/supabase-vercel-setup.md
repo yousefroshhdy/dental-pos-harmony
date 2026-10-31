@@ -8,10 +8,11 @@
 | Item | Value |
 |------|-------|
 | Supabase project | `honest-os-staging`, ref `hhdctubhbdqriyqwjgfk`, eu-central-1, Free plan |
-| Database | All 66 migrations applied (2026-10-31, each fetched from GitHub at a pinned commit with an md5 check). All 52 suites, 2687 pgTAP assertions, pass there in a rolled-back transaction; nothing persisted. Advisors: no security findings beyond the documented ones; performance shows only expected unused indexes on an empty database, 4 duplicate indexes (dropping them needs owner approval, rule 9) and 4 intentional multi-policy tables |
+| Database | All 68 migrations applied (2026-10-31, each fetched from GitHub at a pinned commit with an md5 check). All 52 suites (2687 pgTAP assertions) passed there in a rolled-back transaction; after the duplicate-index and export-permission migrations, suites 39, 40, 48, 52 and the new 54 passed again. Nothing persisted. Advisors: no security findings beyond the documented ones; performance shows only expected unused indexes on an empty database, 4 duplicate indexes (dropping them needs owner approval, rule 9) and 4 intentional multi-policy tables |
 | Vercel project | `honest-os-staging` (Hobby), linked to `yousefroshhdy/dental-pos-harmony`, region fra1, Node 22 |
 | URL | https://honest-os-staging.vercel.app (open; the app's own login applies). Preview deployments stay behind Vercel Authentication |
 | Deployed branch | `ccr-cd8ec6c2-y28xig` (Vercel serves it as production for this project) |
+| Production deployment | `dpl_GXrFWzZHXudxD9xuH7e9gfwPfjR5` from `e669a0d` (2026-10-31), READY, aliased to the URL above |
 | Env vars set | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key), `NEXT_PUBLIC_APP_URL` |
 | Cron | six daily jobs in `vercel.json` (outbox, overdue, kpi-snapshot, tracking, commissions, escalations; Hobby limit; see ARCHITECTURE §2.6) |
 | Separation | Nothing is shared with the Noah projects (`noah-os`, `noor`) |
