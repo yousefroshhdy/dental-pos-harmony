@@ -1,10 +1,41 @@
+import type { Page } from "@playwright/test";
+import { buildSyntheticWorkbook, syntheticWorkbookBytes } from "../unit/legacy-synthetic";
 import type { Ids, Persona } from "./stack";
+import { msg } from "./verify/messages";
 
 /**
  * The screens to capture, in review order (Phase P step 2b first, then the rest of the nav),
- * each with the persona that uses it. `path` is after the locale prefix.
+ * each with the persona that uses it. `path` is after the locale prefix. `prepare` runs after
+ * the page loaded and before the shot (local stack, synthetic data only).
  */
-export type Screen = { slug: string; persona: Persona; path: (ids: Ids) => string };
+export type Screen = {
+  slug: string;
+  persona: Persona;
+  path: (ids: Ids) => string;
+  prepare?: (page: Page, locale: "ar" | "en") => Promise<void>;
+};
+
+/**
+ * /admin/setup/legacy-import with the synthetic workbook checked, so the reconciliation, the
+ * step counts and the negative-stock decision show. "Upload and check" stores nothing; an
+ * import left open by the verification run is abandoned first.
+ */
+async function uploadSyntheticWorkbook(page: Page, locale: "ar" | "en"): Promise<void> {
+  const t = (key: string) => msg(locale, `legacyImport.${key}`);
+  const abandon = page.getByRole("button", { name: t("session.abandon") });
+  if (await abandon.isVisible()) {
+    await page.getByLabel(t("session.abandonCheckbox")).check();
+    page.once("dialog", (d) => void d.accept());
+    await abandon.click();
+  }
+  await page.getByLabel(t("upload.file")).setInputFiles({
+    name: "synthetic-old-system.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(await syntheticWorkbookBytes(buildSyntheticWorkbook())),
+  });
+  await page.getByRole("button", { name: t("upload.analyze") }).click();
+  await page.getByRole("heading", { name: t("recon.title") }).waitFor();
+}
 
 export const SCREENS: readonly Screen[] = [
   { slug: "today", persona: "rep", path: () => "/today" },
@@ -78,6 +109,7 @@ export const SCREENS: readonly Screen[] = [
   { slug: "notifications", persona: "rep", path: () => "/notifications" },
   { slug: "sync", persona: "rep", path: () => "/sync" },
   { slug: "admin-setup", persona: "owner", path: () => "/admin/setup" },
+  { slug: "admin-legacy-import", persona: "owner", path: () => "/admin/setup/legacy-import", prepare: uploadSyntheticWorkbook },
   { slug: "admin-users", persona: "admin", path: () => "/admin/users" },
   { slug: "admin-user", persona: "admin", path: (ids) => `/admin/users/${ids.user}` },
   { slug: "admin-employees", persona: "admin", path: () => "/admin/employees" },

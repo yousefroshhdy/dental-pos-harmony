@@ -4,10 +4,11 @@ Working rules and context for AI-assisted development of **Honest OS**, the busi
 
 ## Current state
 
-- **Phase 2 (foundation) in progress.** The owner delegated the open decisions on 2026-10-28; working decisions are in `docs/DECISIONS.md` Part A. D-01, D-02, D-03, D-05 and D-12 still need facts and gate later phases. **No real personal data until D-03 legal review clears it.**
-- Schema source of truth is now `supabase/migrations/`. `docs/database/draft/` is the historical Phase 1 artefact; do not edit it.
+- **Phase P (make it usable), step 8 done locally.** Phases 2–5 and Phase P are Implemented and Tested in part: 3431 DB assertions (61 suites), 1937 unit tests, 77 verification lines and 348 screenshots on the local signed-in stack (`docs/TESTING.md` §7–8). All 80 migrations are on staging. **Nothing is Verified**; the owner's click-through is `docs/VERIFICATION.md`. MFA enforcement ships off.
+- Decisions: `docs/DECISIONS.md` (Part A open items; Part C owner decisions A–F). Staging may hold HONEST's real data (decision A); **real data never goes into Git, tests, fixtures, logs, screenshots or PR text**, and production waits for the D-03 legal review.
+- Owner actions pending: rotate the Supabase secret key and re-add the three secrets as Sensitive; Google Cloud keys and APIs with a budget alert; exposed schemas `api, service`; leaked-password protection; SMTP; activate STD-2026; create the verification test account; run the legacy import; set reps' base addresses; add a quarantine warehouse for returns (no UI for it yet).
+- Schema source of truth is `supabase/migrations/`. `docs/database/draft/` is the historical Phase 1 artefact; do not edit it.
 - Progress is tracked in `docs/ROADMAP.md` §1.
-- As of 2026-10-30, Phases 3–5 are Implemented and Tested in part: the wave-2 modules and the audit-4 fixes (`docs/security/audit-2026-11-03.md`) pass 2687 DB assertions and 1442 unit tests on `0ba1acf`. Nothing is Verified; the staging deploy is in progress, and MFA enforcement ships off.
 
 ## Document map (keep in sync with code, in the same PR)
 
@@ -28,6 +29,7 @@ Working rules and context for AI-assisted development of **Honest OS**, the busi
 | `docs/RISKS.md` | Risk register |
 | `docs/DECISIONS.md` | Open decisions (D-xx) and ADRs |
 | `docs/ROADMAP.md` | MVP scope, phases, acceptance criteria, execution checklist, progress tracker |
+| `docs/VERIFICATION.md` | Click-through per role (line ids = Playwright tests in `tests/e2e-local/verification.spec.ts`) |
 
 ## Non-negotiable rules
 
@@ -72,6 +74,8 @@ pnpm test:db                  # all migrations + pgTAP-format suites on a plain 
                               #   PGHOST=… PGUSER=postgres HONEST_TEST_DB=<unique name> pnpm test:db
 pnpm build                    # production build (placeholder NEXT_PUBLIC_* values are fine)
 pnpm e2e:chromium             # Playwright (needs a build; PW_CHROMIUM_PATH for a custom chromium)
+pnpm e2e:local:up             # local signed-in stack (docs/TESTING.md §7); e2e:local:shots, e2e:local:verify, e2e:local:down
+pnpm verify:preview           # read-only verification lines on a preview (VERIFY_BASE_URL, VERIFY_EMAIL, VERIFY_PASSWORD, VERIFY_ROLE)
 supabase test db              # same DB tests with real pgTAP on a Supabase stack
 ```
 

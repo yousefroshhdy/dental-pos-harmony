@@ -27,6 +27,8 @@ const port = env.E2E_LOCAL_APP_PORT ?? "3210";
 
 export default defineConfig({
   testDir: "tests/e2e-local",
+  // The verification walkthrough has its own config (playwright.verify.config.ts).
+  testMatch: /screens\.spec\.ts$/,
   globalSetup: "./tests/e2e-local/global-setup.ts",
   globalTeardown: "./tests/e2e-local/global-teardown.ts",
   fullyParallel: true,

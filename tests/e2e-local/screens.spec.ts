@@ -102,6 +102,10 @@ for (const screen of screens) {
         const url = `/${locale}${screen.path(ids)}`;
         const response = await page.goto(url, { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+        if (screen.prepare) {
+          await screen.prepare(page, locale === "en" ? "en" : "ar");
+          await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+        }
         await page.evaluate(() => document.fonts?.ready).catch(() => undefined);
         const found = await audit(page, width);
         await page.screenshot({ path: path.join(SHOTS_DIR, file), fullPage: true });

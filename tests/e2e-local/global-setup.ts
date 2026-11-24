@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
-import en from "../../messages/en.json";
+import { signIn } from "./sign-in";
 import { IDS_FILE, localEnv, PERSONAS, queryIds, RESULTS_DIR, SHOTS_DIR, STATE_DIR } from "./stack";
 
 /** Signs every persona in once through the real login form and keeps its cookies; reads the demo ids. */
@@ -19,15 +19,7 @@ export default async function globalSetup(config: FullConfig) {
   );
   try {
     for (const [persona, email] of Object.entries(PERSONAS)) {
-      const context = await browser.newContext({ baseURL, locale: "en-US" });
-      const page = await context.newPage();
-      await page.goto("/en/login");
-      await page.getByLabel(en.auth.email).fill(email);
-      await page.getByLabel(en.auth.password).fill(env.E2E_LOCAL_PASSWORD ?? "");
-      await page.getByRole("button", { name: en.auth.submit, exact: true }).click();
-      await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 30_000 });
-      await context.storageState({ path: path.join(STATE_DIR, `${persona}.json`) });
-      await context.close();
+      await signIn(browser, baseURL, email, env.E2E_LOCAL_PASSWORD ?? "", path.join(STATE_DIR, `${persona}.json`));
     }
   } finally {
     await browser.close();
