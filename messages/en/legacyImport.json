@@ -1,0 +1,178 @@
+{
+  "title": "Import the old-system workbook",
+  "intro": "Upload the workbook exported from the old system. It is converted on the server in memory and checked against its own Checks sheet; then you load customers, products, prices, opening stock and opening balances one step at a time, each with a dry run before the commit.",
+  "back": "Back to owner setup",
+  "notStored": "The file itself is not stored anywhere. Only the import rows of each step are kept, as for any import.",
+  "setupCard": {
+    "title": "Import the old-system workbook",
+    "description": "Upload the .xlsx from the old system and load it step by step, with the reconciliation and a dry run before each commit.",
+    "open": "Open the workbook import"
+  },
+  "catalogMissing": "Before the products step, add the brands and category {codes} on the owner setup page.",
+  "catalogLink": "Add them on the setup page",
+  "upload": {
+    "title": "1. Upload and check",
+    "file": "Workbook (.xlsx)",
+    "fileHint": ".xlsx only, up to {mb} MB, at most {rows} rows per sheet.",
+    "governorate": "Governorate for every customer",
+    "governorateHint": "The old system has no governorate. Mansoura is Dakahlia (EG-DK).",
+    "warehouse": "Warehouse for the opening stock",
+    "warehouseHint": "Usually the main warehouse created on the setup page.",
+    "noWarehouse": "Create the main warehouse on the setup page first.",
+    "analyze": "Upload and check",
+    "analyzing": "Checking…",
+    "start": "Start the import",
+    "starting": "Starting…",
+    "startHint": "This stages the five steps. Nothing is posted until you commit each step.",
+    "otherFile": "Choose another file",
+    "open": "An import is already open. Finish or abandon it below before uploading a new workbook."
+  },
+  "problems": {
+    "no_file": "Choose the workbook first.",
+    "not_xlsx": "This is not an .xlsx workbook. Export it from the old system as Excel (.xlsx).",
+    "too_large": "The file is too large (the limit is {mb} MB).",
+    "not_zip": "The file is damaged or is not an Excel workbook.",
+    "zip_bomb": "The file unpacks to far more data than a workbook of this size should. It was refused.",
+    "too_many_rows": "A sheet has more than {rows} rows. Split the data before importing.",
+    "too_many_sheets": "The workbook has too many sheets.",
+    "unreadable": "The workbook could not be read. Open it in Excel, save it again as .xlsx and retry.",
+    "missing_sheets": "The workbook needs the sheets Customers and Items.",
+    "bad_request": "The upload was incomplete. Try again.",
+    "bad_origin": "The upload must come from this page. Reload the page and try again.",
+    "decisions_incomplete": "Choose \"fix to 0\" or \"skip\" for every item with negative stock.",
+    "new_negative_items": "The corrected workbook has negative-stock items you have not decided on. Abandon this import and start again with the new workbook.",
+    "file_rejected": "A converted file could not be read back. Report this with the reference."
+  },
+  "errors": {
+    "LEGACY_ORDER": "Commit the earlier steps first, in order: customers, products, prices, opening stock, opening balances.",
+    "LEGACY_DECISION": "The rows do not match your decisions (negative stock or credit balances).",
+    "INVALID_STATE": "This is no longer possible here. Reload the page.",
+    "ALREADY_COMMITTED": "This step was already committed.",
+    "CONFLICT": "This upload was already sent with other content. Reload the page and try again.",
+    "CONFIRM_REQUIRED": "Tick the confirmation first."
+  },
+  "recon": {
+    "title": "Reconciliation with the Checks sheet",
+    "intro": "Each check of the workbook's Checks sheet against what the import will load.",
+    "check": "Check",
+    "source": "Workbook",
+    "converted": "Import",
+    "difference": "Difference",
+    "verdict": "Result",
+    "verdicts": {
+      "match": "Match",
+      "mismatch": "Mismatch",
+      "info": "For information"
+    },
+    "tally": "{match} match · {mismatch} mismatch · {info} for information",
+    "allMatch": "Every check matches.",
+    "someMismatch": "Some checks do not match. Read the notes before you start.",
+    "notes": "Converter notes (English)",
+    "empty": "The workbook has no Checks sheet to compare with."
+  },
+  "counts": {
+    "title": "What each step will load",
+    "rows": "{count, plural, =0 {nothing} one {# row} other {# rows}}",
+    "barcodes": "{count, plural, one {# barcode} other {# barcodes}} read from the PDF are not imported; check them with a scanner."
+  },
+  "negative": {
+    "title": "Items with negative stock",
+    "intro": "The old system shows these items below zero. They are left out of the opening stock. Decide for each one:",
+    "zeroHint": "Fix to 0: the item is imported with its price and starts with no stock; count it later.",
+    "skipHint": "Skip: the item is not imported at all; it stays listed on this import.",
+    "empty": "No item has negative stock.",
+    "sku": "SKU",
+    "name": "Item",
+    "quantity": "Old quantity",
+    "decision": "Decision",
+    "zero": "Fix to 0",
+    "skip": "Skip",
+    "allZero": "Fix all to 0",
+    "allSkip": "Skip all",
+    "missing": "{count, plural, one {# item still needs} other {# items still need}} a decision.",
+    "recorded": "Decisions recorded at the start"
+  },
+  "credits": {
+    "title": "Credit balances",
+    "intro": "{count, plural, one {# customer has} other {# customers have}} a credit balance in the old system (total {total}). They are held back until you confirm them.",
+    "none": "No customer has a credit balance.",
+    "import": "Import the credit balances now, with the opening balances",
+    "held": "Credit balances: held (not imported)",
+    "imported": "Credit balances: imported with the opening balances"
+  },
+  "steps": {
+    "title": "2. Load step by step",
+    "intro": "Each step: dry run (checks every row, posts nothing), then commit (all rows in one transaction). A step opens only after the previous one is committed.",
+    "kinds": {
+      "customers": "Customers",
+      "products": "Products",
+      "customer_prices": "Base prices",
+      "opening_stock": "Opening stock",
+      "opening_ar": "Opening balances"
+    },
+    "states": {
+      "empty": "Nothing to import",
+      "locked": "Waiting",
+      "staged": "Ready for a dry run",
+      "checked": "Dry run passed",
+      "rejected": "Dry run found errors",
+      "committed": "Committed",
+      "discarded": "Discarded"
+    },
+    "rows": "Rows",
+    "ok": "OK",
+    "errors": "Errors",
+    "dryRun": "Dry run",
+    "dryRunAgain": "Dry run again",
+    "dryRunning": "Checking…",
+    "commit": "Commit",
+    "committing": "Committing…",
+    "commitCheckbox": "I checked the dry run. Commit {count, plural, one {# row} other {# rows}} in one transaction.",
+    "commitConfirm": "Commit this step? It cannot be undone; corrections are made as reversals.",
+    "lockedHint": "Commit the previous step first.",
+    "emptyHint": "The workbook has nothing for this step.",
+    "discardedHint": "This step's rows were discarded. Upload a corrected workbook for it.",
+    "rejectsTitle": "Rows with errors",
+    "rejectsMore": "Showing the first {shown}. The full list is on the batch page.",
+    "openBatch": "Open the batch",
+    "sheetRow": "Row {row}",
+    "failure": "The commit was refused at row {row}; nothing was posted.",
+    "failureNoRow": "The commit was refused; nothing was posted.",
+    "restage": "Upload a corrected workbook for this step",
+    "restageHint": "Your decisions stay as recorded. The rows of this step are replaced; committed steps stay.",
+    "restageSubmit": "Replace this step's rows",
+    "restaging": "Uploading…",
+    "restaged": "{count, plural, one {Replaced once} other {Replaced # times}}",
+    "outcome": {
+      "validated": "Dry run passed. You can commit.",
+      "rejected": "The dry run found errors. Fix them in the old system or here, then upload a corrected workbook for this step.",
+      "committed": "Committed.",
+      "commitRefused": "The commit was refused and nothing was posted. See the errors below."
+    }
+  },
+  "session": {
+    "status": {
+      "open": "In progress",
+      "completed": "Completed",
+      "abandoned": "Abandoned"
+    },
+    "startedBy": "Started {at} by {by}",
+    "abandon": "Abandon this import",
+    "abandonCheckbox": "Discard the steps that are not committed. Committed steps stay.",
+    "abandonConfirm": "Abandon this import?",
+    "completed": "Every step is committed.",
+    "newImport": "Import another workbook"
+  },
+  "quality": {
+    "title": "3. Data to complete",
+    "intro": "Open each record and add what is missing. The list updates as you fix them.",
+    "issues": {
+      "phone_missing": "Customers without a phone",
+      "location_missing": "Customers without a location",
+      "cost_unknown": "Items without a cost (cost unknown)"
+    },
+    "empty": "Nothing to complete.",
+    "more": "Showing the first {shown}.",
+    "open": "Open"
+  }
+}

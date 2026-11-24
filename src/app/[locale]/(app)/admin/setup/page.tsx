@@ -9,6 +9,7 @@ import { ActionForm } from "@/modules/admin/components/action-form";
 import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { Field } from "@/modules/admin/components/field";
 import { BaseLocationForm } from "@/modules/admin/components/setup/base-location-form";
+import { LegacyImportCard } from "@/modules/imports/legacy/components/setup-card";
 import { LoginForm } from "@/modules/admin/components/setup/login-form";
 import { activeRolesByUser, localizedName } from "@/modules/admin/logic";
 import { listAllTerritories, listCoverage, listEmployees, listOpenAssignments, listRoles } from "@/modules/admin/queries";
@@ -308,6 +309,7 @@ export default async function SetupPage({ params }: { params: Params }) {
       <section id="setup-imports" aria-labelledby="setup-imports-title" className="space-y-3">
         <CardTitle id="setup-imports-title">{t("imports.title")}</CardTitle>
         <p className="text-sm text-muted-foreground">{t("imports.intro")}</p>
+        <LegacyImportCard />
         {o && o.legacy_catalog_missing.length > 0 ? (
           <Card className="space-y-2">
             <p className="text-sm">{t("imports.catalogHint", { codes: o.legacy_catalog_missing.join(", ") })}</p>

@@ -54,8 +54,8 @@ export const SYNTHETIC_ITEMS: Cell[][] = [
   item(302, "SYNTHETIC BAND", "CHINA", 0, 0, 0),
 ];
 
-/** Writes the synthetic workbook to `path`. */
-export async function writeSyntheticWorkbook(path: string): Promise<void> {
+/** The synthetic workbook, built in memory. */
+export function buildSyntheticWorkbook(): ExcelJS.Workbook {
   const wb = new ExcelJS.Workbook();
   const checks = wb.addWorksheet("Checks");
   checks.addRow(["Check", "In this workbook (formula)", "Source report total", "Source", "Difference"]);
@@ -73,5 +73,15 @@ export async function writeSyntheticWorkbook(path: string): Promise<void> {
   items.addRow(ITEM_HEADER);
   for (const r of SYNTHETIC_ITEMS) items.addRow(r);
   wb.addWorksheet("Sales_Invoices").addRow(["invoice_no", "net_total_EGP"]);
-  await wb.xlsx.writeFile(path);
+  return wb;
+}
+
+/** Writes the synthetic workbook to `path`. */
+export async function writeSyntheticWorkbook(path: string): Promise<void> {
+  await buildSyntheticWorkbook().xlsx.writeFile(path);
+}
+
+/** The synthetic workbook as .xlsx bytes, as the browser uploads it. */
+export async function syntheticWorkbookBytes(wb: ExcelJS.Workbook = buildSyntheticWorkbook()): Promise<Uint8Array> {
+  return new Uint8Array(await wb.xlsx.writeBuffer());
 }

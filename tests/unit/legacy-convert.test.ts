@@ -16,9 +16,9 @@ import {
   skuFor,
   UNKNOWN_LOT,
   type ConvertResult,
-} from "../../scripts/legacy/convert";
+} from "@/modules/imports/legacy/convert";
 import { assertSafeOutput, parseArgs } from "../../scripts/legacy/convert-workbook";
-import { readWorkbook, type Sheets } from "../../scripts/legacy/workbook";
+import { readWorkbook, type Sheets } from "@/modules/imports/legacy/workbook";
 import { parseCsv } from "@/modules/imports/csv";
 import { KIND_SPECS } from "@/modules/imports/kinds";
 import { buildRows } from "@/modules/imports/logic";
