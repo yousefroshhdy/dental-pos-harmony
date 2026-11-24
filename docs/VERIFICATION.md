@@ -64,6 +64,36 @@ of tests, screenshots and notes):
 `finance@`, `inventory@`, `admin@honest.test`, with the per-run password from
 `.cache/e2e-local/env.local`.
 
+## 0. The owner's 30-minute staging run (do this first)
+
+One pass through the whole business on **https://honest-os-staging.vercel.app**, in the order the
+business will use it. Work in Arabic (`/ar/…`) on a computer, with a phone (390 px or the APK) for
+S-04 to S-06. The detailed lines per role (sections 1–7) say the same thing click by click; each
+step below names them.
+
+**Before S-01:** you are signed in as the owner with TOTP (`/ar/account/security` says the session
+is verified). Use **synthetic** test records for S-03 to S-10 ("Clinic Test 1", phone
+`+2010000000NN`, the person "Rep Test"), never a real clinic. What you create here stays on staging
+(ledgers are append-only); a wrong invoice is corrected by a credit note, not by deleting it.
+
+**Status** here is the lowest status of the lines the step relies on. "Tested (local)" means the
+same clicks passed on the local stack with synthetic data and mocked sign-in (`docs/TESTING.md`
+§7–8); it is not Verified. Only you set Verified, in the record table at the end.
+
+| # | Step (who) | Exact URL | What to click | What you should see | Lines | Status |
+|---|------------|-----------|---------------|---------------------|-------|--------|
+| S-01 | Owner setup (owner, ~4 min) | `/ar/admin/setup` | Read **Progress** (التقدم). If missing: **Create the main warehouse** (إنشاء المخزن الرئيسي) with code `WH-MAIN`; **Cover Dakahlia with Mansoura** (تغطية الدقهلية بمنطقة المنصورة); in **1. Main warehouse** check a **Quarantine** (حجر) warehouse exists (needed for returns; there is no button for it yet, see "Gaps found") | **Owner setup** (إعداد المالك); Progress shows Main warehouse, Territories with coverage, People, Logins and Reps' base addresses, each done or with its count | OWN-02 | Tested (local) for the page; creating the warehouse and coverage on staging: Planned |
+| S-02 | Old-system workbook (owner, ~6 min) | `/ar/admin/setup/legacy-import` | **Workbook (.xlsx)** (الملف .xlsx) › your real workbook › **Upload and check** (رفع ومراجعة) › decide each negative-stock item (**Fix all to 0** (تصفير الكل) or skip) › **Start the import** › for each of the five steps in order (customers, products, prices, opening stock, opening balances): **Dry run** (تجربة), read the result, then **Commit** | Every card under **Reconciliation with the Checks sheet** (المطابقة مع ورقة المراجعة) says it matches the source (on-hand units differ only by the negative rows you chose to skip); a step opens only after the one before is committed; at the end **3. Data to complete** (٣. بيانات تحتاج استكمالاً) (customers without phone or location, items without cost) with links. No file is stored | OWN-03 to OWN-08 | Tested (local, synthetic workbook); the real import is yours |
+| S-03 | Invite a rep and sign in as the rep (owner, then rep, ~4 min) | `/ar/admin/setup` › **3. People, roles and logins** (3. الأشخاص والأدوار وحسابات الدخول) | **Add a person** (إضافة شخص): name "Rep Test", **E-mail** a mailbox you control › **Add person** › on that row **Create login and role** (إنشاء حساب دخول ودور): **Role** (الدور) Sales Representative, **Territory** (المنطقة) Mansoura › **Create login and link** (إنشاء الحساب والرابط) › open the link in a private window (or on the phone). Then back as owner: **Base address** (عنوان الانطلاق) › **Type the point instead** (إدخال النقطة يدويًا) or **Find on map and save** (with the key) › **Lead radius (km)** 5 › **Save the point** | "Login created for … Send this link privately:" with a one-time link (no e-mail until SMTP is set up); the rep lands on the rep home with **Start my day** (ابدأ يومي) and the bottom bar (Today, Map, Leads, Visits, Orders); the row shows **Has a login** (له حساب دخول) and "Base set · 5 km" | ADM-08, REP-01 | Planned (the local stack has no real Supabase Auth); REP-01 Tested (local) |
+| S-04 | Leads near the rep (rep, phone, ~3 min) | `/ar/leads` | Read the list; open one lead | Without the Places key: the plain notice that clinic names are not available yet and each lead as **Clinic (name not loaded)**; with the key: names, address, Google attribution, nearest first. On `/ar/leads/team` (owner) **Search now** lists a run with its estimated cost | REP-03, REP-04, REP-24, OWN-17 | Tested (local) without key; with the key: Planned |
+| S-05 | Visit with check-in (rep, phone, ~4 min) | `/ar/today` then `/ar/leads/<id>` | **Start my day** (ابدأ يومي) › open a lead › **Clinic name** (اسم العيادة), **Doctor's name** (اسم الطبيب), **Governorate** (المحافظة) › **Save and check in** (حفظ وتسجيل الوصول) › allow location › **Check in at …** (تسجيل الوصول عند …) › later **Check out** | The lead becomes a prospect customer; the visit shows **in progress** with the GPS result (inside the radius, or "needs a manager's approval" without location); a pin proposal appears for the area manager (`/ar/map/proposals`) | REP-02, REP-05, AM-10, REP-23 | Tested (local) in a browser; on a real phone (APK, background tracking): Planned (`docs/TESTING.md` §6.1) |
+| S-06 | Order with an offer and a free item (rep, ~4 min) | `/ar/orders/new` | **Customer** = the new prospect › an offer **Add** (إضافة) › **Search products** (ابحث في المنتجات) › **Add** a product with **Price** = **Free / bonus** (مجاني / هدية) › **Calculate prices on the server** (احسب الأسعار على الخادم) › **Save and review prices** › **Submit order** | Before saving: the offer lines, the free line at 0 (**Free**, مجاني), VAT per product rate; the preview says the order needs approval because "A free item outside an offer needs a sales manager." After submit: **Pending approval** (بانتظار الموافقة) | REP-09, REP-10, REP-12 | Tested (local) in parts (offer order, free line and approval reason); this combined order: Planned |
+| S-07 | Approval (owner or sales director, ~2 min) | `/ar/approvals` | **To decide** (بانتظار قرارك) › the request (its type reads in Arabic, e.g. "خصم أو ائتمان طلبية") › **Approve** (موافقة) | "This request was approved. No further decision is needed."; the order is **Approved** (معتمد); the rep gets a notification that opens the order | SD-04, OWN-14, REP-20 | Tested (local) |
+| S-08 | Fulfil and invoice (inventory, then finance, ~3 min) | the order page `/ar/orders/<id>` | Inventory: **Warehouse** (المستودع) › **Reserve stock** (حجز المخزون) › **Post fulfilment** (تسجيل التنفيذ). Finance: **Issue invoice** (إصدار فاتورة) › **Issue invoice** (إصدار الفاتورة) | **Reserved**, then **Fulfilled**; invoice `INV-…` with **VAT summary** (ملخص الضريبة) per rate; the free line at 0 | INV-03, FIN-03, FIN-02 | Tested (local) |
+| S-09 | Payment (rep, then finance, ~3 min) | `/ar/finance/payments/new`, then `/ar/finance/payments` | Rep: **Customer** › **Amount received (EGP)** › **Cash** (نقدًا) › **Record payment** (تسجيل الدفعة). Finance: the payment › **Confirm payment** (تأكيد الدفعة) › **Choose amounts** (تحديد المبالغ) on the invoice › **Allocate these amounts** (توزيع هذه المبالغ) | **Waiting for verification** (بانتظار التحقق), then **Confirmed** (مؤكدة) with the invoice under **Allocations** (التوزيعات); the invoice is paid or part-paid | REP-14, FIN-04 | Tested (local) |
+| S-10 | Commission statement (finance, then rep, ~2 min) | `/ar/commissions/periods`, then `/ar/commissions` | Finance: **Recalculate <month>** (إعادة حساب …). Rep: read the statement | "The month was recalculated."; **Commission statement** (كشف العمولة) lists the paid invoice under **From collected cash to commission**, with **Print statement** (طباعة الكشف). Needs STD-2026 active (OWN-19) | FIN-05, REP-15, REP-21, OWN-19 | Tested (local); activating STD-2026 on staging: Planned (yours) |
+| S-11 | Map and tracking day view (owner or area manager, ~3 min) | `/ar/map`, `/ar/tracking`, then `/ar/tracking/<rep>` | Map: read the pins and the list. Tracking: **Tracking health now** (حالة التتبع الآن) › the rep's name. Rep, at the end: **End my day** (أنهِ يومي) › **Yes, end my day** | Without the browser key: the map pages say the map is not available yet and still list customers and counts; with the key: Google map in Arabic with pins. Tracking lists only your team; the day page shows the day summary (start, visits, stops, end) and, with the key, the route | REP-16, AM-02, AM-03, AM-04, OWN-18 | Tested (local) without key; with the key and a real day's points: Planned |
+
 ## How to run the automated lines
 
 **Local (all lines, writes included):**
@@ -237,6 +267,11 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 | Admin | 8 | 7 | 1 | 7 |
 | **Total** | **84** | **77** | **7** | **38** |
 
+The 30-minute staging run (section 0) has 11 steps built from these lines: 4 rely only on lines
+Tested (local) (S-02 with the synthetic workbook, S-07 to S-09); 7 also need something only
+staging has (creating the warehouse, real sign-in links, Google keys, a real phone, a combined
+offer-and-free-item order, the STD-2026 activation) and stay Planned for that part.
+
 Nothing is Verified.
 
 ## What cannot be automated here
@@ -265,6 +300,24 @@ Nothing is Verified.
   device.
 
 ## Record (filled in by the owner on staging)
+
+**The 30-minute staging run (section 0):**
+
+| Step | Date | Passed? | What was seen if not | Browser / phone |
+|------|------|---------|----------------------|-----------------|
+| S-01 owner setup | | | | |
+| S-02 workbook import | | | | |
+| S-03 rep invite and login | | | | |
+| S-04 leads | | | | |
+| S-05 visit with check-in | | | | |
+| S-06 order with offer and free item | | | | |
+| S-07 approval | | | | |
+| S-08 fulfil and invoice | | | | |
+| S-09 payment | | | | |
+| S-10 commission statement | | | | |
+| S-11 map and tracking day | | | | |
+
+**Lines per role (sections 1–7):**
 
 | Date | Role / account | Lines done | Passed | Failed (line, what was seen) | Browser / phone | By |
 |------|----------------|-----------|--------|------------------------------|-----------------|----|
