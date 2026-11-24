@@ -1,6 +1,7 @@
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Card, CardTitle } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
+import { workflowLabel } from "@/modules/approvals/components/request-view";
 import { formatDay } from "../format";
 import { toNumber } from "../logic";
 import type { OverdueCustomerRow, PendingApprovalRow } from "../types";
@@ -41,6 +42,7 @@ export async function OverdueCustomers({ rows, title }: { rows: readonly Overdue
 /** Requests the caller can decide now (api.v_approval_requests, caller-scoped). */
 export async function PendingApprovals({ rows }: { rows: readonly PendingApprovalRow[] }) {
   const t = await getTranslations("dashboards.pending");
+  const ta = await getTranslations("approvals");
   const format = await getFormatter();
   const locale = await getLocale();
   return (
@@ -55,7 +57,7 @@ export async function PendingApprovals({ rows }: { rows: readonly PendingApprova
             return (
               <li key={r.request_id}>
                 <Link href={`/approvals/${r.request_id}`} className="flex min-h-11 flex-col justify-center gap-0.5 py-2 hover:bg-muted">
-                  <span className="font-medium">{r.workflow_name}</span>
+                  <span className="font-medium">{workflowLabel(ta, r.workflow_code, r.workflow_name)}</span>
                   <span className="text-xs text-muted-foreground">
                     {[subject, r.customer_name, format.dateTime(new Date(r.created_at), { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Cairo", numberingSystem: "latn" })]
                       .filter(Boolean)

@@ -32,7 +32,8 @@
     "creditLimit": "تعديل حد الائتمان",
     "commissionPeriod": "فترة عمولات",
     "commissionAdjustment": "تعديل عمولة",
-    "dataExport": "تصدير بيانات حساسة"
+    "dataExport": "تصدير بيانات حساسة",
+    "writeOff": "شطب فاتورة"
   },
   "status": {
     "pending": "قيد الانتظار",

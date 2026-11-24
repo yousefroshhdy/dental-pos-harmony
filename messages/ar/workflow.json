@@ -22,7 +22,8 @@
     "creditLimit": "تغيير حد الائتمان",
     "commissionPeriod": "فترة العمولات",
     "commissionAdjustment": "تعديل عمولة",
-    "dataExport": "تصدير بيانات حساسة"
+    "dataExport": "تصدير بيانات حساسة",
+    "writeOff": "شطب فاتورة"
   },
   "errors": {
     "PERMISSION_DENIED": "غير مسموح لك بهذا الإجراء. (مرجع {requestId})",

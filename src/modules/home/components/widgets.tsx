@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Link } from "@/i18n/navigation";
 import type { AppError } from "@/lib/errors";
 import { cn } from "@/lib/utils";
+import { workflowLabel } from "@/modules/approvals/components/request-view";
 import { formatKpi, formatPercent } from "@/modules/dashboards/format";
 import { byCode, KPI_LINKS, pivotTeam, toNumber } from "@/modules/dashboards/logic";
 import { getKpiSummary, getKpiTeam, getPendingForMe } from "@/modules/dashboards/queries";
@@ -46,7 +47,7 @@ export async function HomeSection({
           {title}
         </h2>
         {href ? (
-          <Link href={href} className="inline-flex min-h-11 items-center gap-0.5 text-sm text-primary underline-offset-4 hover:underline">
+          <Link href={href} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-0.5 text-sm text-primary underline-offset-4 hover:underline">
             {t("open")}
             <Chevron aria-hidden="true" className="size-4" />
           </Link>
@@ -143,6 +144,7 @@ export async function KpiStrip({ codes, period, title }: { codes: readonly KpiCo
 
 export async function ApprovalsCard() {
   const t = await getTranslations("home");
+  const ta = await getTranslations("approvals");
   const format = await getFormatter();
   const pending = await getPendingForMe();
   return (
@@ -157,7 +159,7 @@ export async function ApprovalsCard() {
             <li key={r.request_id}>
               <Link href={`/approvals/${r.request_id}`} className="flex min-h-11 items-center justify-between gap-3 py-2 hover:text-primary">
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{r.workflow_name}</span>
+                  <span className="block truncate text-sm font-medium">{workflowLabel(ta, r.workflow_code, r.workflow_name)}</span>
                   {r.customer_name ? <span className="block truncate text-xs text-muted-foreground">{r.customer_name}</span> : null}
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground tabular-nums">

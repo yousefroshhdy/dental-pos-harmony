@@ -33,6 +33,7 @@ export const WORKFLOW_LABEL_KEYS: Record<string, string> = {
   "perf.commission_period": "commissionPeriod",
   "perf.commission_adjustment": "commissionAdjustment",
   "data.export": "dataExport",
+  "finance.write_off": "writeOff",
 };
 const WORKFLOW_ORDER = Object.keys(WORKFLOW_LABEL_KEYS);
 

@@ -22,7 +22,8 @@
     "creditLimit": "Credit limit change",
     "commissionPeriod": "Commission period",
     "commissionAdjustment": "Commission adjustment",
-    "dataExport": "Sensitive data export"
+    "dataExport": "Sensitive data export",
+    "writeOff": "Invoice write-off"
   },
   "errors": {
     "PERMISSION_DENIED": "You are not allowed to do this. (ref {requestId})",

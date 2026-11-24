@@ -43,6 +43,7 @@ export const WORKFLOW_LABEL_KEYS: Record<string, string> = {
   "perf.commission_period": "commissionPeriod",
   "perf.commission_adjustment": "commissionAdjustment",
   "data.export": "dataExport",
+  "finance.write_off": "writeOff",
 };
 
 export function workflowLabelKey(code: string | null | undefined): string | null {
