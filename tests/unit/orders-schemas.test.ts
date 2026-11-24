@@ -22,7 +22,7 @@ describe("draft lines: ids, quantities and what the seller asks for", () => {
 
   it.each([
     ["a requested discount", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 24 }],
-    ["a net price typed by the seller", { variant_id: VARIANT, quantity: 2, net_unit_price: 2667.85 }],
+    ["a net price typed by the seller", { variant_id: VARIANT, quantity: 2, net_unit_price: 2723.45 }],
     ["a free (bonus) line", { variant_id: VARIANT, quantity: 3, is_bonus: true }],
   ])("accepts %s (the server converts and checks it)", (_label, line) => {
     expect(draftLineSchema.safeParse(line).success).toBe(true);
@@ -34,7 +34,7 @@ describe("draft lines: ids, quantities and what the seller asks for", () => {
     ["a tax", { variant_id: VARIANT, quantity: 1, line_tax: 10 }],
     ["a discount above 100 %", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 120 }],
     ["a discount of 0", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 0 }],
-    ["a net price with 3 decimals", { variant_id: VARIANT, quantity: 1, net_unit_price: 2667.855 }],
+    ["a net price with 3 decimals", { variant_id: VARIANT, quantity: 1, net_unit_price: 2723.455 }],
     ["both a discount and a net price", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 5, net_unit_price: 900 }],
     ["a bonus line with a discount", { variant_id: VARIANT, quantity: 1, is_bonus: true, requested_discount_pct: 5 }],
     ["is_bonus false (omit it instead)", { variant_id: VARIANT, quantity: 1, is_bonus: false }],

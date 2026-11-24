@@ -1,8 +1,8 @@
 -- Honest OS migration: Phase P step 6, part 1 — offers/packages, bonus lines, net prices,
 -- invoice-level discounts, decision-B discount tiers and per-product VAT (schema + admin).
 --
--- How HONEST sells (old system, 318 invoices / 1,388 lines): free package items (kits, abutments,
--- scan bodies), deep fixed discounts (20 %, 24 %, 46.64 %), net prices typed by the seller, and one
+-- How HONEST sells (old system invoices): free package items (kits, abutments,
+-- scan bodies), deep fixed discounts, net prices typed by the seller, and one
 -- implant at several prices. Decisions B and C (docs/DECISIONS.md Part C, 2026-11-24) bind this.
 --
 -- Contents

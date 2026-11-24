@@ -121,10 +121,11 @@ Definitions are in `docs/TESTING.md` §4.
 | Step 2a role homes on `/[locale]` (owner > finance > manager > rep), existing `api.*` reads only | Implemented, Tested (unit: role choice, figures) | `src/modules/home`, unit `ui-home-role` |
 | Step 2b per-screen redesign (Today, Customers, Customer detail, Orders, then the rest) and screenshots | Planned (next wave) | — |
 | Step | Item | Status | Evidence |
-| 1 | Old-system workbook → import CSVs (`pnpm legacy:convert`), reconciliation vs the Checks sheet; real files in `private/import/` | Implemented, Tested | `tests/unit/legacy-convert.test.ts` (synthetic workbook); run once on the owner's workbook: customers 58, debit 5,265,439.70 and credit 1,500,000.00 match; stock units 12,146 vs 12,139 (2 negative rows left out) |
+| 1 | Old-system workbook → import CSVs (`pnpm legacy:convert`), reconciliation vs the Checks sheet; real files in `private/import/` | Implemented, Tested | `tests/unit/legacy-convert.test.ts` (synthetic workbook); run once on the owner's workbook (locally, output not committed): customer count, debit and credit totals match the source; stock units match the source except the 2 negative rows left out |
 | 1 | Imports accept the old data: customers without a phone, old account numbers, base (DEFAULT) prices, unknown cost, governorate batch default | Implemented, Tested | suite 55 (converter output end to end), suites 34/47 unchanged |
 | 1 | Owner setup screen `/admin/setup`: warehouse, legacy brands/category, territories (Mansoura → Dakahlia), people, logins with roles (one-time link, no SMTP), reps' base address (Google geocoding or typed), import order | Implemented, Tested (DB + unit) | suite 55, `tests/unit/admin-setup.test.ts`; no live click-through yet |
 | 1 | Load the files on staging (owner) | Planned | owner steps in the step-1 report |
+| — | Privacy clean-up (reviewer, 2026-11-25): no real workbook figure, name or phone in any committed file; real totals replaced with "matches the source"; suite 56 and unit tests use a synthetic net-price shape (2,723.45 / 45.53 %) | Implemented, Tested | scan of every tracked file against the workbook (names, phones, amounts); `pnpm test:db` 3207 / 0 failing, `pnpm check` 1757 |
 
 ## 2. MVP scope (prioritised)
 

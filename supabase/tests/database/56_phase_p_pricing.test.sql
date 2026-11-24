@@ -1,9 +1,9 @@
 -- Phase P step 6: pricing, offers and VAT (migrations 20261125000200 and 20261125000210).
 -- Synthetic copies of the real invoice shapes (no real names, numbers or customers):
 --   * a package with two bonus lines (kit + abutments free with three implants)
---   * a 46.64 % offer that needs no approval
+--   * a 45.53 % offer that needs no approval
 --   * manual 24 % by a rep (approval) and by a sales manager (direct); 30 % by a manager (owner)
---   * a net price of 2,667.85 typed against a 5,000 list price
+--   * a net price of 2,723.45 typed against a 5,000 list price
 --   * an invoice-level discount spread across lines, rounding on the last line
 --   * a VAT-0 product next to a 14 % one, and issued invoices that keep their VAT
 --   * an expired, untargeted or changed offer refused at submit
@@ -87,11 +87,11 @@ select is((api.upsert_offer('56300000-0000-0000-0000-000000000001', 'pkg-3', 'Th
   'the owner defines a package: 3 implants for 12,000 with a free kit and 3 free abutments');
 select is((select code || '|' || pricing_mode || '|' || package_price::text || '|' || version from sales.offers
            where id = '56300000-0000-0000-0000-000000000001'), 'PKG-3|package|12000.00|1', 'the code is normalised to upper case');
-select is(api.upsert_offer('56300000-0000-0000-0000-000000000002', 'OFF-4664', 'Implant at 2,668', null,
+select is(api.upsert_offer('56300000-0000-0000-0000-000000000002', 'OFF-4553', 'Implant at 2,723.50', null,
   'per_line', null, core.business_date(), null,
-  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":2668},
-    {"variant_id":"56200000-0000-0000-0000-000000000003","quantity":1,"is_bonus":true}]') ->> 'code', 'OFF-4664',
-  'a per-line offer: one implant at a net 2,668 (46.64 %) with a free scan body');
+  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":2723.50},
+    {"variant_id":"56200000-0000-0000-0000-000000000003","quantity":1,"is_bonus":true}]') ->> 'code', 'OFF-4553',
+  'a per-line offer: one implant at a net 2,723.50 (45.53 %) with a free scan body');
 select lives_ok($$select api.upsert_offer('56300000-0000-0000-0000-000000000003', 'TGT-DELTA', 'Delta only', null,
   'per_line', null, core.business_date(), null,
   '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":4000}]',
@@ -133,12 +133,12 @@ select is((select count(*)::int from integration.outbox where event_type = 'offe
 
 -- Reads
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
-select is((select string_agg(code, ',' order by code) from api.v_offers where is_current), 'OFF-4664,PKG-3,SHORT,TAG-GOLD,TGT-DELTA',
+select is((select string_agg(code, ',' order by code) from api.v_offers where is_current), 'OFF-4553,PKG-3,SHORT,TAG-GOLD,TGT-DELTA',
   'a rep reads the current offers');
 select is((select count(*)::int from api.v_offer_customers where offer_id = '56300000-0000-0000-0000-000000000003'), 0,
   'but not the targeted customer outside their scope');
 select is((select string_agg(code, ',' order by code) from jsonb_to_recordset(api.eligible_offers('40000000-0000-0000-0000-000000000001')) as x(code text)),
-  'OFF-4664,PKG-3,SHORT', 'eligible offers for this customer: untargeted ones only');
+  'OFF-4553,PKG-3,SHORT', 'eligible offers for this customer: untargeted ones only');
 select is((select count(*)::int from jsonb_array_elements(api.eligible_offers('40000000-0000-0000-0000-000000000001') -> 0 -> 'items')), 2,
   'each eligible offer carries its items');
 select throws_like($$select api.eligible_offers('40000000-0000-0000-0000-000000000002')$$, 'PERMISSION_DENIED%',
@@ -207,15 +207,15 @@ select is((select count(*)::int from finance.invoice_items where invoice_id = cu
   'only the paid line is in the commission base (the engine reads line_total > 0)');
 
 -- ===========================================================================
--- 5. A 46.64 % offer needs no approval
+-- 5. A 45.53 % offer needs no approval
 -- ===========================================================================
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select api.save_order_draft('56400000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000001',
   '[{"offer_id":"56300000-0000-0000-0000-000000000002"}]');
 select is((select string_agg(applied_discount_pct::numeric || '/' || line_discount::numeric || '/' || manual_discount_pct::numeric || '/' || is_bonus, ',' order by line_no)
            from api.v_order_lines where order_id = '56400000-0000-0000-0000-000000000002'),
-  '46.64/2332.00/0.00/false,0.00/0.00/0.00/true', '5,000 → 2,668 is 46.64 % off, plus the free scan body');
-select is(api.submit_order('56400000-0000-0000-0000-000000000002') ->> 'status', 'submitted', 'the 46.64 % offer is submitted without approval');
+  '45.53/2276.50/0.00/false,0.00/0.00/0.00/true', '5,000 → 2,723.50 is 45.53 % off, plus the free scan body');
+select is(api.submit_order('56400000-0000-0000-0000-000000000002') ->> 'status', 'submitted', 'the 45.53 % offer is submitted without approval');
 
 -- ===========================================================================
 -- 6. Manual discounts against the tiers: rep 0 %, sales manager 25 %, owner above
@@ -271,23 +271,23 @@ select is((select r.priority || '|' || string_agg(s.stage_no || ':' || coalesce(
 update crm.customers set credit_limit = null where id = '40000000-0000-0000-0000-000000000001';
 
 -- ===========================================================================
--- 7. Net-price entry: 2,667.85 typed against a 5,000 list price
+-- 7. Net-price entry: 2,723.45 typed against a 5,000 list price
 -- ===========================================================================
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select set_config('t.net', api.save_order_draft('56400000-0000-0000-0000-000000000006', '40000000-0000-0000-0000-000000000001',
-  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":2,"net_unit_price":2667.85}]')::text, true);
+  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":2,"net_unit_price":2723.45}]')::text, true);
 select is((select requested_net_price::numeric || '|' || requested_discount_pct::numeric || '|' || applied_discount_pct::numeric
                   || '|' || line_subtotal::numeric || '|' || line_discount::numeric || '|' || line_tax::numeric || '|' || line_total::numeric
            from api.v_order_lines where order_id = '56400000-0000-0000-0000-000000000006'),
-  '2667.85|46.64|46.64|10000.00|4664.30|747.00|6082.70',
-  'net 2,667.85 → 46.64 % (2 decimals) and an exact discount of 2 × 2,332.15; VAT on 5,335.70');
+  '2723.45|45.53|45.53|10000.00|4553.10|762.57|6209.47',
+  'net 2,723.45 → 45.53 % (2 decimals) and an exact discount of 2 × 2,276.55; VAT on 5,446.90');
 select is((select (line_subtotal - line_discount) / quantity from sales.order_items where order_id = '56400000-0000-0000-0000-000000000006'),
-  2667.85::numeric, 'the net unit price is exactly what the seller typed');
-select is((current_setting('t.net')::jsonb ->> 'indicative_total')::numeric, 6082.70::numeric, 'order total 10,000 − 4,664.30 + 747.00');
-select is(api.submit_order('56400000-0000-0000-0000-000000000006') ->> 'status', 'pending_approval', '46.64 % typed by a rep needs approval');
+  2723.45::numeric, 'the net unit price is exactly what the seller typed');
+select is((current_setting('t.net')::jsonb ->> 'indicative_total')::numeric, 6209.47::numeric, 'order total 10,000 − 4,553.10 + 762.57');
+select is(api.submit_order('56400000-0000-0000-0000-000000000006') ->> 'status', 'pending_approval', '45.53 % typed by a rep needs approval');
 select tests.clear_authentication();
 select is((select payload ->> 'owner_required' from wf.approval_requests where entity_id = '56400000-0000-0000-0000-000000000006'), 'true',
-  'and 46.64 % is above the manager tier: owner');
+  'and 45.53 % is above the manager tier: owner');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select throws_like($$select api.save_order_draft(gen_random_uuid(), '40000000-0000-0000-0000-000000000001',
   '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":5000.01}]')$$,
@@ -299,7 +299,7 @@ select throws_like($$select api.save_order_draft(gen_random_uuid(), '40000000-00
   '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":0}]')$$,
   'VALIDATION%', 'a net price of 0 is refused (free items are bonus lines)');
 select throws_like($$select api.save_order_draft(gen_random_uuid(), '40000000-0000-0000-0000-000000000001',
-  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":2667.855}]')$$,
+  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":2723.455}]')$$,
   'VALIDATION%', 'a net price has at most 2 decimals');
 select throws_like($$select api.save_order_draft(gen_random_uuid(), '40000000-0000-0000-0000-000000000001',
   '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"line_total":1}]')$$,
@@ -418,7 +418,7 @@ select is((select tax_total::numeric || '|' || total::numeric from finance.invoi
 select is((select string_agg(tax_rate_pct::numeric || ':' || tax_amount::numeric, ',' order by tax_amount desc) from finance.invoice_items
            where invoice_id = current_setting('t.inv')::uuid and not is_bonus), '14.00:1680.00', 'its lines keep the rate of the issue');
 select is((select tax_rate_pct::numeric || ':' || line_tax::numeric from sales.order_items where order_id = '56400000-0000-0000-0000-000000000002'
-           and line_no = 1), '14.00:373.52', 'a submitted order keeps its VAT');
+           and line_no = 1), '14.00:381.29', 'a submitted order keeps its VAT');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select is((api.save_order_draft(gen_random_uuid(), '40000000-0000-0000-0000-000000000001',
   '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1}]') ->> 'tax_total')::numeric, 250::numeric,
@@ -459,9 +459,9 @@ select api.save_order_draft('56400000-0000-0000-0000-000000000012', '40000000-00
 select is((select string_agg(quantity::text, ',' order by line_no) from sales.order_items where order_id = '56400000-0000-0000-0000-000000000012'),
   '2,2', 'two packages double every line');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a1');
-select is((api.upsert_offer('56300000-0000-0000-0000-000000000002', 'OFF-4664', 'Implant at 2,668', null,
+select is((api.upsert_offer('56300000-0000-0000-0000-000000000002', 'OFF-4553', 'Implant at 2,723.50', null,
   'per_line', null, core.business_date(), null,
-  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":2668}]', null, null, null, 1) ->> 'version')::int, 2,
+  '[{"variant_id":"56200000-0000-0000-0000-000000000001","quantity":1,"net_unit_price":2723.50}]', null, null, null, 1) ->> 'version')::int, 2,
   'the owner removes the free scan body (version 2)');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select throws_like($$select api.submit_order('56400000-0000-0000-0000-000000000012')$$, 'OFFER_CHANGED%',
@@ -472,7 +472,7 @@ select tests.authenticate_as('00000000-0000-0000-0000-0000000000a4');
 select throws_like($$select api.save_order_draft(gen_random_uuid(), '40000000-0000-0000-0000-000000000001',
   '[{"offer_id":"56300000-0000-0000-0000-000000000001"}]')$$, 'OFFER_INACTIVE%', 'an ended offer cannot be picked');
 select is((select count(*)::int from jsonb_array_elements(api.eligible_offers('40000000-0000-0000-0000-000000000001'))), 2,
-  'eligible now: the 46.64 % offer and the gold-tier offer');
+  'eligible now: the 45.53 % offer and the gold-tier offer');
 
 -- ===========================================================================
 -- 12. Package price above the current list value is capped (never a negative discount)
@@ -488,23 +488,23 @@ select is((api.save_order_draft(gen_random_uuid(), '40000000-0000-0000-0000-0000
 
 -- ===========================================================================
 -- 12b. A partial invoice of a net-price line takes its discount pro rata from the amount
---      (3 × net 2,667.85 against 5,000; one delivered): exactly 2,667.85 net, not 46.64 % of 5,000
+--      (3 × net 2,723.45 against 5,000; one delivered): exactly 2,723.45 net, not 45.53 % of 5,000
 -- ===========================================================================
 select tests.clear_authentication();
 insert into sales.orders (id, order_no, customer_id, employee_id, status, payment_terms_days, subtotal, discount_total, tax_total, total)
 values ('56400000-0000-0000-0000-000000000020', 'SO-SYN-56', '40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000004',
-        'partially_fulfilled', 0, 15000, 6996.45, 1120.50, 9124.05);
+        'partially_fulfilled', 0, 15000, 6829.65, 1143.85, 9314.20);
 insert into sales.order_items (id, order_id, line_no, variant_id, quantity, list_price, requested_discount_pct, applied_discount_pct,
                                tax_rate_pct, line_subtotal, line_discount, line_tax, line_total, fulfilled_qty, requested_net_price, manual_discount_pct)
 values ('56410000-0000-0000-0000-000000000020', '56400000-0000-0000-0000-000000000020', 1, '56200000-0000-0000-0000-000000000001', 3, 5000,
-        46.64, 46.64, 14, 15000, 6996.45, 1120.50, 9124.05, 1, 2667.85, 46.64);
+        45.53, 45.53, 14, 15000, 6829.65, 1143.85, 9314.20, 1, 2723.45, 45.53);
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a6');
 select set_config('t.part', api.issue_invoice('56400000-0000-0000-0000-000000000020', 'syn-part-inv') ->> 'invoice_id', true);
 select is((select discount::numeric || '|' || (line_subtotal - discount)::numeric || '|' || tax_amount::numeric
-           from finance.invoice_items where invoice_id = current_setting('t.part')::uuid), '2332.15|2667.85|373.50',
-  'one of three net-price units is invoiced at exactly 2,667.85 + 14 % VAT');
-select is((select total::numeric from finance.invoices where id = current_setting('t.part')::uuid), 3041.35::numeric,
-  'invoice total 2,667.85 + 373.50');
+           from finance.invoice_items where invoice_id = current_setting('t.part')::uuid), '2276.55|2723.45|381.28',
+  'one of three net-price units is invoiced at exactly 2,723.45 + 14 % VAT');
+select is((select total::numeric from finance.invoices where id = current_setting('t.part')::uuid), 3104.73::numeric,
+  'invoice total 2,723.45 + 381.28');
 
 -- ===========================================================================
 -- 13. Old payloads keep working

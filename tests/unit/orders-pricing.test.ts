@@ -33,29 +33,29 @@ const MIGRATION = readFileSync(join(__dirname, "../../supabase/migrations/202611
 
 describe("typed numbers", () => {
   it("2 decimals at most; Arabic-Indic digits, ٫ and thousands separators accepted", () => {
-    expect(parseDecimal("2667.85")).toBe(2667.85);
-    expect(parseDecimal("٢٦٦٧٫٨٥")).toBe(2667.85);
+    expect(parseDecimal("2723.45")).toBe(2723.45);
+    expect(parseDecimal("٢٧٢٣٫٤٥")).toBe(2723.45);
     expect(parseDecimal("5,000")).toBe(5000);
-    expect(parseDecimal("2667.855")).toBeNull();
+    expect(parseDecimal("2723.455")).toBeNull();
     expect(parseDecimal("-5")).toBeNull();
     expect(parseDecimal("abc")).toBeNull();
     expect(parseDecimal("")).toBeNull();
   });
   it("a discount is 0 < pct ≤ 100; an amount is > 0", () => {
-    expect(parseDiscountPct("46.64")).toBe(46.64);
+    expect(parseDiscountPct("45.53")).toBe(45.53);
     expect(parseDiscountPct("0")).toBeNull();
     expect(parseDiscountPct("100.01")).toBeNull();
     expect(parseAmount("0")).toBeNull();
     expect(parseAmount("0.01")).toBe(0.01);
     expect(adjustValid({ kind: "net", value: "" })).toBe(true);
-    expect(adjustValid({ kind: "net", value: "2667,85x" })).toBe(false);
+    expect(adjustValid({ kind: "net", value: "2723,45x" })).toBe(false);
     expect(adjustValid({ kind: "discount", value: "24" })).toBe(true);
   });
 });
 
 describe("draft payload", () => {
   const lines = [
-    { variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", name: "Synthetic implant", adjust: { kind: "net" as const, value: "2667.85" } },
+    { variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", name: "Synthetic implant", adjust: { kind: "net" as const, value: "2723.45" } },
     { variant_id: ABUTMENT, quantity: 1, sku: "SYN-V2", name: "Synthetic abutment", bonus: true },
     { variant_id: ABUTMENT, quantity: 3, sku: "SYN-V2", name: "Synthetic abutment", adjust: { kind: "discount" as const, value: "24" } },
   ];
@@ -73,7 +73,7 @@ describe("draft payload", () => {
     });
     expect(p.lines).toEqual([
       { offer_id: OFFER, quantity: 2 },
-      { variant_id: IMPLANT, quantity: 2, net_unit_price: 2667.85 },
+      { variant_id: IMPLANT, quantity: 2, net_unit_price: 2723.45 },
       { variant_id: ABUTMENT, quantity: 1, is_bonus: true },
       { variant_id: ABUTMENT, quantity: 3, requested_discount_pct: 24 },
     ]);
@@ -116,13 +116,13 @@ describe("saved draft → builder", () => {
   const saved = [
     { variant_id: IMPLANT, quantity: 3, sku: "SYN-V1", variant_name: "Implant", offer_id: OFFER, offer_code: "PKG-3", offer_packages: 1, is_bonus: false },
     { variant_id: ABUTMENT, quantity: 3, sku: "SYN-V2", variant_name: "Abutment", offer_id: OFFER, offer_code: "PKG-3", offer_packages: 1, is_bonus: true },
-    { variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", variant_name: "Implant", requested_net_price: "2667.85", requested_discount_pct: "46.64" },
+    { variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", variant_name: "Implant", requested_net_price: "2723.45", requested_discount_pct: "45.53" },
     { variant_id: ABUTMENT, quantity: 1, sku: "SYN-V2", variant_name: "Abutment", is_bonus: true },
   ];
   it("offer lines become the offer; other lines keep their bonus flag and the price asked", () => {
     expect(offersFromLines(saved)).toEqual([{ offer_id: OFFER, packages: 1, code: "PKG-3", name: "PKG-3" }]);
     expect(linesToBuilder(saved)).toEqual([
-      { variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", name: "Implant", adjust: { kind: "net", value: "2667.85" } },
+      { variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", name: "Implant", adjust: { kind: "net", value: "2723.45" } },
       { variant_id: ABUTMENT, quantity: 1, sku: "SYN-V2", name: "Abutment", bonus: true },
     ]);
   });
@@ -161,7 +161,7 @@ describe("device copy keeps offers and what was typed", () => {
       customerId: CUSTOMER,
       visitId: null,
       notes: "",
-      lines: [{ variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", name: "Implant", adjust: { kind: "net", value: "2667.85" } }],
+      lines: [{ variant_id: IMPLANT, quantity: 2, sku: "SYN-V1", name: "Implant", adjust: { kind: "net", value: "2723.45" } }],
       offers: [{ offer_id: OFFER, packages: 2, code: "PKG-3", name: "Package" }],
       invoiceDiscount: { kind: "pct", value: "5" },
       dirty: true,
