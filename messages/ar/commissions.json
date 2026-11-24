@@ -255,5 +255,17 @@
     "historyTitle": "السجل",
     "historyEmpty": "لا توجد نِسَب سابقة.",
     "limited": "يُعرض آخر {count} صف نسبة."
+  },
+  "tables": {
+    "month": "الشهر",
+    "status": "الحالة",
+    "closing": "الإغلاق",
+    "actions": "الإجراءات",
+    "plan": "الخطة",
+    "name": "الاسم",
+    "window": "سارية",
+    "rates": "النسب",
+    "close": "إغلاق",
+    "searchEmployee": "ابحث بالاسم"
   }
 }

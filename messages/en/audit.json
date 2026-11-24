@@ -165,5 +165,12 @@
     "work": {
       "tasks": "Tasks"
     }
+  },
+  "table": {
+    "what": "Change",
+    "when": "When",
+    "actor": "By",
+    "changes": "Fields",
+    "emptyHint": "Widen the dates or clear a filter. Only changes made after auditing started are kept."
   }
 }

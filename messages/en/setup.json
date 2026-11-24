@@ -152,5 +152,24 @@
       "failed": "failed"
     },
     "partial": "The link works, but one step failed. Fix it on Admin → Users or Employees."
+  },
+  "console": {
+    "all": "All",
+    "noMatch": "Nothing matches.",
+    "filterStatus": "Filter by status",
+    "filterSeverity": "Filter by severity",
+    "jumpToModule": "Jump to a module",
+    "department": "Department",
+    "usersIntro": "Everyone who can sign in. Access comes only from roles; suspend a user to stop all access at once.",
+    "searchUsers": "Search by name, email or employee no.",
+    "usersEmptyHint": "Invite the first user from here or from the owner setup screen.",
+    "searchEmployees": "Search by name, job title or employee no.",
+    "employeesEmptyHint": "Add employees here, or all at once on the owner setup screen.",
+    "rolesIntro": "Each role is a set of permissions with a scope (own, team, territory, all). Open a role to see or change what it allows.",
+    "searchRoles": "Search roles",
+    "searchTerritories": "Search territories",
+    "securityIntro": "Sign-ins, role and permission changes, settings and exports. Newest first, Cairo time.",
+    "searchEventType": "Search by event code",
+    "heldTab": "Customers held"
   }
 }

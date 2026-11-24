@@ -122,5 +122,10 @@
     "saving": "جارٍ الحفظ…",
     "saveClass": "حفظ الفئة",
     "classSaved": "حُفظت فئة الزيارة."
+  },
+  "coverageTable": {
+    "customer": "العميل",
+    "status": "الحالة",
+    "search": "ابحث باسم العميل أو رقمه"
   }
 }

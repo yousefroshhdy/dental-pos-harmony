@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { MapPinIcon } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
@@ -7,7 +10,7 @@ import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { placeUrl, toLatLng } from "@/lib/maps/geo";
 import { localizedName, MAX_LOCATION_ACCURACY_M } from "@/modules/crm/logic";
-import { chipClass, Empty, Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
+import { chipClass, Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
 import { DecideProposalForm } from "@/modules/maps/components/decide-proposal-form";
 import { MapTabs } from "@/modules/maps/components/map-tabs";
 import { ProposalsMap, type ProposalPin } from "@/modules/maps/components/proposals-map";
@@ -58,11 +61,8 @@ export default async function LocationProposalsPage({ params, searchParams }: Pr
 
   return (
     <PageBody>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <MapTabs ctx={ctx} current="/map/proposals" />
-        <p className="text-sm text-muted-foreground">{t("explain")}</p>
-      </div>
+      <PageHeader title={t("title")} description={t("explain")} />
+      <MapTabs ctx={ctx} current="/map/proposals" />
       <nav aria-label={t("viewLabel")} className="flex gap-2">
         <Link href="/map/proposals" className={chipClass(view === "pending")}>
           {t("pending")}
@@ -75,7 +75,7 @@ export default async function LocationProposalsPage({ params, searchParams }: Pr
       {!result.ok ? (
         <Alert>{tErrors(result.error.messageKey, { requestId: result.error.requestId ?? "—" })}</Alert>
       ) : rows.length === 0 ? (
-        <Empty>{view === "pending" ? t("emptyPending") : t("emptyDecided")}</Empty>
+        <EmptyState icon={<MapPinIcon aria-hidden="true" />} title={view === "pending" ? t("emptyPending") : t("emptyDecided")} />
       ) : (
         <>
           {view === "pending" && pins.length > 0 ? <ProposalsMap apiKey={mapsBrowserKey()} locale={lang} pins={pins} /> : null}

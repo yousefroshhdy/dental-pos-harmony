@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { ChevronLeftIcon, ChevronRightIcon, RouteIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
@@ -148,57 +152,72 @@ export default async function TrackingDayPage({ params }: { params: Params }) {
 
   return (
     <PageBody>
-      <div className="space-y-1">
-        {isManager ? (
-          <Link href={`/tracking?date=${day}`} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-            {t("day.back")}
-          </Link>
-        ) : null}
-        <h1 className="text-2xl font-semibold break-words">{t("day.title", { name })}</h1>
-        <p className="text-sm text-muted-foreground">{format.dateTime(dayAsDate(day), CAIRO_DATE_LONG)}</p>
-        <div className="flex flex-wrap gap-1">
-          {view.flags.map((f) => (
-            <Badge key={f} tone="warning">
-              {t(`flags.${f}`)}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      <nav aria-label={t("day.timeline")} className="flex flex-wrap gap-2">
-        <Link href={`${base}/${addDays(day, -1)}`} className={buttonVariants({ variant: "outline" })}>
-          {t("day.prevDay")}
-        </Link>
-        {day < today ? (
-          <Link href={`${base}/${addDays(day, 1)}`} className={buttonVariants({ variant: "outline" })}>
-            {t("day.nextDay")}
-          </Link>
-        ) : null}
-      </nav>
+      <PageHeader
+        eyebrow={isManager ? <BackLink href={`/tracking?date=${day}`}>{t("day.back")}</BackLink> : undefined}
+        title={<span className="break-words">{t("day.title", { name })}</span>}
+        description={
+          <span className="flex flex-col gap-2">
+            <span>{format.dateTime(dayAsDate(day), CAIRO_DATE_LONG)}</span>
+            {view.flags.length > 0 ? (
+              <span className="flex flex-wrap gap-1">
+                {view.flags.map((f) => (
+                  <Badge key={f} tone="warning">
+                    {t(`flags.${f}`)}
+                  </Badge>
+                ))}
+              </span>
+            ) : null}
+          </span>
+        }
+        actions={
+          <nav aria-label={t("day.timeline")} className="flex flex-wrap gap-2">
+            <Link href={`${base}/${addDays(day, -1)}`} className={buttonVariants({ variant: "outline" })}>
+              <ChevronRightIcon aria-hidden="true" className="ltr:rotate-180" />
+              {t("day.prevDay")}
+            </Link>
+            {day < today ? (
+              <Link href={`${base}/${addDays(day, 1)}`} className={buttonVariants({ variant: "outline" })}>
+                {t("day.nextDay")}
+                <ChevronLeftIcon aria-hidden="true" className="ltr:rotate-180" />
+              </Link>
+            ) : null}
+          </nav>
+        }
+      />
 
       {view.summaryOnly ? (
-        <Alert tone="info">
+        <Alert tone="info" role="status">
           <strong className="font-semibold">{t("day.summaryOnlyTitle")}</strong> {t("day.summaryOnly", { days: data.retention_days ?? 90 })}
         </Alert>
       ) : view.purgedWithoutSummary ? (
-        <Alert tone="info">{t("day.purged")}</Alert>
+        <Alert tone="info" role="status">
+          {t("day.purged")}
+        </Alert>
       ) : null}
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map(([label, value]) => (
           <Card key={label} className="space-y-1 p-3 sm:p-4">
             <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="text-lg font-semibold">{value}</dd>
+            <dd className="text-lg font-semibold tabular-nums">{value}</dd>
           </Card>
         ))}
       </dl>
 
-      <TrackingDayMap day={data} locale={lang} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+        <div className="lg:sticky lg:top-20">
+          <TrackingDayMap day={data} locale={lang} />
+        </div>
 
-      <Section title={t("day.timeline")} count={timeline.length}>
-        <p className="text-sm text-muted-foreground">{t("day.explain")}</p>
-        {timeline.length === 0 ? <Empty>{t("day.empty")}</Empty> : <ol className="space-y-2">{timeline.map(entry)}</ol>}
-      </Section>
+        <Section title={t("day.timeline")} count={timeline.length}>
+          <p className="text-sm text-muted-foreground">{t("day.explain")}</p>
+          {timeline.length === 0 ? (
+            <EmptyState compact icon={<RouteIcon aria-hidden="true" />} title={t("day.empty")} />
+          ) : (
+            <ol className="space-y-2 border-s-2 ps-3">{timeline.map(entry)}</ol>
+          )}
+        </Section>
+      </div>
 
       <Section title={t("day.points")} count={view.summaryOnly ? view.figures.ping_count : view.points.length}>
         {view.summaryOnly ? (

@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { ChevronLeftIcon, ChevronRightIcon, ListChecksIcon, UserXIcon } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card, CardTitle, Label, Select } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { cn } from "@/lib/utils";
-import { BottomActions, Empty, PageBody } from "@/modules/field/components/layout-bits";
+import { BottomActions, PageBody } from "@/modules/field/components/layout-bits";
 import { localizedName } from "@/modules/field/logic";
 import { AddVisitForm } from "@/modules/planning/components/add-visit-form";
 import { UnplanButton } from "@/modules/planning/components/unplan-button";
@@ -61,7 +64,7 @@ export default async function PlanningWeekPage({ params, searchParams }: { param
     const own = planningErrorCode(loadError?.code);
     return (
       <PageBody>
-        <h1 className="text-2xl font-semibold">{t("week.title")}</h1>
+        <PageHeader title={t("week.title")} />
         <Alert>{own ? t(`errors.${own}`) : tErrors(loadError?.messageKey ?? "UNKNOWN", { requestId: loadError?.requestId ?? "—" })}</Alert>
       </PageBody>
     );
@@ -74,8 +77,8 @@ export default async function PlanningWeekPage({ params, searchParams }: { param
   if (!employee) {
     return (
       <PageBody>
-        <h1 className="text-2xl font-semibold">{t("week.title")}</h1>
-        <Empty>{t("errors.NO_EMPLOYEE_PROFILE")}</Empty>
+        <PageHeader title={t("week.title")} />
+        <EmptyState icon={<UserXIcon aria-hidden="true" />} title={t("errors.NO_EMPLOYEE_PROFILE")} />
       </PageBody>
     );
   }
@@ -102,13 +105,19 @@ export default async function PlanningWeekPage({ params, searchParams }: { param
 
   return (
     <PageBody>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("week.title")}</h1>
-        <p className="text-sm text-muted-foreground">{employee.is_me ? t("week.subtitleMine") : t("week.subtitleFor", { name: employeeName })}</p>
-      </div>
+      <PageHeader
+        title={t("week.title")}
+        description={employee.is_me ? t("week.subtitleMine") : t("week.subtitleFor", { name: employeeName })}
+        actions={
+          <Link href="/planning/coverage" className={buttonVariants({ variant: "outline" })}>
+            <ListChecksIcon aria-hidden="true" />
+            {t("coverage.title")}
+          </Link>
+        }
+      />
 
       {employees.length > 1 ? (
-        <form method="get" className="flex flex-wrap items-end gap-2">
+        <form method="get" className="flex flex-wrap items-end gap-2 rounded-lg border bg-card p-3 shadow-sm">
           <input type="hidden" name="week" value={week} />
           <div className="min-w-0 flex-1 space-y-1 sm:flex-none">
             <Label htmlFor="planning-employee">{t("week.employee")}</Label>
@@ -132,6 +141,7 @@ export default async function PlanningWeekPage({ params, searchParams }: { param
         </h2>
         <nav aria-label={t("week.navLabel")} className="flex flex-wrap gap-2">
           <Link href={weekHref(addDays(week, -7))} className={buttonVariants({ variant: "outline" })}>
+            <ChevronRightIcon aria-hidden="true" className="ltr:rotate-180" />
             {t("week.prev")}
           </Link>
           {week !== weekStartOf(today) ? (
@@ -141,6 +151,7 @@ export default async function PlanningWeekPage({ params, searchParams }: { param
           ) : null}
           <Link href={weekHref(addDays(week, 7))} className={buttonVariants({ variant: "outline" })}>
             {t("week.next")}
+            <ChevronLeftIcon aria-hidden="true" className="ltr:rotate-180" />
           </Link>
         </nav>
       </div>
@@ -171,7 +182,7 @@ export default async function PlanningWeekPage({ params, searchParams }: { param
                   </div>
                   {!isWorkDay ? <p className="text-xs text-muted-foreground">{t("week.dayOff")}</p> : null}
                   {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t("week.noVisits")}</p>
+                    <p className="rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">{t("week.noVisits")}</p>
                   ) : (
                     <ul className="space-y-2">
                       {items.map((r) => (

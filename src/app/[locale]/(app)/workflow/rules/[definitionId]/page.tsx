@@ -3,9 +3,12 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
+import { WorkflowIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { cn } from "@/lib/utils";
@@ -96,23 +99,29 @@ export default async function WorkflowDefinitionPage({ params }: { params: Param
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Link href="/workflow/rules" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("rules.back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{labelKey ? t(`workflows.${labelKey}`) : definition.name}</h1>
-          <Badge tone="info">{t("rules.version", { version: definition.version })}</Badge>
-        </div>
-        <code dir="ltr" className="block text-sm break-all text-muted-foreground">
-          {definition.code}
-        </code>
-        <p className="text-sm text-muted-foreground">{t("rules.howItWorks")}</p>
-        {!editable ? <Alert tone="info">{t("rules.readOnly")}</Alert> : <p className="text-sm text-muted-foreground">{t("rules.limitsNote")}</p>}
-      </div>
+      <PageHeader
+        eyebrow={<BackLink href="/workflow/rules">{t("rules.back")}</BackLink>}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {labelKey ? t(`workflows.${labelKey}`) : definition.name}
+            <Badge tone="info">{t("rules.version", { version: definition.version })}</Badge>
+          </span>
+        }
+        description={
+          <span className="flex flex-col gap-1">
+            <code dir="ltr" className="break-all">
+              {definition.code}
+            </code>
+            <span>{t("rules.howItWorks")}</span>
+          </span>
+        }
+      />
+      <Alert tone="info" role="status">
+        {editable ? t("rules.limitsNote") : t("rules.readOnly")}
+      </Alert>
 
       {rules.data.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">{t("rules.noRules")}</p>
+        <EmptyState icon={<WorkflowIcon aria-hidden="true" />} title={t("rules.noRules")} />
       ) : (
         rules.data.map((rule) => {
           const clauses = parseCondition(rule.condition);

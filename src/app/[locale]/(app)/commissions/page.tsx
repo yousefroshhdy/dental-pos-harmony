@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { PrinterIcon, UsersIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
@@ -47,24 +49,27 @@ export default async function CommissionStatementPage({ params, searchParams }: 
   const canSeeTeam = can(ctx, "perf.commission.read", "team");
 
   const header = (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("statement.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("statement.intro")}</p>
-      </div>
-      {canSeeTeam ? (
-        <Link href={`/commissions/team?period=${month}`} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>
-          {t("statement.teamLink")}
-        </Link>
-      ) : null}
-    </div>
+    <PageHeader
+      title={t("statement.title")}
+      description={t("statement.intro")}
+      actions={
+        canSeeTeam ? (
+          <Link href={`/commissions/team?period=${month}`} className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}>
+            <UsersIcon aria-hidden="true" />
+            {t("statement.teamLink")}
+          </Link>
+        ) : null
+      }
+    />
   );
 
   if (!employeeId) {
     return (
       <div className="space-y-6">
         {header}
-        <Alert tone="info">{t("statement.noEmployee")}</Alert>
+        <Alert tone="info" role="status">
+          {t("statement.noEmployee")}
+        </Alert>
       </div>
     );
   }
@@ -111,6 +116,7 @@ export default async function CommissionStatementPage({ params, searchParams }: 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>{t("statement.funnelTitle")}</CardTitle>
           <Link href={printHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "min-h-11")}>
+            <PrinterIcon aria-hidden="true" />
             {t("statement.print")}
           </Link>
         </div>

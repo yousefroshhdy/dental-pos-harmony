@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
-import { Badge, Card, CardTitle } from "@/components/ui/primitives";
+import { UserCheckIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { FormSheet } from "@/components/page-kit/form-sheet";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Badge } from "@/components/ui/primitives";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { WorkflowErrorMessage } from "@/modules/workflow/components/action-message";
@@ -63,7 +70,7 @@ export default async function DelegationsPage({ params }: { params: Promise<{ lo
 
   const list = (items: DelegationRow[], empty: string) =>
     items.length === 0 ? (
-      <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">{empty}</p>
+      <EmptyState compact icon={<UserCheckIcon aria-hidden="true" />} title={empty} />
     ) : (
       <ul className="divide-y rounded-lg border bg-card">
         {items.map((r) => (
@@ -93,57 +100,83 @@ export default async function DelegationsPage({ params }: { params: Promise<{ lo
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("delegations.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("delegations.subtitle")}</p>
-      </div>
-
-      {mayCreate ? (
-        <Card className="space-y-3">
-          <CardTitle>{t("delegations.form.title")}</CardTitle>
-          <p className="text-sm text-muted-foreground">{t("delegations.form.hint")}</p>
-          {!people.ok ? <WorkflowErrorMessage messageKey={errorKeyFor(people.error)} requestId={people.error.requestId} /> : null}
-          <DelegationForm
-            // A fresh client_ref (and a fresh form) after every successful submit.
-            key={clientRef}
-            clientRef={clientRef}
-            me={me}
-            people={peopleList}
-            onBehalfOf={onBehalfOf}
-            workflows={workflows}
-            defaultFrom={isoToCairoLocal(now)}
-            defaultTo={isoToCairoLocal(new Date(now.getTime() + 7 * 24 * 3600 * 1000))}
-            locale={locale}
-          />
-        </Card>
-      ) : null}
+      <PageHeader
+        eyebrow={<BackLink href="/workflow">{t("hub.title")}</BackLink>}
+        title={t("delegations.title")}
+        description={t("delegations.subtitle")}
+        actions={
+          mayCreate ? (
+            <FormSheet trigger={t("delegations.form.title")} title={t("delegations.form.title")} description={t("delegations.form.hint")} closeLabel={t("rulesTable.close")}>
+              {!people.ok ? <WorkflowErrorMessage messageKey={errorKeyFor(people.error)} requestId={people.error.requestId} /> : null}
+              <DelegationForm
+                // A fresh client_ref (and a fresh form) after every successful submit.
+                key={clientRef}
+                clientRef={clientRef}
+                me={me}
+                people={peopleList}
+                onBehalfOf={onBehalfOf}
+                workflows={workflows}
+                defaultFrom={isoToCairoLocal(now)}
+                defaultTo={isoToCairoLocal(new Date(now.getTime() + 7 * 24 * 3600 * 1000))}
+                locale={locale}
+              />
+            </FormSheet>
+          ) : null
+        }
+      />
 
       {!rows.ok || !groups ? (
         <WorkflowErrorMessage messageKey={rows.ok ? "UNKNOWN" : errorKeyFor(rows.error)} requestId={rows.ok ? undefined : rows.error.requestId} />
       ) : (
-        <>
-          <section aria-labelledby="delegations-from-me" className="space-y-2">
-            <h2 id="delegations-from-me" className="text-lg font-semibold">
+        <Tabs defaultValue="fromMe" dir={directionOf(locale)}>
+          <TabsList className="w-full justify-start sm:w-auto">
+            <TabsTrigger value="fromMe">
               {t("delegations.fromMe")}
-            </h2>
-            {list(groups.fromMe, t("delegations.emptyFromMe"))}
-          </section>
-          <section aria-labelledby="delegations-to-me" className="space-y-2">
-            <h2 id="delegations-to-me" className="text-lg font-semibold">
+              <Count n={groups.fromMe.length} />
+            </TabsTrigger>
+            <TabsTrigger value="toMe">
               {t("delegations.toMe")}
-            </h2>
-            {list(groups.toMe, t("delegations.emptyToMe"))}
-          </section>
-          {groups.team.length > 0 || managesOthers ? (
-            <section aria-labelledby="delegations-team" className="space-y-2">
-              <h2 id="delegations-team" className="text-lg font-semibold">
+              <Count n={groups.toMe.length} />
+            </TabsTrigger>
+            {groups.team.length > 0 || managesOthers ? (
+              <TabsTrigger value="team">
                 {t("delegations.team")}
+                <Count n={groups.team.length} />
+              </TabsTrigger>
+            ) : null}
+          </TabsList>
+          <TabsContent value="fromMe">
+            <section aria-labelledby="delegations-from-me" className="space-y-2">
+              <h2 id="delegations-from-me" className="sr-only">
+                {t("delegations.fromMe")}
               </h2>
-              {list(groups.team, t("delegations.emptyTeam"))}
+              {list(groups.fromMe, t("delegations.emptyFromMe"))}
             </section>
+          </TabsContent>
+          <TabsContent value="toMe">
+            <section aria-labelledby="delegations-to-me" className="space-y-2">
+              <h2 id="delegations-to-me" className="sr-only">
+                {t("delegations.toMe")}
+              </h2>
+              {list(groups.toMe, t("delegations.emptyToMe"))}
+            </section>
+          </TabsContent>
+          {groups.team.length > 0 || managesOthers ? (
+            <TabsContent value="team">
+              <section aria-labelledby="delegations-team" className="space-y-2">
+                <h2 id="delegations-team" className="sr-only">
+                  {t("delegations.team")}
+                </h2>
+                {list(groups.team, t("delegations.emptyTeam"))}
+              </section>
+            </TabsContent>
           ) : null}
-        </>
+        </Tabs>
       )}
     </div>
   );
+}
+
+function Count({ n }: { n: number }) {
+  return <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">{n}</span>;
 }

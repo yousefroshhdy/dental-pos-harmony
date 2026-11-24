@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { TargetIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { FormSheet } from "@/components/page-kit/form-sheet";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { DashboardError } from "@/modules/dashboards/components/dashboard-error";
@@ -36,37 +40,35 @@ export default async function TargetsPage({ params }: { params: Promise<{ locale
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <Link href="/dashboard" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("targets.back")}
-        </Link>
-        <h1 className="text-2xl font-semibold">{t("targets.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("targets.intro")}</p>
-      </div>
-
-      <Card className="space-y-4">
-        <CardTitle>{t("targets.new")}</CardTitle>
-        {subjects.ok ? (
-          <TargetForm
-            targetId={crypto.randomUUID()}
-            kpis={TARGETABLE_CODES.map((code) => ({ id: code, label: t(`kpi.${code}.name`) }))}
-            employees={subjects.data.employees.map((o) => ({ id: o.id, label: pick(o.label_en, o.label_ar) }))}
-            roles={subjects.data.roles.map((o) => ({ id: o.id, label: pick(o.label_en, o.label_ar) }))}
-            territories={subjects.data.territories.map((o) => ({ id: o.id, label: pick(o.label_en, o.label_ar) }))}
-            defaultStart={month.from}
-            defaultEnd={month.to}
-          />
-        ) : (
-          <DashboardError code={dashboardErrorCode(subjects.error)} requestId={subjects.error.requestId} />
-        )}
-      </Card>
+      <PageHeader
+        eyebrow={<BackLink href="/dashboard">{t("targets.back")}</BackLink>}
+        title={t("targets.title")}
+        description={t("targets.intro")}
+        actions={
+          <FormSheet trigger={t("targets.new")} title={t("targets.new")} description={t("targets.latestWins")} closeLabel={t("targets.close")}>
+            {subjects.ok ? (
+              <TargetForm
+                targetId={crypto.randomUUID()}
+                kpis={TARGETABLE_CODES.map((code) => ({ id: code, label: t(`kpi.${code}.name`) }))}
+                employees={subjects.data.employees.map((o) => ({ id: o.id, label: pick(o.label_en, o.label_ar) }))}
+                roles={subjects.data.roles.map((o) => ({ id: o.id, label: pick(o.label_en, o.label_ar) }))}
+                territories={subjects.data.territories.map((o) => ({ id: o.id, label: pick(o.label_en, o.label_ar) }))}
+                defaultStart={month.from}
+                defaultEnd={month.to}
+              />
+            ) : (
+              <DashboardError code={dashboardErrorCode(subjects.error)} requestId={subjects.error.requestId} />
+            )}
+          </FormSheet>
+        }
+      />
 
       <Card className="space-y-3">
         <CardTitle>{t("targets.list")}</CardTitle>
         {!targets.ok ? (
           <DashboardError code={dashboardErrorCode(targets.error)} requestId={targets.error.requestId} />
         ) : targets.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("targets.empty")}</p>
+          <EmptyState compact icon={<TargetIcon aria-hidden="true" />} title={t("targets.empty")} />
         ) : (
           <>
             <Table>

@@ -2,17 +2,21 @@ import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Alert, Badge, Input, Label, Table, Td, Th } from "@/components/ui/primitives";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { FilterChips } from "@/components/page-kit/filter-chips";
+import { FormDatePicker } from "@/components/page-kit/form-controls";
+import { FormField } from "@/components/ui/form-field";
+import { PageHeader } from "@/components/ui/page-header";
+import { Alert } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
-import { cn } from "@/lib/utils";
-import { Empty, Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
+import { PageBody } from "@/modules/field/components/layout-bits";
 import { localizedName } from "@/modules/field/logic";
 import { TrackingHealthPanel } from "@/modules/tracking/components/health-panel";
+import { TeamDayTable, type TeamDayListRow } from "@/modules/tracking/components/team-day-table";
 import { CAIRO_DATE_LONG, CAIRO_TIME, dayAsDate, formatDuration, formatKm } from "@/modules/tracking/format";
 import { addDays, cairoToday, canReadTracking, dayFlags, isRowFlagged, parseDay, sortTeamRows, trackingErrorCode } from "@/modules/tracking/logic";
 import { getTeamDay } from "@/modules/tracking/queries";
-import type { TeamDayRow } from "@/modules/tracking/types";
 import { ExportCsvButton } from "@/modules/reports/components/export-csv-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -46,46 +50,51 @@ export default async function TrackingTeamPage({ params, searchParams }: { param
   const rows = result.ok ? sortTeamRows(result.data, lang) : [];
   const flagged = rows.filter(isRowFlagged).length;
 
-  const name = (r: TeamDayRow) => localizedName(lang, r.full_name_en, r.full_name_ar);
-  const dayHref = (r: TeamDayRow) => `/tracking/${r.employee_id}/${day}`;
+  const flaggedOnly = sp.flagged === "1";
   const time = (iso: string | null) => (iso ? format.dateTime(new Date(iso), CAIRO_TIME) : t("team.none"));
-  const onShift = (r: TeamDayRow) =>
-    r.on_shift ? <Badge tone="success">{t("team.yes")}</Badge> : r.shift_count === 0 ? <Badge>{t("team.notStarted")}</Badge> : <Badge>{t("team.no")}</Badge>;
-  const flagBadges = (r: TeamDayRow) => (
-    <div className="flex flex-wrap gap-1">
-      {dayFlags(r.flags).map((f) => (
-        <Badge key={f} tone="warning">
-          {t(`flags.${f}`)}
-        </Badge>
-      ))}
-      {r.from_summary ? <Badge tone="info">{t("team.summaryOnly")}</Badge> : null}
-    </div>
-  );
-  const gaps = (r: TeamDayRow) => (r.gap_count > 0 ? t("team.gapsValue", { count: String(r.gap_count), duration: formatDuration(t, r.gap_seconds) }) : t("team.none"));
-  const idle = (r: TeamDayRow) => (r.idle_stop_count > 0 ? formatDuration(t, r.idle_stop_seconds) : t("team.none"));
+  const tableRows: TeamDayListRow[] = rows
+    .filter((r) => !flaggedOnly || isRowFlagged(r))
+    .map((r) => ({
+      employeeId: r.employee_id,
+      name: localizedName(lang, r.full_name_en, r.full_name_ar),
+      href: `/tracking/${r.employee_id}/${day}`,
+      onShift: r.on_shift ? "yes" : r.shift_count === 0 ? "notStarted" : "no",
+      shift: formatDuration(t, r.shift_seconds),
+      shiftSeconds: r.shift_seconds,
+      visits: r.visit_count,
+      visitTime: formatDuration(t, r.visit_seconds),
+      idle: r.idle_stop_count > 0 ? formatDuration(t, r.idle_stop_seconds) : t("team.none"),
+      gaps: r.gap_count > 0 ? t("team.gapsValue", { count: String(r.gap_count), duration: formatDuration(t, r.gap_seconds) }) : t("team.none"),
+      distance: formatKm(t, r.distance_m),
+      distanceM: Number(r.distance_m ?? 0),
+      lastSeen: time(r.last_ping_at),
+      lastSeenAt: r.last_ping_at,
+      flagged: isRowFlagged(r),
+      flags: dayFlags(r.flags),
+      summaryOnly: r.from_summary,
+    }));
 
   return (
     <PageBody>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">{t("team.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("team.subtitle")}</p>
-        </div>
-        <ExportCsvButton ctx={ctx} kind="tracking" filters={{ date: day }} label={t("team.export")} />
-      </div>
+      <PageHeader
+        title={t("team.title")}
+        description={t("team.subtitle")}
+        actions={<ExportCsvButton ctx={ctx} kind="tracking" filters={{ date: day }} label={t("team.export")} />}
+      />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-sm sm:flex-row sm:items-end sm:justify-between">
         <form method="get" className="flex flex-wrap items-end gap-2">
-          <div className="space-y-1">
-            <Label htmlFor="tracking-date">{t("team.date")}</Label>
-            <Input id="tracking-date" name="date" type="date" defaultValue={day} max={today} className="w-auto" />
-          </div>
+          <FormField label={t("team.date")} className="min-w-48">
+            <FormDatePicker name="date" defaultValue={day} max={today} placeholder={t("team.date")} />
+          </FormField>
+          {flaggedOnly ? <input type="hidden" name="flagged" value="1" /> : null}
           <Button type="submit" variant="outline">
             {t("team.show")}
           </Button>
         </form>
         <nav aria-label={t("team.date")} className="flex flex-wrap gap-2">
           <Link href={`/tracking?date=${addDays(day, -1)}`} className={buttonVariants({ variant: "outline" })}>
+            <ChevronRightIcon aria-hidden="true" className="ltr:rotate-180" />
             {t("team.prevDay")}
           </Link>
           {day !== today ? (
@@ -96,6 +105,7 @@ export default async function TrackingTeamPage({ params, searchParams }: { param
           {day < today ? (
             <Link href={`/tracking?date=${addDays(day, 1)}`} className={buttonVariants({ variant: "outline" })}>
               {t("team.nextDay")}
+              <ChevronLeftIcon aria-hidden="true" className="ltr:rotate-180" />
             </Link>
           ) : null}
         </nav>
@@ -104,95 +114,43 @@ export default async function TrackingTeamPage({ params, searchParams }: { param
       {/* Phase P step 5: is tracking working on each phone right now? (today only) */}
       {day === today ? <TrackingHealthPanel /> : null}
 
-      <h2 className="text-lg font-semibold">{format.dateTime(dayAsDate(day), CAIRO_DATE_LONG)}</h2>
-
-      {!result.ok ? (
-        <Alert>
-          {trackingErrorCode(result.error.code)
-            ? t(`errors.${trackingErrorCode(result.error.code)}`)
-            : tErrors(result.error.messageKey, { requestId: result.error.requestId ?? "—" })}
-        </Alert>
-      ) : rows.length === 0 ? (
-        <Empty>{t("team.empty")}</Empty>
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground">
-            {t("team.count", { count: rows.length })} · {t("team.flaggedCount", { count: flagged })}
-          </p>
-
-          {/* Phones: one card per rep. */}
-          <ItemList className="md:hidden">
-            {rows.map((r) => (
-              <Item key={r.employee_id} className={cn(isRowFlagged(r) && "border-warning bg-warning/10")}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <Link href={dayHref(r)} className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline">
-                    {name(r)}
-                  </Link>
-                  {onShift(r)}
-                </div>
-                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                  <dt className="text-muted-foreground">{t("team.shiftTime")}</dt>
-                  <dd>{formatDuration(t, r.shift_seconds)}</dd>
-                  <dt className="text-muted-foreground">{t("team.visits")}</dt>
-                  <dd>
-                    {r.visit_count} · {formatDuration(t, r.visit_seconds)}
-                  </dd>
-                  <dt className="text-muted-foreground">{t("team.idle")}</dt>
-                  <dd>{idle(r)}</dd>
-                  <dt className="text-muted-foreground">{t("team.gaps")}</dt>
-                  <dd>{gaps(r)}</dd>
-                  <dt className="text-muted-foreground">{t("team.distance")}</dt>
-                  <dd>{formatKm(t, r.distance_m)}</dd>
-                  <dt className="text-muted-foreground">{t("team.lastSeen")}</dt>
-                  <dd>{time(r.last_ping_at)}</dd>
-                </dl>
-                {flagBadges(r)}
-              </Item>
-            ))}
-          </ItemList>
-
-          {/* Wider screens: the table. */}
-          <div className="hidden md:block">
-            <Table>
-              <thead>
-                <tr>
-                  <Th scope="col">{t("team.rep")}</Th>
-                  <Th scope="col">{t("team.onShift")}</Th>
-                  <Th scope="col">{t("team.shiftTime")}</Th>
-                  <Th scope="col">{t("team.visits")}</Th>
-                  <Th scope="col">{t("team.visitTime")}</Th>
-                  <Th scope="col">{t("team.idle")}</Th>
-                  <Th scope="col">{t("team.gaps")}</Th>
-                  <Th scope="col">{t("team.distance")}</Th>
-                  <Th scope="col">{t("team.lastSeen")}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.employee_id} className={cn(isRowFlagged(r) && "bg-warning/10")}>
-                    <Td>
-                      <div className="space-y-1">
-                        <Link href={dayHref(r)} aria-label={t("team.open", { name: name(r) })} className="font-medium text-primary underline-offset-4 hover:underline">
-                          {name(r)}
-                        </Link>
-                        {flagBadges(r)}
-                      </div>
-                    </Td>
-                    <Td>{onShift(r)}</Td>
-                    <Td className="whitespace-nowrap">{formatDuration(t, r.shift_seconds)}</Td>
-                    <Td>{r.visit_count}</Td>
-                    <Td className="whitespace-nowrap">{formatDuration(t, r.visit_seconds)}</Td>
-                    <Td className="whitespace-nowrap">{idle(r)}</Td>
-                    <Td className="whitespace-nowrap">{gaps(r)}</Td>
-                    <Td className="whitespace-nowrap">{formatKm(t, r.distance_m)}</Td>
-                    <Td className="whitespace-nowrap">{time(r.last_ping_at)}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        </>
-      )}
+      <section aria-labelledby="tracking-day" className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="tracking-day" className="text-lg font-semibold">
+            {format.dateTime(dayAsDate(day), CAIRO_DATE_LONG)}
+          </h2>
+          {result.ok && rows.length > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("team.count", { count: rows.length })} · {t("team.flaggedCount", { count: flagged })}
+            </p>
+          ) : null}
+        </div>
+        <TeamDayTable
+          rows={tableRows}
+          error={
+            result.ok ? undefined : (
+              <Alert>
+                {trackingErrorCode(result.error.code)
+                  ? t(`errors.${trackingErrorCode(result.error.code)}`)
+                  : tErrors(result.error.messageKey, { requestId: result.error.requestId ?? "—" })}
+              </Alert>
+            )
+          }
+          filters={
+            <FilterChips
+              label={t("teamTable.filter")}
+              pathname="/tracking"
+              params={sp}
+              param="flagged"
+              current={flaggedOnly ? "1" : null}
+              options={[
+                { value: null, label: t("teamTable.everyone"), count: rows.length },
+                { value: "1", label: t("teamTable.flaggedOnly"), count: flagged },
+              ]}
+            />
+          }
+        />
+      </section>
     </PageBody>
   );
 }

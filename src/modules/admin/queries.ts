@@ -1,8 +1,13 @@
 import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
+import { rangeOf, runPaged, searchFilter, type Paged } from "@/lib/list-query";
 import { createClient } from "@/lib/supabase/server";
+import type { EmployeeFilter } from "./logic";
+import { EMPLOYEE_SEARCH_COLUMNS, employeeStatusesFor, ROLE_SEARCH_COLUMNS, USER_SEARCH_COLUMNS } from "./tables";
 import type {
+  ProfileStatus,
+  Severity,
   AdminEmployeeRow,
   CoverageRow,
   EmployeeTerritoryRow,
@@ -199,4 +204,96 @@ export async function listCoverage(): Promise<Result<CoverageRow[]>> {
 export async function listGovernorates(): Promise<Result<GovernorateRow[]>> {
   const db = await createClient();
   return run("v_governorates", db.from("v_governorates").select("code, name_en, name_ar").order("code"), []);
+}
+
+// ---------------------------------------------------------------------------
+// Server-paged lists (Phase P step 2b): one page plus the exact count. The
+// search text is sanitised by list-query.searchFilter.
+// ---------------------------------------------------------------------------
+
+export interface PageRequest {
+  offset: number;
+  pageSize: number;
+  /** View column to order by. */
+  orderBy: string;
+  desc: boolean;
+  search: string;
+}
+
+export async function listUsersPage(req: PageRequest & { status: ProfileStatus | null }): Promise<Result<Paged<UserRow>>> {
+  const db = await createClient();
+  let query = db.from("v_users").select(USER_COLUMNS, { count: "exact" });
+  if (req.status) query = query.eq("status", req.status);
+  const or = searchFilter(USER_SEARCH_COLUMNS, req.search);
+  if (or) query = query.or(or);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_users", query.order(req.orderBy, { ascending: !req.desc, nullsFirst: false }).order("user_id").range(from, to));
+}
+
+/** Open assignments of the users on one page (the roles column). */
+export async function listOpenAssignmentsFor(userIds: readonly string[]): Promise<Result<UserRoleRow[]>> {
+  if (userIds.length === 0) return ok([]);
+  const db = await createClient();
+  return run(
+    "v_user_roles",
+    db.from("v_user_roles").select(USER_ROLE_COLUMNS).is("revoked_at", null).in("user_id", [...userIds]).order("granted_at", { ascending: true }),
+    [],
+  );
+}
+
+export async function listEmployeesPage(req: PageRequest & { filter: EmployeeFilter }): Promise<Result<Paged<AdminEmployeeRow>>> {
+  const db = await createClient();
+  let query = db.from("v_admin_employees").select(EMPLOYEE_COLUMNS, { count: "exact" });
+  const statuses = employeeStatusesFor(req.filter);
+  if (statuses) {
+    query = statuses.include
+      ? query.in("employment_status", [...statuses.statuses])
+      : query.not("employment_status", "in", `(${statuses.statuses.join(",")})`);
+  }
+  const or = searchFilter(EMPLOYEE_SEARCH_COLUMNS, req.search);
+  if (or) query = query.or(or);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_admin_employees", query.order(req.orderBy, { ascending: !req.desc, nullsFirst: false }).order("id").range(from, to));
+}
+
+/** Open territory assignments of the employees on one page. */
+export async function listOpenEmployeeTerritoriesFor(employeeIds: readonly string[]): Promise<Result<EmployeeTerritoryRow[]>> {
+  if (employeeIds.length === 0) return ok([]);
+  const db = await createClient();
+  return run(
+    "v_employee_territories",
+    db
+      .from("v_employee_territories")
+      .select(EMPLOYEE_TERRITORY_COLUMNS)
+      .is("valid_to", null)
+      .in("employee_id", [...employeeIds])
+      .order("territory_code"),
+    [],
+  );
+}
+
+export async function listRolesPage(req: PageRequest): Promise<Result<Paged<RoleRow>>> {
+  const db = await createClient();
+  let query = db.from("v_roles").select(ROLE_COLUMNS, { count: "exact" });
+  const or = searchFilter(ROLE_SEARCH_COLUMNS, req.search);
+  if (or) query = query.or(or);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_roles", query.order(req.orderBy, { ascending: !req.desc, nullsFirst: false }).order("id").range(from, to));
+}
+
+export async function listSecurityEventsPage(req: PageRequest & { severity: Severity | null }): Promise<Result<Paged<SecurityEventRow>>> {
+  const db = await createClient();
+  let query = db.from("v_security_events").select("id, occurred_at, user_id, event_type, severity, details", { count: "exact" });
+  if (req.severity) query = query.eq("severity", req.severity);
+  const or = searchFilter(["event_type"], req.search);
+  if (or) query = query.or(or);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_security_events", query.order(req.orderBy, { ascending: !req.desc }).order("id").range(from, to));
+}
+
+/** Names for the actor column of one page (only the users on it). */
+export async function listUsersByIds(userIds: readonly string[]): Promise<Result<UserRow[]>> {
+  if (userIds.length === 0) return ok([]);
+  const db = await createClient();
+  return run("v_users", db.from("v_users").select(USER_COLUMNS).in("user_id", [...userIds]), []);
 }

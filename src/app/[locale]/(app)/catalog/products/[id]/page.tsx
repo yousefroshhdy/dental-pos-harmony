@@ -3,7 +3,14 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
-import { Alert, Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
+import { BoxesIcon, TagIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { PageError } from "@/components/page-kit/page-error";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { setProductStatus, setVariantStatus } from "@/modules/catalog/actions";
@@ -56,33 +63,51 @@ export default async function ProductPage({ params }: { params: Params }) {
     manage ? listCategories() : Promise.resolve(null),
     showPrices ? listPriceListItems({ productId: id }) : Promise.resolve(null),
   ]);
-  if (!product.ok) return <CatalogErrorMessage messageKey={product.error.messageKey} requestId={product.error.requestId} />;
+  const back = <BackLink href="/catalog">{t("back")}</BackLink>;
+  if (!product.ok) return <PageError back={back} error={product.error} />;
   if (!product.data) notFound();
-  if (!variants.ok) return <CatalogErrorMessage messageKey={variants.error.messageKey} requestId={variants.error.requestId} />;
+  if (!variants.ok) return <PageError back={back} error={variants.error} />;
 
   const p = product.data;
   const priceRows: PriceListItemRow[] = prices && prices.ok ? prices.data : [];
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Link href="/catalog" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{localizedName(locale, p.name_en, p.name_ar)}</h1>
-          <code dir="ltr" className="text-sm text-muted-foreground">
-            {p.code}
-          </code>
-          <Badge tone={productStatusTone(p.status)}>{tStatus(p.status)}</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {p.brand_name} · {localizedName(locale, p.category_name_en, p.category_name_ar)}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={back}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {localizedName(locale, p.name_en, p.name_ar)}
+            <Badge tone={productStatusTone(p.status)}>{tStatus(p.status)}</Badge>
+          </span>
+        }
+        description={
+          <>
+            <code dir="ltr" className="me-2">
+              {p.code}
+            </code>
+            {p.brand_name} · {localizedName(locale, p.category_name_en, p.category_name_ar)}
+          </>
+        }
+      />
 
-      {p.status === "discontinued" ? <Alert tone="info">{t("discontinuedNote")}</Alert> : null}
+      {p.status === "discontinued" ? (
+        <Alert tone="info" role="status">
+          {t("discontinuedNote")}
+        </Alert>
+      ) : null}
 
+      <Tabs defaultValue="details" dir={directionOf(locale)}>
+        <TabsList className="w-full justify-start sm:w-auto">
+          <TabsTrigger value="details">{t("details")}</TabsTrigger>
+          <TabsTrigger value="variants">
+            {tVariant("title")}
+            <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">{variants.data.length}</span>
+          </TabsTrigger>
+          {showPrices ? <TabsTrigger value="prices">{t("pricesTitle")}</TabsTrigger> : null}
+        </TabsList>
+
+        <TabsContent value="details" className="space-y-4">
       {manage ? (
         <Card className="space-y-3">
           <CardTitle>{t("statusTitle")}</CardTitle>
@@ -136,13 +161,16 @@ export default async function ProductPage({ params }: { params: Params }) {
         )}
       </Card>
 
+        </TabsContent>
+
+        <TabsContent value="variants">
       <Card className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <CardTitle>{tVariant("title")}</CardTitle>
           <span className="text-sm text-muted-foreground">{tVariant("count", { active: p.active_variant_count, total: p.variant_count })}</span>
         </div>
         {variants.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{tVariant("empty")}</p>
+          <EmptyState compact icon={<BoxesIcon aria-hidden="true" />} title={tVariant("empty")} />
         ) : (
           <ul className="divide-y rounded-md border">
             {variants.data.map((v) => {
@@ -197,44 +225,45 @@ export default async function ProductPage({ params }: { params: Params }) {
           </div>
         ) : null}
       </Card>
+        </TabsContent>
 
       {showPrices ? (
+        <TabsContent value="prices">
         <Card className="space-y-3">
           <CardTitle>{t("pricesTitle")}</CardTitle>
           {prices && !prices.ok ? (
             <CatalogErrorMessage messageKey={prices.error.messageKey} requestId={prices.error.requestId} />
           ) : priceRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("noPrices")}</p>
+            <EmptyState compact icon={<TagIcon aria-hidden="true" />} title={t("noPrices")} />
           ) : (
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{t("priceList")}</Th>
-                  <Th>{tVariant("sku")}</Th>
-                  <Th className="text-end">{t("minQty")}</Th>
-                  <Th className="text-end">{t("unitPrice")}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {priceRows.map((row) => (
-                  <tr key={`${row.price_list_id}:${row.variant_id}:${row.min_qty}`}>
-                    <Td>
-                      <Link href={`/catalog/price-lists/${row.price_list_id}`} className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
-                        <code dir="ltr">{row.price_list_code}</code>
-                      </Link>
-                    </Td>
-                    <Td>
+            <ul className="divide-y rounded-md border">
+              {priceRows.map((row) => (
+                <li key={`${row.price_list_id}:${row.variant_id}:${row.min_qty}`} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/catalog/price-lists/${row.price_list_id}`}
+                      className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline"
+                    >
+                      <code dir="ltr">{row.price_list_code}</code>
+                    </Link>
+                    <span className="ms-2 text-sm text-muted-foreground">
                       <code dir="ltr">{row.sku}</code>
-                    </Td>
-                    <Td className="text-end tabular-nums">{row.min_qty}</Td>
-                    <Td className="text-end tabular-nums">{format.number(Number(row.unit_price), "egp")}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-muted-foreground tabular-nums">
+                      {t("minQty")}: {row.min_qty}
+                    </span>
+                    <span className="font-medium tabular-nums">{format.number(Number(row.unit_price), "egp")}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </Card>
+        </TabsContent>
       ) : null}
+      </Tabs>
     </div>
   );
 }

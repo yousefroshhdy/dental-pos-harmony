@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { SlidersHorizontalIcon } from "lucide-react";
+import { PageError } from "@/components/page-kit/page-error";
+import { Alert } from "@/components/ui/alert";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge, Card, CardTitle, Input, Select } from "@/components/ui/primitives";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { updateSetting } from "@/modules/admin/actions";
 import { ActionForm } from "@/modules/admin/components/action-form";
-import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { Field } from "@/modules/admin/components/field";
 import { CAIRO_DATE_TIME } from "@/modules/admin/format";
 import {
@@ -183,22 +189,35 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   const t = await getTranslations("admin.settings");
   const format = await getFormatter();
   const settings = await listSettings();
-  if (!settings.ok) return <ErrorMessage messageKey={settings.error.messageKey} requestId={settings.error.requestId} />;
+  const header = <PageHeader title={t("title")} description={t("intro")} />;
+  if (!settings.ok) return <PageError back={header} error={settings.error} />;
   const groups = groupSettings(settings.data);
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("intro")}</p>
-        {!ctx.is_owner ? <p className="text-sm text-muted-foreground">{t("ownerOnlyHint")}</p> : null}
-      </div>
+      {header}
+      {!ctx.is_owner ? (
+        <Alert tone="info" role="status">
+          {t("ownerOnlyHint")}
+        </Alert>
+      ) : null}
 
-      {groups.length === 0 ? <p className="text-sm text-muted-foreground">{t("empty")}</p> : null}
+      {groups.length === 0 ? <EmptyState icon={<SlidersHorizontalIcon aria-hidden="true" />} title={t("empty")} /> : null}
 
+      {groups.length > 0 ? (
+      <Tabs defaultValue={groups[0]!.group} dir={directionOf(locale)}>
+        <TabsList aria-label={t("title")} className="w-full justify-start sm:w-auto">
+          {groups.map((group) => (
+            <TabsTrigger key={group.group} value={group.group}>
+              {t(`groups.${group.labelKey}`)}
+              <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">{group.items.length}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
       {groups.map((group) => (
-        <section key={group.group} aria-labelledby={`group-${group.group}`} className="space-y-3">
-          <CardTitle id={`group-${group.group}`}>{t(`groups.${group.labelKey}`)}</CardTitle>
+        <TabsContent key={group.group} value={group.group}>
+        <section aria-labelledby={`group-${group.group}`} className="space-y-3">
+          <CardTitle id={`group-${group.group}`} className="sr-only">{t(`groups.${group.labelKey}`)}</CardTitle>
           <ul className="space-y-3">
             {group.items.map((row) => {
               const state = settingEditState(ctx, row);
@@ -280,7 +299,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
             })}
           </ul>
         </section>
+        </TabsContent>
       ))}
+      </Tabs>
+      ) : null}
     </div>
   );
 }

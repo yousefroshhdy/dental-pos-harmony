@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { Alert } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/page-kit/back-link";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { CommissionError } from "@/modules/commissions/components/commission-error";
@@ -56,9 +56,7 @@ export default async function CommissionPrintPage({ params, searchParams }: { pa
 
   const toolbar = (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2 print:hidden">
-      <Link href={back} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("print.back")}
-      </Link>
+      <BackLink href={back}>{t("print.back")}</BackLink>
       <CommissionPrintButton label={t("print.print")} />
     </div>
   );

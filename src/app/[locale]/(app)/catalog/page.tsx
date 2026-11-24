@@ -1,30 +1,25 @@
+import { PlusIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { FilterChips } from "@/components/page-kit/filter-chips";
+import { UrlSelectFilter } from "@/components/page-kit/url-select-filter";
 import { buttonVariants } from "@/components/ui/button";
-import { Badge, Card, Input, Label, Select } from "@/components/ui/primitives";
+import { readTableParams } from "@/components/ui/data-table-params";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
+import { firstParam, pickParam } from "@/lib/list-query";
 import { CatalogErrorMessage } from "@/modules/catalog/components/action-form";
 import { CatalogTabs } from "@/modules/catalog/components/catalog-tabs";
-import {
-  attributeSummary,
-  canManageProducts,
-  canReadPrices,
-  canReadProducts,
-  filterProducts,
-  groupVariantsByProduct,
-  localizedName,
-  productStatusTone,
-  toNumber,
-  variantStatusTone,
-} from "@/modules/catalog/logic";
-import { listBrands, listProducts, listVariants } from "@/modules/catalog/queries";
+import { ProductsTable, type ProductListRow } from "@/modules/catalog/components/products-table";
+import { canManageProducts, canReadPrices, canReadProducts, localizedName, productStatusTone, toNumber } from "@/modules/catalog/logic";
+import { listBrands, listProductsPage, listVariantsFor } from "@/modules/catalog/queries";
+import { priceRange, PRODUCT_STATUSES, PRODUCTS_TABLE, productSortColumn } from "@/modules/catalog/tables";
+import type { VariantRow } from "@/modules/catalog/types";
 
 type Params = Promise<{ locale: string }>;
-type Search = Promise<{ q?: string | string[]; brand?: string | string[]; status?: string | string[] }>;
-
-const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
+type Search = Promise<Record<string, string | string[] | undefined>>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
@@ -38,142 +33,98 @@ export default async function CatalogPage({ params, searchParams }: { params: Pa
   const ctx = await getUserContext();
   if (!canReadProducts(ctx)) return <Forbidden />;
 
-  const search = await searchParams;
-  const filter = { q: one(search.q), brand: one(search.brand), status: one(search.status) };
+  const sp = await searchParams;
+  const table = readTableParams(sp, PRODUCTS_TABLE);
+  const status = pickParam(sp, "status", [...PRODUCT_STATUSES, "all"] as const, "all");
+  const rawBrand = firstParam(sp, "brand");
+  const brand = rawBrand && /^[A-Za-z0-9_-]{1,40}$/.test(rawBrand) ? rawBrand : null;
+
   const t = await getTranslations("catalog.products");
   const tStatus = await getTranslations("catalog.product.status");
+  const tl = await getTranslations("catalog.list");
   const format = await getFormatter();
-
-  const [products, variants, brands] = await Promise.all([listProducts(), listVariants(), listBrands()]);
-  const failure = [products, variants, brands].find((r) => !r.ok);
-  if (failure && !failure.ok) return <CatalogErrorMessage messageKey={failure.error.messageKey} requestId={failure.error.requestId} />;
-  if (!products.ok || !variants.ok || !brands.ok) return null;
-
-  const all = groupVariantsByProduct(products.data, variants.data);
-  const shown = filterProducts(all, filter);
-  const manage = canManageProducts(ctx);
   const showPrices = canReadPrices(ctx);
-  const filtered = Boolean(filter.q || filter.brand || filter.status);
+  const manage = canManageProducts(ctx);
+
+  const [products, brands] = await Promise.all([
+    listProductsPage({
+      offset: table.offset,
+      pageSize: table.pageSize,
+      orderBy: productSortColumn(table.sorting[0]?.id, locale),
+      desc: table.sorting[0]?.desc ?? false,
+      search: table.search,
+      brand,
+      status: status === "all" ? null : status,
+    }),
+    listBrands(),
+  ]);
+  const pageRows = products.ok ? products.data.rows : [];
+  const variants = await listVariantsFor(pageRows.map((p) => p.id));
+  const byProduct = new Map<string, VariantRow[]>();
+  for (const v of variants.ok ? variants.data : []) byProduct.set(v.product_id, [...(byProduct.get(v.product_id) ?? []), v]);
+
+  const money = (n: number) => format.number(n, "egp");
+  const rows: ProductListRow[] = pageRows.map((p) => {
+    const range = priceRange((byProduct.get(p.id) ?? []).filter((v) => v.status === "active").map((v) => toNumber(v.default_price)));
+    return {
+      id: p.id,
+      code: p.code,
+      name: localizedName(locale, p.name_en, p.name_ar),
+      brand: p.brand_name,
+      category: localizedName(locale, p.category_name_en, p.category_name_ar),
+      status: p.status,
+      statusTone: productStatusTone(p.status),
+      variants: Number(p.variant_count),
+      activeVariants: Number(p.active_variant_count),
+      price: !showPrices || !range ? null : range.min === range.max ? money(range.min) : `${money(range.min)} – ${money(range.max)}`,
+    };
+  });
 
   return (
     <div className="space-y-6">
       <CatalogTabs ctx={ctx} current="products" />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("summary", { products: all.length, variants: variants.data.length })}</p>
-        </div>
-        {manage ? (
-          <Link href="/catalog/products/new" className={buttonVariants()}>
-            {t("new")}
-          </Link>
-        ) : null}
-      </div>
-
-      <form method="get" role="search" aria-label={t("filters")} className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end">
-        <div className="space-y-1">
-          <Label htmlFor="catalog-q">{t("search")}</Label>
-          <Input id="catalog-q" name="q" type="search" defaultValue={filter.q ?? ""} placeholder={t("searchPlaceholder")} />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="catalog-brand">{t("brand")}</Label>
-          <Select id="catalog-brand" name="brand" defaultValue={filter.brand ?? ""} className="w-full">
-            <option value="">{t("allBrands")}</option>
-            {brands.data.map((b) => (
-              <option key={b.id} value={b.code}>
-                {b.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="catalog-status">{t("status")}</Label>
-          <Select id="catalog-status" name="status" defaultValue={filter.status ?? ""} className="w-full">
-            <option value="">{t("allStatuses")}</option>
-            <option value="active">{tStatus("active")}</option>
-            <option value="draft">{tStatus("draft")}</option>
-            <option value="discontinued">{tStatus("discontinued")}</option>
-          </Select>
-        </div>
-        <div className="flex gap-2">
-          <button type="submit" className={buttonVariants({ variant: "outline" })}>
-            {t("apply")}
-          </button>
-          {filtered ? (
-            <Link href="/catalog" className={buttonVariants({ variant: "ghost" })}>
-              {t("clear")}
-            </Link>
-          ) : null}
-        </div>
-      </form>
-
-      {shown.length === 0 ? (
-        <Card className="space-y-3 text-center">
-          <p className="text-sm text-muted-foreground">{filtered ? t("noMatch") : t("empty")}</p>
-          {manage && !filtered ? (
-            <Link href="/catalog/products/new" className={buttonVariants({ variant: "outline" })}>
+      <PageHeader
+        title={t("title")}
+        description={products.ok ? tl("count", { count: products.data.total }) : undefined}
+        actions={
+          manage ? (
+            <Link href="/catalog/products/new" className={buttonVariants()}>
+              <PlusIcon aria-hidden="true" />
               {t("new")}
             </Link>
-          ) : null}
-        </Card>
-      ) : (
-        <ul className="space-y-3" aria-label={t("listLabel")}>
-          {shown.map((p) => (
-            <li key={p.id}>
-              <Card className="space-y-3">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 space-y-1">
-                    <Link
-                      href={`/catalog/products/${p.id}`}
-                      className="inline-flex min-h-11 items-center gap-2 font-semibold text-primary underline-offset-4 hover:underline"
-                    >
-                      <span>{localizedName(locale, p.name_en, p.name_ar)}</span>
-                    </Link>
-                    <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <code dir="ltr">{p.code}</code>
-                      <span aria-hidden>·</span>
-                      <span>{p.brand_name}</span>
-                      <span aria-hidden>·</span>
-                      <span>{localizedName(locale, p.category_name_en, p.category_name_ar)}</span>
-                    </p>
-                  </div>
-                  <Badge tone={productStatusTone(p.status)}>{tStatus(p.status)}</Badge>
-                </div>
-                {p.variants.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t("noVariants")}</p>
-                ) : (
-                  <ul className="divide-y rounded-md border" aria-label={t("variantsOf", { name: p.code })}>
-                    {p.variants.map((v) => {
-                      const price = toNumber(v.default_price);
-                      return (
-                        <li key={v.id} className="flex flex-col gap-1 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="min-w-0">
-                            <code dir="ltr" className="text-sm font-medium break-all">
-                              {v.sku}
-                            </code>
-                            <span className="ms-2 text-sm">{v.name_en}</span>
-                            {attributeSummary(v.attributes) ? (
-                              <span className="block text-xs text-muted-foreground" dir="ltr">
-                                {attributeSummary(v.attributes)}
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 text-sm">
-                            {showPrices ? (
-                              <span className="tabular-nums">{price === null ? t("noPrice") : format.number(price, "egp")}</span>
-                            ) : null}
-                            {v.status !== "active" ? <Badge tone={variantStatusTone(v.status)}>{tStatus(v.status)}</Badge> : null}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
+          ) : null
+        }
+      />
+
+      <ProductsTable
+        rows={rows}
+        rowCount={products.ok ? products.data.total : 0}
+        canCreate={manage}
+        showPrices={showPrices}
+        filtered={Boolean(brand || status !== "all")}
+        error={
+          products.ok ? undefined : <CatalogErrorMessage messageKey={products.error.messageKey} requestId={products.error.requestId} />
+        }
+        filters={
+          <>
+            <FilterChips
+              label={t("status")}
+              pathname="/catalog"
+              params={sp}
+              param="status"
+              current={status === "all" ? null : status}
+              options={[{ value: null, label: t("allStatuses") }, ...PRODUCT_STATUSES.map((s) => ({ value: s, label: tStatus(s) }))]}
+            />
+            {brands.ok && brands.data.length > 0 ? (
+              <UrlSelectFilter
+                label={t("brand")}
+                param="brand"
+                options={[{ value: "", label: t("allBrands") }, ...brands.data.map((b) => ({ value: b.code, label: b.name }))]}
+              />
+            ) : null}
+          </>
+        }
+      />
     </div>
   );
 }

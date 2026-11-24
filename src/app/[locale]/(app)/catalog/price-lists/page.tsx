@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
-import { Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { FormSheet } from "@/components/page-kit/form-sheet";
+import { PageHeader } from "@/components/ui/page-header";
 import { getUserContext } from "@/lib/authz/context";
 import { CatalogErrorMessage } from "@/modules/catalog/components/action-form";
 import { CatalogTabs } from "@/modules/catalog/components/catalog-tabs";
 import { PriceListForm } from "@/modules/catalog/components/price-list-form";
+import { PriceListsTable, type PriceListListRow } from "@/modules/catalog/components/price-lists-table";
 import { canManagePrices, canReadPrices, dateOnly, priceListKindTone, todayInCairo } from "@/modules/catalog/logic";
 import { listPriceLists } from "@/modules/catalog/queries";
 
@@ -30,69 +31,43 @@ export default async function PriceListsPage({ params }: { params: Params }) {
   const manage = canManagePrices(ctx);
   const day = (d: string) => format.dateTime(dateOnly(d), { dateStyle: "medium", timeZone: "UTC", numberingSystem: "latn" });
 
+  const tl = await getTranslations("catalog.list");
+  const rows: PriceListListRow[] = (lists.ok ? lists.data : []).map((l) => ({
+    id: l.id,
+    code: l.code,
+    name: l.name,
+    kind: l.kind,
+    kindTone: priceListKindTone(l.kind),
+    isDefault: l.is_default,
+    state: l.is_current ? "current" : l.is_active ? "notInForce" : "inactive",
+    priority: l.priority,
+    validity: l.valid_to ? t("fromTo", { from: day(l.valid_from), to: day(l.valid_to) }) : t("fromOpen", { from: day(l.valid_from) }),
+    items: Number(l.item_count),
+    customers: l.kind === "customer" ? Number(l.customer_count) : null,
+  }));
+
   return (
     <div className="space-y-6">
       <CatalogTabs ctx={ctx} current="priceLists" />
-      <div>
-        <h1 className="text-2xl font-semibold">{t("listTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("listIntro")}</p>
-      </div>
+      <PageHeader
+        title={t("listTitle")}
+        description={t("listIntro")}
+        actions={
+          manage ? (
+            <FormSheet trigger={t("newTitle")} title={t("newTitle")} closeLabel={tl("close")}>
+              <PriceListForm newId={crypto.randomUUID()} today={todayInCairo()} />
+            </FormSheet>
+          ) : null
+        }
+      />
 
-      {!lists.ok ? (
-        <CatalogErrorMessage messageKey={lists.error.messageKey} requestId={lists.error.requestId} />
-      ) : lists.data.length === 0 ? (
-        <Card>
-          <p className="text-sm text-muted-foreground">{t("empty")}</p>
-        </Card>
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <Th>{t("code")}</Th>
-              <Th>{t("name")}</Th>
-              <Th>{t("kind")}</Th>
-              <Th className="text-end">{t("priority")}</Th>
-              <Th>{t("validity")}</Th>
-              <Th className="text-end">{t("items")}</Th>
-              <Th className="text-end">{t("customersCount")}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {lists.data.map((l) => (
-              <tr key={l.id}>
-                <Td>
-                  <Link href={`/catalog/price-lists/${l.id}`} className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline">
-                    <code dir="ltr">{l.code}</code>
-                  </Link>
-                </Td>
-                <Td className="min-w-40">{l.name}</Td>
-                <Td>
-                  <span className="flex flex-wrap gap-1">
-                    <Badge tone={priceListKindTone(l.kind)}>{t(`kinds.${l.kind}`)}</Badge>
-                    {l.is_default ? <Badge tone="info">{t("default")}</Badge> : null}
-                    {l.is_current ? <Badge tone="success">{t("current")}</Badge> : <Badge>{l.is_active ? t("notInForce") : t("inactive")}</Badge>}
-                  </span>
-                </Td>
-                <Td className="text-end tabular-nums">{l.priority}</Td>
-                <Td className="whitespace-nowrap">
-                  {l.valid_to ? t("fromTo", { from: day(l.valid_from), to: day(l.valid_to) }) : t("fromOpen", { from: day(l.valid_from) })}
-                </Td>
-                <Td className="text-end tabular-nums">{l.item_count}</Td>
-                <Td className="text-end tabular-nums">{l.kind === "customer" ? l.customer_count : "—"}</Td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
+      <PriceListsTable
+        rows={rows}
+        error={lists.ok ? undefined : <CatalogErrorMessage messageKey={lists.error.messageKey} requestId={lists.error.requestId} />}
+      />
 
       <p className="text-xs text-muted-foreground">{t("resolutionNote")}</p>
 
-      {manage ? (
-        <Card className="space-y-4">
-          <CardTitle>{t("newTitle")}</CardTitle>
-          <PriceListForm newId={crypto.randomUUID()} today={todayInCairo()} />
-        </Card>
-      ) : null}
     </div>
   );
 }

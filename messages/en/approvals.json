@@ -198,6 +198,27 @@
       "customerAssigned": "A customer was assigned to you",
       "customerUnassigned": "A customer was moved to another representative",
       "taskAssigned": "A task was assigned to you"
+    },
+    "table": {
+      "notification": "Notification",
+      "when": "When",
+      "actions": "Actions",
+      "search": "Search notifications"
+    }
+  },
+  "inboxTable": {
+    "request": "Request",
+    "workflow": "Type",
+    "allWorkflows": "All types",
+    "requester": "Requested by",
+    "keyFact": "Key detail",
+    "waiting": "Waiting",
+    "status": "Status",
+    "search": "Search by customer, requester or SKU",
+    "emptyHint": {
+      "decide": "New requests appear here as soon as someone needs your decision.",
+      "mine": "Requests you raise (a discount, a return, a credit note) are tracked here.",
+      "decided": "Every request you approve or reject stays listed here."
     }
   }
 }

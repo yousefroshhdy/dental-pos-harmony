@@ -252,5 +252,16 @@
     "save": "Set VAT",
     "saved": "VAT rate saved.",
     "formLabel": "VAT rate of {product}"
+  },
+  "list": {
+    "product": "Product",
+    "code": "Code",
+    "category": "Category",
+    "variants": "Variants",
+    "activeOf": "{active} of {total} active",
+    "price": "Price",
+    "emptyHint": "Add products one by one here, or import the item list from /imports.",
+    "count": "{count, plural, =0 {No products} one {# product} other {# products}}",
+    "close": "Close"
   }
 }

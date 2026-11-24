@@ -16,11 +16,10 @@ export async function tableLabel(schema: string, table: string): Promise<string>
  * One audit entry: when, what, who, and a field-level diff (old → new).
  * `showRecord` adds the table/record line and the timeline link (search results).
  */
-export async function AuditEntryCard({ entry, showRecord }: { entry: AuditEntry; showRecord: boolean }) {
+export async function AuditEntryCard({ entry, showRecord, bare = false }: { entry: AuditEntry; showRecord: boolean; /** No border or padding (inside a list card). */ bare?: boolean }) {
   const t = await getTranslations("audit");
   const format = await getFormatter();
   const locale = await getLocale();
-  const changes = fieldChanges(entry);
   const href = recordHref(entry);
   const history = showRecord ? historyHref(entry.table_schema, entry.table_name, entry.record_id) : null;
   const who = actorName(locale, entry);
@@ -28,7 +27,7 @@ export async function AuditEntryCard({ entry, showRecord }: { entry: AuditEntry;
   const headingId = `audit-entry-${entry.id}`;
 
   return (
-    <article aria-labelledby={headingId} className="space-y-2 rounded-lg border bg-card p-3 sm:p-4">
+    <article aria-labelledby={headingId} className={bare ? "space-y-2" : "space-y-2 rounded-lg border bg-card p-3 sm:p-4"}>
       <header className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 space-y-1">
           <h3 id={headingId} className="flex flex-wrap items-center gap-2 font-medium">
@@ -66,20 +65,7 @@ export async function AuditEntryCard({ entry, showRecord }: { entry: AuditEntry;
         </div>
       </header>
 
-      {changes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("entry.noChanges")}</p>
-      ) : (
-        <details open={entry.action === "UPDATE" && changes.length <= 8}>
-          <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm text-primary">
-            {t("entry.changes", { count: changes.length })}
-          </summary>
-          <dl className="mt-1 divide-y rounded-md border">
-            {changes.map((change) => (
-              <FieldRow key={change.field} change={change} action={entry.action} t={t} />
-            ))}
-          </dl>
-        </details>
-      )}
+      <AuditChanges entry={entry} />
 
       {entry.request_id ? (
         <p className="text-xs text-muted-foreground">
@@ -90,6 +76,28 @@ export async function AuditEntryCard({ entry, showRecord }: { entry: AuditEntry;
         </p>
       ) : null}
     </article>
+  );
+}
+
+/**
+ * The field-level diff of one entry (old → new), folded under "N fields changed".
+ * `defaultOpen` false keeps a table row short; the card opens small updates.
+ */
+export async function AuditChanges({ entry, defaultOpen }: { entry: AuditEntry; defaultOpen?: boolean }) {
+  const t = await getTranslations("audit");
+  const changes = fieldChanges(entry);
+  if (changes.length === 0) return <p className="text-sm text-muted-foreground">{t("entry.noChanges")}</p>;
+  return (
+    <details open={defaultOpen ?? (entry.action === "UPDATE" && changes.length <= 8)}>
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm text-primary">
+        {t("entry.changes", { count: changes.length })}
+      </summary>
+      <dl className="mt-1 divide-y rounded-md border">
+        {changes.map((change) => (
+          <FieldRow key={change.field} change={change} action={entry.action} t={t} />
+        ))}
+      </dl>
+    </details>
   );
 }
 
