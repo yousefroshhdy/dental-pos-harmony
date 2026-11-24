@@ -1,6 +1,16 @@
 import { can, type UserContext } from "@/lib/authz/can";
 import type { AppError } from "@/lib/errors";
-import type { BuilderLine, OrderHistoryRow, OrderLineRow, OrderRow, OrderStatus, StockAvailableRow } from "./types";
+import type {
+  BuilderLine,
+  BuilderOffer,
+  InvoiceDiscountInput,
+  OrderHistoryRow,
+  OrderLineRow,
+  OrderRow,
+  OrderStatus,
+  PriceAdjust,
+  StockAvailableRow,
+} from "./types";
 
 /**
  * Pure order logic for the UI: the status machine, which actions to offer, and
@@ -185,12 +195,12 @@ export function statusTone(status: OrderStatus): BadgeTone {
 // ---------------------------------------------------------------------------
 // Submit outcome
 // ---------------------------------------------------------------------------
-export type ApprovalReason = "discount" | "credit";
+export type ApprovalReason = "discount" | "freeItem" | "credit";
 
 /**
  * Why an order waits for approval. api.submit_order writes the reasons
- * ('discount above limit', 'credit limit', joined by '; ') into the history row
- * of the draft → pending_approval transition.
+ * ('discount above limit', 'free item outside an offer', 'credit limit', joined
+ * by '; ') into the history row of the draft → pending_approval transition.
  */
 export function approvalReasons(history: readonly Pick<OrderHistoryRow, "id" | "to_status" | "reason">[]): ApprovalReason[] {
   const row = [...history].filter((h) => h.to_status === "pending_approval").sort((a, b) => b.id - a.id)[0];
@@ -198,6 +208,7 @@ export function approvalReasons(history: readonly Pick<OrderHistoryRow, "id" | "
   const out = new Set<ApprovalReason>();
   for (const part of row.reason.split(";").map((p) => p.trim().toLowerCase())) {
     if (part.startsWith("discount")) out.add("discount");
+    else if (part.startsWith("free item")) out.add("freeItem");
     else if (part.startsWith("credit")) out.add("credit");
   }
   return [...out];
@@ -277,6 +288,13 @@ export function warehouseOptions(
 /** Codes with a message under orders.errors.* (business codes raised by the order commands first). */
 export const ORDER_ERROR_CODES = [
   "CUSTOMER_BLOCKED",
+  "OFFER_EXPIRED",
+  "OFFER_NOT_STARTED",
+  "OFFER_INACTIVE",
+  "OFFER_NOT_ELIGIBLE",
+  "OFFER_CHANGED",
+  "NET_PRICE_ABOVE_LIST",
+  "INVOICE_DISCOUNT_TOO_LARGE",
   "WAREHOUSE_NOT_SELLABLE",
   "INSUFFICIENT_STOCK",
   "NO_PRICE",
@@ -348,17 +366,137 @@ export function sanitizeSearch(raw: string): string {
 export const MAX_LINES = 200;
 export const MAX_QUANTITY = 100_000;
 
-/** Saved draft lines → builder lines (one per variant; quantities of repeated variants are summed). */
-export function linesToBuilder(lines: readonly Pick<OrderLineRow, "variant_id" | "quantity" | "sku" | "variant_name">[]): BuilderLine[] {
-  return lines.reduce<BuilderLine[]>(
-    (acc, l) => addLine(acc, { variant_id: l.variant_id, quantity: l.quantity, sku: l.sku ?? "", name: l.variant_name ?? l.sku ?? "" }),
-    [],
-  );
+type SavedLine = Pick<OrderLineRow, "variant_id" | "quantity" | "sku" | "variant_name"> &
+  Partial<Pick<OrderLineRow, "is_bonus" | "offer_id" | "offer_code" | "offer_packages" | "requested_net_price" | "requested_discount_pct">>;
+
+/**
+ * Saved draft lines → builder lines (one per variant and bonus flag; quantities
+ * of repeated ones are summed). Lines that came from an offer are left out: the
+ * builder keeps the offer itself (offersFromLines) and the server expands it.
+ */
+export function linesToBuilder(lines: readonly SavedLine[]): BuilderLine[] {
+  return lines
+    .filter((l) => !l.offer_id)
+    .reduce<BuilderLine[]>((acc, l) => {
+      const bonus = l.is_bonus === true;
+      const net = l.requested_net_price == null ? null : toNumber(l.requested_net_price);
+      const pct = toNumber(l.requested_discount_pct);
+      const adjust: PriceAdjust = bonus
+        ? null
+        : net !== null && net > 0
+          ? { kind: "net", value: String(net) }
+          : pct > 0
+            ? { kind: "discount", value: String(pct) }
+            : null;
+      return addLine(acc, {
+        variant_id: l.variant_id,
+        quantity: l.quantity,
+        sku: l.sku ?? "",
+        name: l.variant_name ?? l.sku ?? "",
+        ...(bonus ? { bonus: true } : {}),
+        ...(adjust ? { adjust } : {}),
+      });
+    }, []);
 }
 
-/** Adds a variant to builder lines, or increases its quantity if already present. */
-export function addLine<L extends { variant_id: string; quantity: number }>(lines: readonly L[], line: L): L[] {
-  const i = lines.findIndex((l) => l.variant_id === line.variant_id);
+/** The offers of a saved draft (one per offer, with its package count). */
+export function offersFromLines(lines: readonly SavedLine[]): BuilderOffer[] {
+  const out: BuilderOffer[] = [];
+  for (const l of lines) {
+    if (!l.offer_id || out.some((o) => o.offer_id === l.offer_id)) continue;
+    const packages = Number(l.offer_packages ?? 1);
+    out.push({ offer_id: l.offer_id, packages: Number.isInteger(packages) && packages >= 1 ? packages : 1, code: l.offer_code ?? "", name: l.offer_code ?? "" });
+  }
+  return out;
+}
+
+/** The invoice discount a saved draft asked for. */
+export function invoiceDiscountOf(order: Pick<OrderRow, "invoice_discount_amount" | "invoice_discount_pct">): InvoiceDiscountInput {
+  if (order.invoice_discount_amount != null && toNumber(order.invoice_discount_amount) > 0) {
+    return { kind: "amount", value: String(toNumber(order.invoice_discount_amount)) };
+  }
+  if (order.invoice_discount_pct != null && toNumber(order.invoice_discount_pct) > 0) {
+    return { kind: "pct", value: String(toNumber(order.invoice_discount_pct)) };
+  }
+  return null;
+}
+
+/** A builder line is one per variant and bonus flag (the same product may be sold and given free). */
+export const lineKey = (line: { variant_id: string; bonus?: boolean }) => `${line.variant_id}:${line.bonus ? "bonus" : "paid"}`;
+
+/** Adds a variant to builder lines, or increases its quantity if already present (same bonus flag). */
+export function addLine<L extends { variant_id: string; quantity: number; bonus?: boolean }>(lines: readonly L[], line: L): L[] {
+  const i = lines.findIndex((l) => lineKey(l) === lineKey(line));
   if (i === -1) return lines.length >= MAX_LINES ? [...lines] : [...lines, line];
   return lines.map((l, j) => (j === i ? { ...l, quantity: Math.min(MAX_QUANTITY, l.quantity + line.quantity) } : l));
+}
+
+// ---------------------------------------------------------------------------
+// Pricing inputs. The server decides every price; these only parse what was typed.
+// ---------------------------------------------------------------------------
+/**
+ * Price lists hold prices BEFORE VAT; VAT is added per line at each product's
+ * rate (decision C, migration 20261125000210). Shown on the order, invoice and print.
+ */
+export const PRICES_INCLUDE_VAT = false;
+
+const ARABIC_INDIC = /[٠-٩۰-۹]/g;
+
+/** Typed number → a value with at most 2 decimals, or null. Accepts Arabic-Indic digits, ٫ and thousands separators. */
+export function parseDecimal(raw: string | null | undefined): number | null {
+  if (raw == null) return null;
+  const text = raw
+    .trim()
+    .replace(ARABIC_INDIC, (d) => String(d.charCodeAt(0) - (d.charCodeAt(0) >= 0x06f0 ? 0x06f0 : 0x0660)))
+    .replace(/٫/g, ".")
+    .replace(/[,٬\s]/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(text)) return null;
+  const n = Number(text);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** A requested discount % (0 < pct ≤ 100) or null. */
+export function parseDiscountPct(raw: string | null | undefined): number | null {
+  const n = parseDecimal(raw);
+  return n !== null && n > 0 && n <= 100 ? n : null;
+}
+
+/** A net unit price or an amount in EGP (> 0) or null. */
+export function parseAmount(raw: string | null | undefined): number | null {
+  const n = parseDecimal(raw);
+  return n !== null && n > 0 && n <= 999_999_999_999.99 ? n : null;
+}
+
+/** An adjustment that was typed but does not parse blocks the save (the text stays as typed). Empty = list price. */
+export function adjustValid(adjust: PriceAdjust | undefined): boolean {
+  if (!adjust || adjust.value.trim() === "") return true;
+  return adjust.kind === "discount" ? parseDiscountPct(adjust.value) !== null : parseAmount(adjust.value) !== null;
+}
+
+export function invoiceDiscountValid(input: InvoiceDiscountInput): boolean {
+  if (!input || input.value.trim() === "") return true;
+  return input.kind === "pct" ? parseDiscountPct(input.value) !== null : parseAmount(input.value) !== null;
+}
+
+export interface VatGroup {
+  rate: number;
+  taxable: number;
+  vat: number;
+}
+
+/** VAT per rate of order lines (server amounts, summed in cents). Free lines carry nothing and are left out. */
+export function vatGroups(
+  lines: readonly (Pick<OrderLineRow, "tax_rate_pct" | "line_subtotal" | "line_discount" | "line_tax"> & { is_bonus?: boolean })[],
+): VatGroup[] {
+  const groups = new Map<number, { taxable: number; vat: number }>();
+  const cents = (v: number | string | null | undefined) => Math.round(toNumber(v) * 100);
+  for (const l of lines) {
+    if (l.is_bonus) continue;
+    const rate = cents(l.tax_rate_pct) / 100;
+    const g = groups.get(rate) ?? { taxable: 0, vat: 0 };
+    g.taxable += cents(l.line_subtotal) - cents(l.line_discount);
+    g.vat += cents(l.line_tax);
+    groups.set(rate, g);
+  }
+  return [...groups.entries()].sort(([a], [b]) => b - a).map(([rate, g]) => ({ rate, taxable: g.taxable / 100, vat: g.vat / 100 }));
 }

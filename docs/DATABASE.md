@@ -290,6 +290,7 @@ erDiagram
 | visits, visit_locations | `field.visits`, `field.location_events` | Raw fixes separated: different retention and access |
 | sales_orders, sales_order_items, order_status_history | `sales.orders`, `sales.order_items`, `sales.order_status_history`, `sales.order_transitions` | State machine as data |
 | price_lists, discount_rules | `catalog.price_lists`, `catalog.price_list_items`, `catalog.customer_price_lists`, `sales.discount_rules` | |
+| offers / packages (Phase P, decision B) | `sales.offers`, `sales.offer_items`, `sales.offer_customers` (`20261125000200`) | Package price or per-line net prices, bonus items, validity window, targeting by customer or tag. Order lines carry `is_bonus`, `offer_id`, `offer_packages`, `requested_net_price`, `invoice_discount_share`, `manual_discount_pct`; orders carry the invoice discount asked for |
 | products, product_variants, brands | `catalog.*` + `catalog.categories`, `catalog.product_costs` | Cost split out for field-level security |
 | warehouses, inventory_lots, inventory_movements, inventory_reservations, stock_transfers | `inventory.warehouses`, `inventory.lots`, `inventory.serials`, `inventory.movements`, `inventory.stock_balances`, `inventory.reservations`, `inventory.transfers` (+items), `inventory.goods_receipts` (+items) | |
 | invoices, invoice_items, payments, payment_allocations | `finance.*` + `finance.credit_notes` | |
@@ -366,6 +367,9 @@ erDiagram
 | Commission entries immutable; closed periods frozen | guard triggers (`COMMISSION_ENTRY_IMMUTABLE`, `PERIOD_CLOSED`) | ✅ suite 37 |
 | Commission rates append-only and effective-dated; an activated plan's closed months never change | guard triggers on rules and plans (`COMMISSION_RULE_IMMUTABLE`, `COMMISSION_PLAN_IMMUTABLE`, `PERIOD_CLOSED`) | ✅ suite 58 |
 | Every foreign key has a covering index | suite 40 lists offenders with a ready `create index` | ✅ suite 40 |
+| A bonus line is free; an offer line names its packages; one invoice-discount input per order | `order_items_bonus_free_chk`, `order_items_offer_packages_chk`, `orders_invoice_discount_one_chk` | ✅ suite 56 |
+| Σ line nets = gross − every discount, exactly (invoice discount and package spread, rounding on the last line); VAT per line at the rate stored on the line; issued invoices keep their VAT | `sales.price_order`, `api.issue_invoice` | ✅ suite 56 |
+| VAT rate is a percentage 0–100 | `products_tax_rate_range_chk` | ✅ suite 56 |
 
 ## 5. Indexing strategy
 

@@ -15,17 +15,47 @@ const draft = (lines: unknown, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-describe("draft lines: ids and quantities only", () => {
+describe("draft lines: ids, quantities and what the seller asks for", () => {
   it("accepts a variant id and a whole quantity", () => {
     expect(draftLineSchema.safeParse({ variant_id: VARIANT, quantity: 3 }).success).toBe(true);
   });
 
   it.each([
-    ["a price", { variant_id: VARIANT, quantity: 1, list_price: 1 }],
-    ["a discount", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 5 }],
+    ["a requested discount", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 24 }],
+    ["a net price typed by the seller", { variant_id: VARIANT, quantity: 2, net_unit_price: 2667.85 }],
+    ["a free (bonus) line", { variant_id: VARIANT, quantity: 3, is_bonus: true }],
+  ])("accepts %s (the server converts and checks it)", (_label, line) => {
+    expect(draftLineSchema.safeParse(line).success).toBe(true);
+  });
+
+  it.each([
+    ["a list price", { variant_id: VARIANT, quantity: 1, list_price: 1 }],
     ["a total", { variant_id: VARIANT, quantity: 1, line_total: 10 }],
+    ["a tax", { variant_id: VARIANT, quantity: 1, line_tax: 10 }],
+    ["a discount above 100 %", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 120 }],
+    ["a discount of 0", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 0 }],
+    ["a net price with 3 decimals", { variant_id: VARIANT, quantity: 1, net_unit_price: 2667.855 }],
+    ["both a discount and a net price", { variant_id: VARIANT, quantity: 1, requested_discount_pct: 5, net_unit_price: 900 }],
+    ["a bonus line with a discount", { variant_id: VARIANT, quantity: 1, is_bonus: true, requested_discount_pct: 5 }],
+    ["is_bonus false (omit it instead)", { variant_id: VARIANT, quantity: 1, is_bonus: false }],
   ])("rejects a line carrying %s", (_label, line) => {
     expect(draftLineSchema.safeParse(line).success).toBe(false);
+  });
+
+  it("an offer line is an offer id and a package count, nothing else", () => {
+    expect(draftPayloadSchema.safeParse(draft([{ offer_id: VARIANT, quantity: 2 }])).success).toBe(true);
+    expect(draftPayloadSchema.safeParse(draft([{ offer_id: VARIANT, quantity: 2, package_price: 1 }])).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft([{ offer_id: VARIANT, quantity: 0 }])).success).toBe(false);
+  });
+
+  it("an invoice discount is an amount or a percentage", () => {
+    const one = [{ variant_id: VARIANT, quantity: 1 }];
+    expect(draftPayloadSchema.safeParse(draft(one, { invoice_discount: { amount: 100 } })).success).toBe(true);
+    expect(draftPayloadSchema.safeParse(draft(one, { invoice_discount: { pct: 5 } })).success).toBe(true);
+    expect(draftPayloadSchema.safeParse(draft(one, { invoice_discount: null })).success).toBe(true);
+    expect(draftPayloadSchema.safeParse(draft(one, { invoice_discount: { amount: 100, pct: 5 } })).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft(one, { invoice_discount: { total: 100 } })).success).toBe(false);
+    expect(draftPayloadSchema.safeParse(draft(one, { invoice_discount: { pct: 101 } })).success).toBe(false);
   });
 
   it.each([0, -1, 1.5, 100_001, "2"])("rejects quantity %p", (quantity) => {

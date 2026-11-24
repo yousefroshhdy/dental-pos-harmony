@@ -245,5 +245,12 @@
     "end": "End now",
     "confirmEnd": "End “{name}” now? Orders already submitted keep their discount.",
     "pricingNote": "Promotions cannot be edited. To change one, end it and create a new one, so it is always clear which discount applied when."
+  },
+  "vat": {
+    "rate": "VAT %",
+    "reason": "Reason (optional)",
+    "save": "Set VAT",
+    "saved": "VAT rate saved.",
+    "formLabel": "VAT rate of {product}"
   }
 }

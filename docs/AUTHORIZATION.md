@@ -56,7 +56,7 @@ flowchart LR
 | work | `work.task.read`, `work.task.manage` |
 | catalog | `catalog.product.read`, `catalog.product.manage`, `catalog.price.read`, `catalog.price.manage`, `catalog.cost.read`, `catalog.cost.manage` |
 | inventory | `inventory.module.access`, `inventory.stock.read`, `inventory.movement.read`, `inventory.receipt.post`, `inventory.transfer.create`, `inventory.transfer.receive`, `inventory.adjustment.post` (limit = units), `inventory.writeoff.post`, `inventory.quarantine.release` (sensitive; D-13) |
-| sales | `sales.order.read`, `sales.order.create`, `sales.order.submit`, `sales.order.cancel`, `sales.order.fulfil`, `sales.discount.apply` (limit = %), `sales.return.create`, `sales.order.export` |
+| sales | `sales.order.read`, `sales.order.create`, `sales.order.submit`, `sales.order.cancel`, `sales.order.fulfil`, `sales.discount.apply` (limit = %), `sales.return.create`, `sales.order.export`, `sales.offer.manage` (sensitive, scope `all`; owner implicitly, no role by default; Phase P) |
 | finance | `finance.invoice.read`, `finance.invoice.issue`, `finance.credit_note.issue`, `finance.payment.read`, `finance.payment.record`, `finance.payment.confirm`, `finance.payment.allocate` (limit = EGP), `finance.payment.reverse`, `finance.ledger.read`, `finance.collection.manage`, `finance.credit_limit.change`, `finance.page.aging` |
 | perf | `perf.kpi.read`, `perf.kpi.manage`, `perf.target.manage`, `perf.commission.read`, `perf.commission_plan.read`, `perf.commission_plan.manage`, `perf.commission.calculate`, `perf.commission.adjust` |
 | wf | `wf.approval.read`, `wf.approval.decide.<workflow>` (limit = EGP/%), `wf.delegation.manage` |
@@ -252,6 +252,7 @@ Approval limits are **data**, not code:
 - **Limits on permissions** (`role_permissions.limit_value`) decide whether a user can act directly. Example: a 3% discount is applied directly; 5% is not.
 - **Workflow rules** (`wf.workflow_rules.condition`) decide who must approve when the user cannot. Example: 3–10% → area manager; > 10% or order total > EGP 250,000 → Sales Director, then Owner.
 - Approvers must hold `wf.approval.decide.<workflow>` with a sufficient limit at decision time. An approver cannot approve their own request.
+- **Decision B tiers (Phase P, `20261125000210`):** owner-only settings `sales.discount.limit_mode`, `sales.discount.rep_max_pct` (0), `sales.discount.manager_max_pct` (25). In `tiered` mode the submitter's own authority is the owner (unlimited), a **sales manager** (holds `wf.decide.order_discount`: `sales_director`, `area_manager`) up to the manager limit, everyone else up to the rep limit. Above it the order waits: up to the manager limit any sales manager in scope decides (metric 0); above it `owner_required` routes to the owner role (rules 30 with credit, 35 without). `per_role` (shipped default) keeps the role limits above. Offers never need approval; a free item outside an offer needs a sales manager unless the submitter is one. VAT rates: owner only (`api.set_product_vat_rate`).
 
 ### 8.1 Delegation and escalation authority (`20261103001000`, `20261104000600`)
 

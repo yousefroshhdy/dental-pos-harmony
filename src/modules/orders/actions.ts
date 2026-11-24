@@ -6,19 +6,31 @@ import { callCommand } from "@/lib/command";
 import type { AppError } from "@/lib/errors";
 import type { SendResult } from "@/lib/offline/types";
 import { CATALOG_MAX_VARIANTS } from "./device-store";
-import { orderErrorCode } from "./logic";
-import { toDraftSendResult, type DraftPayload } from "./offline-logic";
-import { listSellableCatalog, searchSellableVariants } from "./queries";
+import { invoiceDiscountOf, offersFromLines, orderErrorCode } from "./logic";
+import { toCommandLines, toDraftSendResult, type DraftPayload } from "./offline-logic";
+import { getOrder, listOrderLines, listSellableCatalog, searchSellableVariants } from "./queries";
 import {
+  idSchema,
   draftPayloadSchema,
   formToObject,
   fulfilSchema,
   orderReasonSchema,
   orderRefSchema,
+  previewSchema,
   reserveSchema,
   searchSchema,
 } from "./schemas";
-import type { CatalogSnapshotResult, OrderActionResult, OrderActionState, VariantSearchResult } from "./types";
+import type {
+  CatalogSnapshotResult,
+  DraftPricingResult,
+  OfferOption,
+  OffersResult,
+  OrderActionResult,
+  OrderActionState,
+  OrderPreview,
+  PreviewResult,
+  VariantSearchResult,
+} from "./types";
 
 /**
  * Order mutations. Each action validates FormData, calls exactly one api.*
@@ -49,18 +61,58 @@ const detailPath = (locale: string, orderId: string, flag?: string) => `/${local
 export async function saveDraftOnDevice(payload: DraftPayload): Promise<SendResult> {
   const parsed = draftPayloadSchema.safeParse(payload);
   if (!parsed.success) return { ok: false, error: { code: "VALIDATION", messageKey: "VALIDATION", retryable: false } };
-  const { order_id, customer_id, lines, notes, visit_id, version } = parsed.data;
+  const { order_id, customer_id, lines, notes, visit_id, version, invoice_discount } = parsed.data;
   const result = await callCommand("save_order_draft", {
     p_order_id: order_id,
     p_customer_id: customer_id,
-    // Exactly the two keys the client may send per line (see draftLineSchema).
-    p_lines: lines.map((l) => ({ variant_id: l.variant_id, quantity: l.quantity })),
+    // Only the keys the server accepts per line (draftLineSchema / offerLineSchema); the plain
+    // array when there is no invoice discount, so earlier queued saves keep their fingerprint.
+    p_lines: toCommandLines(lines, invoice_discount),
     p_notes: notes || null,
     p_visit_id: visit_id,
     p_version: version,
   });
   if (result.ok) refresh();
   return toDraftSendResult(result);
+}
+
+/**
+ * The server's pricing of what is in the builder (api.preview_order): totals, every
+ * line, VAT per rate and whether submitting would need approval. Nothing is saved.
+ */
+export async function previewOrder(input: {
+  customer_id: string;
+  lines: DraftPayload["lines"];
+  invoice_discount?: DraftPayload["invoice_discount"];
+}): Promise<PreviewResult> {
+  const parsed = previewSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, errorCode: "VALIDATION" };
+  const result = await callCommand<OrderPreview>("preview_order", {
+    p_customer_id: parsed.data.customer_id,
+    p_lines: toCommandLines(parsed.data.lines, parsed.data.invoice_discount),
+  });
+  if (!result.ok) return { ok: false, errorCode: orderErrorCode(result.error), requestId: result.error.requestId };
+  return { ok: true, preview: result.data };
+}
+
+/** The offers the seller may pick today for this customer (api.eligible_offers). */
+export async function loadEligibleOffers(customerId: string): Promise<OffersResult> {
+  const parsed = idSchema.safeParse(customerId);
+  if (!parsed.success) return { ok: false, errorCode: "VALIDATION" };
+  const result = await callCommand<OfferOption[]>("eligible_offers", { p_customer_id: parsed.data });
+  if (!result.ok) return { ok: false, errorCode: orderErrorCode(result.error), requestId: result.error.requestId };
+  return { ok: true, offers: Array.isArray(result.data) ? result.data : [] };
+}
+
+/** A saved draft's offers and invoice discount, for the builder when it edits the draft. */
+export async function loadDraftPricing(orderId: string): Promise<DraftPricingResult> {
+  const parsed = idSchema.safeParse(orderId);
+  if (!parsed.success) return { ok: false, errorCode: "VALIDATION" };
+  const [order, lines] = await Promise.all([getOrder(parsed.data), listOrderLines(parsed.data)]);
+  if (!order.ok) return { ok: false, errorCode: orderErrorCode(order.error), requestId: order.error.requestId };
+  if (!order.data) return { ok: false, errorCode: "NOT_FOUND" };
+  if (!lines.ok) return { ok: false, errorCode: orderErrorCode(lines.error), requestId: lines.error.requestId };
+  return { ok: true, offers: offersFromLines(lines.data), invoiceDiscount: invoiceDiscountOf(order.data) };
 }
 
 /** The sellable-variant list with indicative list prices, for the device cache (offline search). */

@@ -518,6 +518,8 @@ const local = (over: Partial<LocalDraft> = {}): LocalDraft => ({
   visitId: null,
   notes: "",
   lines: [{ variant_id: VARIANT_1, quantity: 2, sku: "SYN-1", name: "Synthetic implant" }],
+  offers: [],
+  invoiceDiscount: null,
   dirty: true,
   updatedAt: new Date(T0).toISOString(),
   ...over,
@@ -631,8 +633,8 @@ describe("device store (per user)", () => {
 });
 
 describe("builder start", () => {
-  const server: BuilderSeed = { orderId: ORDER, serverVersion: 3, customerId: CUSTOMER, visitId: null, notes: "", lines: [] };
-  const fresh: BuilderSeed = { orderId: null, serverVersion: 0, customerId: "", visitId: null, notes: "", lines: [] };
+  const server: BuilderSeed = { orderId: ORDER, serverVersion: 3, customerId: CUSTOMER, visitId: null, notes: "", lines: [], offers: [], invoiceDiscount: null };
+  const fresh: BuilderSeed = { orderId: null, serverVersion: 0, customerId: "", visitId: null, notes: "", lines: [], offers: [], invoiceDiscount: null };
 
   it("no copy → the server's draft", () => {
     expect(chooseBuilderStart(ORDER, null, server, 0)).toEqual({ seed: server, notice: "none", dropLocal: false });

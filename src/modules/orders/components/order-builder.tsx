@@ -7,10 +7,21 @@ import { Alert, Card, CardTitle, Input, Label, Select } from "@/components/ui/pr
 import { Link, useRouter } from "@/i18n/navigation";
 import type { QueueItem } from "@/lib/offline/types";
 import { useOfflineQueue } from "@/modules/offline/use-offline-queue";
-import { saveDraftOnDevice, searchVariants } from "../actions";
+import { loadDraftPricing, previewOrder, saveDraftOnDevice, searchVariants } from "../actions";
 import { loadDraft, removeLocalDraft, saveLocalDraft } from "../device-store";
 import { CAIRO_DATE_TIME } from "../format";
-import { addLine, localizedName, MAX_LINES, MAX_QUANTITY, sanitizeSearch, type OrderErrorCode } from "../logic";
+import {
+  addLine,
+  adjustValid,
+  invoiceDiscountValid,
+  lineKey,
+  localizedName,
+  MAX_LINES,
+  MAX_QUANTITY,
+  PRICES_INCLUDE_VAT,
+  sanitizeSearch,
+  type OrderErrorCode,
+} from "../logic";
 import {
   buildDraftPayload,
   canSaveDraft,
@@ -28,9 +39,11 @@ import {
   type CatalogSnapshot,
   type RestoreNotice,
 } from "../offline-logic";
-import type { BuilderLine, CustomerOption, SellableVariant } from "../types";
+import type { BuilderLine, BuilderOffer, CustomerOption, InvoiceDiscountInput, OrderPreview, PriceAdjust, SellableVariant } from "../types";
 import { useCatalogSnapshot, useOrdersDeviceStart } from "../use-order-device";
+import { OfferPicker } from "./offer-picker";
 import { OrderError } from "./order-error";
+import { OrderPreviewPanel } from "./order-preview";
 
 export interface BuilderInitial {
   /** Set when editing an existing draft. */
@@ -40,14 +53,20 @@ export interface BuilderInitial {
   visitId?: string;
   notes?: string;
   lines?: BuilderLine[];
+  /** The draft's offers and invoice discount; when editing without them, the builder reads them from the server. */
+  offers?: BuilderOffer[];
+  invoiceDiscount?: InvoiceDiscountInput;
 }
 
 const SEARCH_DELAY_MS = 300;
 
 /**
- * Order builder. The browser holds only variant ids and quantities; it never
- * sends a price. It shows indicative list prices from the last online catalogue
- * snapshot, labelled as such; the server prices the saved draft.
+ * Order builder. The browser holds variant ids, quantities, the offers picked and
+ * what the seller asks for (a discount % or net unit price per line, a free line,
+ * an invoice discount); it never sends a list price, tax or total. It shows
+ * indicative list prices from the last online catalogue snapshot, labelled as
+ * such, and on request the server's full pricing (api.preview_order, nothing
+ * saved); the server prices the saved draft again and checks the limits.
  *
  * Offline (docs/ARCHITECTURE.md §6, A-05): the lines are kept on this device,
  * "Save draft" goes to the device queue and is sent when the connection returns
@@ -84,14 +103,26 @@ export function OrderBuilder({
       visitId: initial.visitId ?? null,
       notes: initial.notes ?? "",
       lines: initial.lines ?? [],
+      offers: initial.offers ?? [],
+      invoiceDiscount: initial.invoiceDiscount ?? null,
     }),
     [initial, customers],
   );
+  // Editing a draft whose offers / invoice discount were not passed in: read them before anything is saved.
+  const needsPricing = Boolean(initial.orderId) && initial.offers === undefined;
 
   const [seed, setSeed] = useState<BuilderSeed>(serverSeed);
   const [customerId, setCustomerId] = useState(serverSeed.customerId);
   const [customerFilter, setCustomerFilter] = useState("");
   const [lines, setLines] = useState<BuilderLine[]>(serverSeed.lines);
+  const [offers, setOffers] = useState<BuilderOffer[]>(serverSeed.offers);
+  const [invoiceDiscount, setInvoiceDiscount] = useState<InvoiceDiscountInput>(serverSeed.invoiceDiscount);
+  const [pricingKnown, setPricingKnown] = useState(!needsPricing);
+  const [preview, setPreview] = useState<{ data: OrderPreview | null; error: { code: OrderErrorCode; requestId?: string } | null; pending: boolean }>({
+    data: null,
+    error: null,
+    pending: false,
+  });
   const [notes, setNotes] = useState(serverSeed.notes);
   const [dirty, setDirty] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -105,18 +136,32 @@ export function OrderBuilder({
     let alive = true;
     const restore = async (queueItems: QueueItem[]) => {
       if (!alive) return;
+      // The saved draft's offers and invoice discount (not part of its builder lines).
+      let server = serverSeed;
+      if (needsPricing && serverSeed.orderId) {
+        const extras = await loadDraftPricing(serverSeed.orderId).catch(() => null);
+        if (!alive) return;
+        if (extras?.ok) {
+          server = { ...serverSeed, offers: extras.offers, invoiceDiscount: extras.invoiceDiscount };
+          setPricingKnown(true);
+        }
+      }
       const local = loadDraft(userId, slot);
-      const mine = draftItems(queueItems, local?.orderId ?? serverSeed.orderId);
+      const mine = draftItems(queueItems, local?.orderId ?? server.orderId);
       const known = local ? { ...local, serverVersion: Math.max(local.serverVersion, syncedVersion(mine)) } : null;
-      const start = chooseBuilderStart(slot, known, serverSeed, mine.filter((i) => i.status !== "done").length);
+      const start = chooseBuilderStart(slot, known, server, mine.filter((i) => i.status !== "done").length);
       if (start.dropLocal) removeLocalDraft(userId, slot);
+      // A device copy carries its own offers and discount, so it can be saved even if the read failed.
+      if (start.seed !== server) setPricingKnown(true);
       if (start.seed !== serverSeed) {
         const keep = start.seed.customerId && customers.some((c) => c.id === start.seed.customerId);
         setSeed(start.seed);
         setCustomerId(keep ? start.seed.customerId : "");
         setLines(start.seed.lines);
+        setOffers(start.seed.offers);
+        setInvoiceDiscount(start.seed.invoiceDiscount);
         setNotes(start.seed.notes);
-        setDirty(known?.dirty ?? false);
+        setDirty(start.seed === server ? false : (known?.dirty ?? false));
       }
       setNotice(start.notice);
       setRestored(true);
@@ -154,10 +199,12 @@ export function OrderBuilder({
       visitId: seed.visitId,
       notes,
       lines,
+      offers,
+      invoiceDiscount,
       dirty,
       updatedAt: new Date().toISOString(),
     });
-  }, [restored, userId, slot, seed.orderId, seed.visitId, serverVersion, customerId, notes, lines, dirty, unconfirmed]);
+  }, [restored, userId, slot, seed.orderId, seed.visitId, serverVersion, customerId, notes, lines, offers, invoiceDiscount, dirty, unconfirmed]);
 
   const visibleCustomers = useMemo(() => {
     const f = customerFilter.trim().toLowerCase();
@@ -170,20 +217,30 @@ export function OrderBuilder({
   }, [customers, customerFilter, customerId]);
 
   const quantitiesValid = lines.every((l) => Number.isInteger(l.quantity) && l.quantity >= 1 && l.quantity <= MAX_QUANTITY);
-  const canSave = canSaveDraft(customerId, lines) && !pending;
+  const adjustsValid = lines.every((l) => adjustValid(l.adjust)) && invoiceDiscountValid(invoiceDiscount);
+  const canSave = canSaveDraft(customerId, lines, offers, invoiceDiscount) && !pending && pricingKnown;
 
   const edit = <T,>(set: (value: T) => void) => (value: T) => {
     set(value);
     setDirty(true);
     setError(null);
+    setPreview({ data: null, error: null, pending: false }); // a preview is of what was on screen then
   };
   const changeLines = edit<(prev: BuilderLine[]) => BuilderLine[]>((fn) => setLines(fn));
+  const changeOffers = edit<BuilderOffer[]>(setOffers);
+  const changeInvoiceDiscount = edit<InvoiceDiscountInput>(setInvoiceDiscount);
   const changeCustomer = edit(setCustomerId);
   const changeNotes = edit(setNotes);
 
-  const setQuantity = (variantId: string, raw: string) => {
+  const updateLine = (key: string, patch: (l: BuilderLine) => BuilderLine) =>
+    changeLines((prev) => {
+      const next = prev.map((l) => (lineKey(l) === key ? patch(l) : l));
+      // Turning a line into a bonus line can meet an existing bonus line of the same product: merge them.
+      return next.reduce<BuilderLine[]>((acc, l) => addLine(acc, l), []);
+    });
+  const setQuantity = (key: string, raw: string) => {
     const n = raw === "" ? 0 : Math.trunc(Number(raw));
-    changeLines((prev) => prev.map((l) => (l.variant_id === variantId ? { ...l, quantity: Number.isFinite(n) ? n : 0 } : l)));
+    updateLine(key, (l) => ({ ...l, quantity: Number.isFinite(n) ? n : 0 }));
   };
 
   function startOver() {
@@ -191,10 +248,24 @@ export function OrderBuilder({
     setSeed(serverSeed);
     setCustomerId(serverSeed.customerId);
     setLines(serverSeed.lines);
+    setOffers(serverSeed.offers);
+    setInvoiceDiscount(serverSeed.invoiceDiscount);
     setNotes(serverSeed.notes);
     setDirty(false);
     setNotice("none");
     setError(null);
+    setPreview({ data: null, error: null, pending: false });
+  }
+
+  async function onPreview() {
+    const payload = buildDraftPayload({ orderId: seed.orderId ?? "00000000-0000-0000-0000-000000000000", customerId, lines, offers, invoiceDiscount, notes, visitId: null, baseVersion: 0 });
+    setPreview({ data: null, error: null, pending: true });
+    const res = await previewOrder({ customer_id: customerId, lines: payload.lines, invoice_discount: payload.invoice_discount ?? null }).catch(() => ({
+      ok: false as const,
+      errorCode: "UNAVAILABLE" as const,
+      requestId: undefined,
+    }));
+    setPreview(res.ok ? { data: res.preview, error: null, pending: false } : { data: null, error: { code: res.errorCode, requestId: res.requestId }, pending: false });
   }
 
   async function onSave(e: FormEvent) {
@@ -211,6 +282,8 @@ export function OrderBuilder({
       orderId,
       customerId,
       lines,
+      offers,
+      invoiceDiscount,
       notes,
       visitId: seed.visitId,
       baseVersion: nextBaseVersion(draftItems(queueItems, orderId), serverVersion),
@@ -221,7 +294,7 @@ export function OrderBuilder({
       online: isOnline,
       queue: engine,
       send: saveDraftOnDevice,
-      summary: [customer?.display_name, t("summary", { count: lines.length })].filter(Boolean).join(" · "),
+      summary: [customer?.display_name, t("summary", { count: lines.length + offers.length })].filter(Boolean).join(" · "),
     });
     setPending(false);
     if (outcome.kind === "sent") {
@@ -298,11 +371,15 @@ export function OrderBuilder({
         )}
       </Card>
 
+      {!pricingKnown && restored ? <Alert>{t("pricingUnknown")}</Alert> : null}
+
+      <OfferPicker customerId={customerId} online={online} locale={locale} offers={offers} onChange={changeOffers} />
+
       <ProductSearch
         locale={locale}
         searchId={ids.search}
         resultsId={ids.results}
-        full={lines.length >= MAX_LINES}
+        full={lines.length + offers.length >= MAX_LINES}
         online={online}
         snapshot={catalog.snapshot}
         snapshotTime={snapshotTime}
@@ -317,23 +394,28 @@ export function OrderBuilder({
         ) : (
           <ul className="divide-y">
             {lines.map((line) => {
-              const qtyId = `qty-${line.variant_id}`;
+              const key = lineKey(line);
+              const qtyId = `qty-${key}`;
+              const priceId = `price-${key}`;
               const invalid = !(Number.isInteger(line.quantity) && line.quantity >= 1 && line.quantity <= MAX_QUANTITY);
               const price = prices.get(line.variant_id);
+              const mode = line.bonus ? "bonus" : (line.adjust?.kind ?? "list");
               return (
-                <li key={line.variant_id} className="flex flex-wrap items-end gap-3 py-3">
+                <li key={key} className="flex flex-wrap items-end gap-3 py-3">
                   <div className="min-w-0 flex-1 basis-48">
                     <p className="font-medium break-words">{line.name}</p>
                     <p dir="ltr" className="text-xs text-muted-foreground text-start">
                       {line.sku}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {price === undefined
-                        ? tOffline("noPrice")
-                        : tOffline("linePrice", { price: money(price), total: money(Math.round(price * Math.max(line.quantity, 0) * 100) / 100) })}
+                      {line.bonus
+                        ? t("bonusLine")
+                        : price === undefined
+                          ? tOffline("noPrice")
+                          : tOffline("linePrice", { price: money(price), total: money(Math.round(price * Math.max(line.quantity, 0) * 100) / 100) })}
                     </p>
                   </div>
-                  <div className="w-28 space-y-1">
+                  <div className="w-24 space-y-1">
                     <Label htmlFor={qtyId}>{t("quantity")}</Label>
                     <Input
                       id={qtyId}
@@ -343,16 +425,50 @@ export function OrderBuilder({
                       max={MAX_QUANTITY}
                       step={1}
                       value={line.quantity === 0 ? "" : line.quantity}
-                      onChange={(e) => setQuantity(line.variant_id, e.target.value)}
+                      onChange={(e) => setQuantity(key, e.target.value)}
                       aria-invalid={invalid || undefined}
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => changeLines((prev) => prev.filter((l) => l.variant_id !== line.variant_id))}
-                    aria-label={t("removeLine", { name: line.name })}
-                  >
+                  <div className="w-40 space-y-1">
+                    <Label htmlFor={`${priceId}-mode`}>{t("priceMode")}</Label>
+                    <Select
+                      id={`${priceId}-mode`}
+                      value={mode}
+                      className="w-full"
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        updateLine(key, (l) => {
+                          if (v === "bonus") return { ...l, bonus: true, adjust: null };
+                          const adjust: PriceAdjust = v === "discount" || v === "net" ? { kind: v, value: l.adjust?.value ?? "" } : null;
+                          return { ...l, bonus: false, adjust };
+                        });
+                      }}
+                    >
+                      <option value="list">{t("modeList")}</option>
+                      <option value="discount">{t("modeDiscount")}</option>
+                      <option value="net">{t("modeNet")}</option>
+                      <option value="bonus">{t("modeBonus")}</option>
+                    </Select>
+                  </div>
+                  {line.adjust && !line.bonus ? (
+                    <div className="w-32 space-y-1">
+                      <Label htmlFor={priceId}>{line.adjust.kind === "discount" ? t("discountPct") : t("netPrice")}</Label>
+                      <Input
+                        id={priceId}
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
+                        value={line.adjust.value}
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 20);
+                          updateLine(key, (l) => (l.adjust ? { ...l, adjust: { kind: l.adjust.kind, value } } : l));
+                        }}
+                        aria-invalid={!adjustValid(line.adjust) || undefined}
+                        autoComplete="off"
+                      />
+                    </div>
+                  ) : null}
+                  <Button type="button" variant="ghost" onClick={() => changeLines((prev) => prev.filter((l) => lineKey(l) !== key))} aria-label={t("removeLine", { name: line.name })}>
                     {t("remove")}
                   </Button>
                 </li>
@@ -361,6 +477,8 @@ export function OrderBuilder({
           </ul>
         )}
         {!quantitiesValid ? <p className="text-sm text-destructive">{t("quantityInvalid", { max: MAX_QUANTITY })}</p> : null}
+        {!adjustsValid ? <p className="text-sm text-destructive">{t("priceInvalid")}</p> : null}
+        {lines.some((l) => l.bonus) ? <p className="text-xs text-muted-foreground">{t("bonusHint")}</p> : null}
         {lines.length > 0 ? (
           <div className="space-y-1 rounded-md bg-muted/50 p-3 text-sm">
             <p className="font-medium">
@@ -372,6 +490,45 @@ export function OrderBuilder({
           </div>
         ) : null}
         <p className="text-xs text-muted-foreground">{t("pricesHint")}</p>
+        <p className="text-xs font-medium">{PRICES_INCLUDE_VAT ? t("vatIncluded") : t("vatExcluded")}</p>
+      </Card>
+
+      <Card className="space-y-3">
+        <CardTitle>{t("invoiceDiscountTitle")}</CardTitle>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-44 space-y-1">
+            <Label htmlFor={`${ids.notes}-idk`}>{t("invoiceDiscountKind")}</Label>
+            <Select
+              id={`${ids.notes}-idk`}
+              className="w-full"
+              value={invoiceDiscount?.kind ?? "none"}
+              onChange={(e) => {
+                const v = e.target.value;
+                changeInvoiceDiscount(v === "amount" || v === "pct" ? { kind: v, value: invoiceDiscount?.value ?? "" } : null);
+              }}
+            >
+              <option value="none">{t("invoiceDiscountNone")}</option>
+              <option value="amount">{t("invoiceDiscountAmount")}</option>
+              <option value="pct">{t("invoiceDiscountPct")}</option>
+            </Select>
+          </div>
+          {invoiceDiscount ? (
+            <div className="w-36 space-y-1">
+              <Label htmlFor={`${ids.notes}-idv`}>{invoiceDiscount.kind === "pct" ? t("discountPct") : t("invoiceDiscountValue")}</Label>
+              <Input
+                id={`${ids.notes}-idv`}
+                type="text"
+                inputMode="decimal"
+                dir="ltr"
+                value={invoiceDiscount.value}
+                onChange={(e) => changeInvoiceDiscount({ kind: invoiceDiscount.kind, value: e.target.value.slice(0, 20) })}
+                aria-invalid={!invoiceDiscountValid(invoiceDiscount) || undefined}
+                autoComplete="off"
+              />
+            </div>
+          ) : null}
+        </div>
+        <p className="text-xs text-muted-foreground">{t("invoiceDiscountHint")}</p>
       </Card>
 
       <Card className="space-y-2">
@@ -379,13 +536,27 @@ export function OrderBuilder({
         <Input id={ids.notes} name="notes" value={notes} onChange={(e) => changeNotes(e.target.value)} maxLength={1000} autoComplete="off" />
       </Card>
 
+      <div className="space-y-3">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!online || preview.pending || !canSaveDraft(customerId, lines, offers, invoiceDiscount)}
+          onClick={() => void onPreview()}
+        >
+          {preview.pending ? t("previewing") : t("preview")}
+        </Button>
+        {!online ? <p className="text-xs text-muted-foreground">{t("previewOffline")}</p> : null}
+        {preview.error ? <OrderError code={preview.error.code} requestId={preview.error.requestId} /> : null}
+        {preview.data ? <OrderPreviewPanel preview={preview.data} /> : null}
+      </div>
+
       {error ? <OrderError code={error.code} requestId={error.requestId} /> : null}
 
       {/* Primary action stays reachable at the bottom on phones. */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1">
           <div className="min-w-0 flex-1 text-sm text-muted-foreground">
-            <p>{t("summary", { count: lines.length })}</p>
+            <p>{t("summary", { count: lines.length + offers.length })}</p>
             {!online ? (
               <p id={ids.offline} className="text-xs">
                 {tOffline("submitNeedsConnection")}

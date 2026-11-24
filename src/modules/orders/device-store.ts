@@ -1,10 +1,10 @@
-import type { BuilderLine } from "./types";
+import type { BuilderLine, BuilderOffer, InvoiceDiscountInput, PriceAdjust } from "./types";
 import { MAX_LINES, MAX_QUANTITY } from "./logic";
 import type { CachedVariant, CatalogSnapshot, DraftSlot, LocalDraft } from "./offline-logic";
 
 /**
  * What this device keeps for the order builder, in localStorage, per user:
- *   honest.orders.v1:<userId>           builder copies (lines, customer, notes) by slot
+ *   honest.orders.v1:<userId>           builder copies (lines, offers, typed discounts, customer, notes) by slot
  *   honest.orders.v1:<userId>:catalog   the last online sellable-variant list with list prices
  * Queued saves themselves live in the user's IndexedDB queue (src/lib/offline).
  *
@@ -72,8 +72,27 @@ function parseLine(v: unknown): BuilderLine | null {
   const q = v.quantity;
   // Quantity 0 is an empty input the rep is still typing; it is kept as is.
   if (!variant || typeof q !== "number" || !Number.isInteger(q) || q < 0 || q > MAX_QUANTITY) return null;
-  // Only ids, the quantity and display text survive: nothing else is ever restored.
-  return { variant_id: variant, quantity: q, sku: str(v.sku, 200) ?? "", name: str(v.name, 500) ?? "" };
+  // Only ids, the quantity, display text and what the seller typed survive: nothing else is ever restored.
+  const line: BuilderLine = { variant_id: variant, quantity: q, sku: str(v.sku, 200) ?? "", name: str(v.name, 500) ?? "" };
+  if (v.bonus === true) line.bonus = true;
+  const adjust = parseTyped(v.adjust, ["discount", "net"]);
+  if (adjust && !line.bonus) line.adjust = adjust as PriceAdjust;
+  return line;
+}
+
+/** A typed {kind, value} pair (discount / net price, or the invoice discount), as text only. */
+function parseTyped(v: unknown, kinds: readonly string[]): { kind: string; value: string } | null {
+  if (!isObject(v) || typeof v.kind !== "string" || !kinds.includes(v.kind)) return null;
+  const value = str(v.value, 32);
+  return value === null ? null : { kind: v.kind, value };
+}
+
+function parseOffer(v: unknown): BuilderOffer | null {
+  if (!isObject(v)) return null;
+  const id = uuid(v.offer_id);
+  const p = v.packages;
+  if (!id || typeof p !== "number" || !Number.isInteger(p) || p < 0 || p > MAX_QUANTITY) return null;
+  return { offer_id: id, packages: p, code: str(v.code, 40) ?? "", name: str(v.name, 200) ?? "" };
 }
 
 export function parseLocalDraft(v: unknown): LocalDraft | null {
@@ -90,6 +109,8 @@ export function parseLocalDraft(v: unknown): LocalDraft | null {
     visitId: uuid(v.visitId),
     notes: str(v.notes) ?? "",
     lines,
+    offers: Array.isArray(v.offers) ? v.offers.slice(0, MAX_LINES).map(parseOffer).filter((o): o is BuilderOffer => o !== null) : [],
+    invoiceDiscount: parseTyped(v.invoiceDiscount, ["amount", "pct"]) as InvoiceDiscountInput,
     dirty: v.dirty === true,
     updatedAt: str(v.updatedAt, 40) ?? new Date(0).toISOString(),
   };

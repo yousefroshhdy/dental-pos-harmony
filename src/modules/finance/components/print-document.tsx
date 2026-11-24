@@ -147,6 +147,16 @@ export function TotalRow({ label, value, strong = false }: { label: string; valu
   );
 }
 
+/** The VAT basis line printed by the VAT summary ("Prices are before VAT; VAT per product rate"). */
+export function VatBasisNote({ text }: { text: string }) {
+  return <p className="fin-doc-keep text-xs text-neutral-600">{text}</p>;
+}
+
+/** "Free / bonus" mark on a printed line (price 0, from a package or approved). */
+export function BonusMark({ label }: { label: string }) {
+  return <span className="ms-1 inline-block rounded border border-neutral-400 px-1 text-[10px] font-medium uppercase">{label}</span>;
+}
+
 /** "Amount in words" box. */
 export function AmountWords({ label, words }: { label: string; words: string }) {
   return (
