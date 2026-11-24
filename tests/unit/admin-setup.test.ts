@@ -3,6 +3,7 @@ import { geocodeAddress, insideEgypt } from "@/lib/maps/geocode";
 import {
   IMPORT_SEQUENCE,
   mansouraNeedingCoverage,
+  needsQuarantineWarehouse,
   parseLatLngPair,
   SALES_MANAGER_ROLE,
   setupRoles,
@@ -176,5 +177,24 @@ describe("geocodeAddress (server key, region eg, Arabic)", () => {
     expect(await geocodeAddress("Somewhere 1", { key: "k".repeat(39), fetchImpl: fn })).toMatchObject({ status: "ok", approximate: true });
     expect(insideEgypt(21.5, 24.5) && insideEgypt(32, 37.5)).toBe(true);
     expect(insideEgypt(32.01, 31) || insideEgypt(31, 24.49)).toBe(false);
+  });
+});
+
+describe("quarantine warehouse offer", () => {
+  const wh = (kind: string, is_active = true) => ({ kind, is_active });
+  it("is offered once a main warehouse exists and no active quarantine one does", () => {
+    expect(needsQuarantineWarehouse([wh("main")])).toBe(true);
+    expect(needsQuarantineWarehouse([wh("main"), wh("quarantine", false)])).toBe(true);
+  });
+  it("is not offered before the main warehouse, or when a quarantine warehouse is active", () => {
+    expect(needsQuarantineWarehouse([])).toBe(false);
+    expect(needsQuarantineWarehouse([wh("main", false)])).toBe(false);
+    expect(needsQuarantineWarehouse([wh("main"), wh("quarantine")])).toBe(false);
+  });
+  it("has the same labels in Arabic and English", () => {
+    for (const key of ["quarantineTitle", "quarantineIntro", "quarantineCreate", "quarantineDefaultName", "quarantineCodeHint"] as const) {
+      expect(setupAr.warehouse[key]).toBeTruthy();
+      expect(setupEn.warehouse[key]).toBeTruthy();
+    }
   });
 });

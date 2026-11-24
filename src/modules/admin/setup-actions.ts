@@ -35,16 +35,25 @@ function failed(error: AppError): ActionResult {
 }
 
 // ---------------------------------------------------------------------------
-// Main warehouse
+// Main and quarantine warehouses
 // ---------------------------------------------------------------------------
-export async function createMainWarehouse(_prev: ActionState, form: FormData): Promise<ActionResult> {
+async function createWarehouse(form: FormData, kind: "main" | "quarantine"): Promise<ActionResult> {
   const parsed = createWarehouseSchema.safeParse(formToObject(form));
   if (!parsed.success) return { ok: false, messageKey: "VALIDATION" };
   const { warehouse_id, code, name } = parsed.data;
-  const result = await callCommand("create_warehouse", { p_warehouse_id: warehouse_id, p_code: code, p_name: name, p_kind: "main" });
+  const result = await callCommand("create_warehouse", { p_warehouse_id: warehouse_id, p_code: code, p_name: name, p_kind: kind });
   if (!result.ok) return failed(result.error);
   refreshSetup();
   return { ok: true };
+}
+
+export async function createMainWarehouse(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  return createWarehouse(form, "main");
+}
+
+/** Where returned goods are received (never sellable); same command, kind `quarantine`. */
+export async function createQuarantineWarehouse(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  return createWarehouse(form, "quarantine");
 }
 
 // ---------------------------------------------------------------------------

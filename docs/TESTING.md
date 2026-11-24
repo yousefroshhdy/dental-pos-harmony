@@ -4,7 +4,7 @@
 >
 > **Current suite (Phase P step 8, local run, 2026-11-24):**
 > - Database: **3431 assertions in 61 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). DB suites no longer run on staging since it holds real data (DECISIONS 2026-11-25).
-> - Unit: **1971 Vitest tests in 129 files** (`pnpm test`).
+> - Unit: **1974 Vitest tests in 129 files** (`pnpm test`).
 > - Local signed-in stack (§7, §8): **77 verification lines passed** (`pnpm e2e:local:verify`) and **348 screenshots** (87 screens × ar/en × 390/1440, `pnpm e2e:local:shots`). Mock auth: Tested, not Verified.
 >
 > Earlier totals, kept for history (run by the lead on `0ba1acf`, 2026-10-30):

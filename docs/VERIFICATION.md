@@ -44,8 +44,8 @@ of tests, screenshots and notes):
 `+2010000000NN`; never a real clinic):
 
 - A main warehouse with stock of at least two products, a price list with their prices, and a
-  **quarantine warehouse** for returns (the setup page creates only main warehouses; see
-  "Gaps found" below).
+  **quarantine warehouse** for returns (`/ar/admin/setup` › **Create the quarantine warehouse**,
+  S-01).
 - At least two customers of the test rep, one **without a phone**.
 - An active owner offer or package (`/ar/offers`) for the rep's customers.
 - Plan **STD-2026 activated** in `/ar/commissions/plans` (owner, MFA).
@@ -82,7 +82,7 @@ same clicks passed on the local stack with synthetic data and mocked sign-in (`d
 
 | # | Step (who) | Exact URL | What to click | What you should see | Lines | Status |
 |---|------------|-----------|---------------|---------------------|-------|--------|
-| S-01 | Owner setup (owner, ~4 min) | `/ar/admin/setup` | Read **Progress** (التقدم). If missing: **Create the main warehouse** (إنشاء المخزن الرئيسي) with code `WH-MAIN`; **Cover Dakahlia with Mansoura** (تغطية الدقهلية بمنطقة المنصورة); in **1. Main warehouse** check a **Quarantine** (حجر) warehouse exists (needed for returns; there is no button for it yet, see "Gaps found") | **Owner setup** (إعداد المالك); Progress shows Main warehouse, Territories with coverage, People, Logins and Reps' base addresses, each done or with its count | OWN-02 | Tested (local) for the page; creating the warehouse and coverage on staging: Planned |
+| S-01 | Owner setup (owner, ~4 min) | `/ar/admin/setup` | Read **Progress** (التقدم). If missing: **Create the main warehouse** (إنشاء المخزن الرئيسي) with code `WH-MAIN`; **Cover Dakahlia with Mansoura** (تغطية الدقهلية بمنطقة المنصورة); then **Create the quarantine warehouse** (إنشاء مخزن الحجر) with code `WH-QRN` (returns are received there) | **Owner setup** (إعداد المالك); Progress shows Main warehouse, Territories with coverage, People, Logins and Reps' base addresses, each done or with its count | OWN-02 | Tested (local) for the page and the quarantine form (unit `admin-setup`, one manual local run); creating them on staging: Planned |
 | S-02 | Old-system workbook (owner, ~6 min) | `/ar/admin/setup/legacy-import` | **Workbook (.xlsx)** (الملف .xlsx) › your real workbook › **Upload and check** (رفع ومراجعة) › decide each negative-stock item (**Fix all to 0** (تصفير الكل) or skip) › **Start the import** › for each of the five steps in order (customers, products, prices, opening stock, opening balances): **Dry run** (تجربة), read the result, then **Commit** | Every card under **Reconciliation with the Checks sheet** (المطابقة مع ورقة المراجعة) says it matches the source (on-hand units differ only by the negative rows you chose to skip); a step opens only after the one before is committed; at the end **3. Data to complete** (٣. بيانات تحتاج استكمالاً) (customers without phone or location, items without cost) with links. No file is stored | OWN-03 to OWN-08 | Tested (local, synthetic workbook); the real import is yours |
 | S-03 | Invite a rep and sign in as the rep (owner, then rep, ~4 min) | `/ar/admin/setup` › **3. People, roles and logins** (3. الأشخاص والأدوار وحسابات الدخول) | **Add a person** (إضافة شخص): name "Rep Test", **E-mail** a mailbox you control › **Add person** › on that row **Create login and role** (إنشاء حساب دخول ودور): **Role** (الدور) Sales Representative, **Territory** (المنطقة) Mansoura › **Create login and link** (إنشاء الحساب والرابط) › open the link in a private window (or on the phone). Then back as owner: **Base address** (عنوان الانطلاق) › **Type the point instead** (إدخال النقطة يدويًا) or **Find on map and save** (with the key) › **Lead radius (km)** 5 › **Save the point** | "Login created for … Send this link privately:" with a one-time link (no e-mail until SMTP is set up); the rep lands on the rep home with **Start my day** (ابدأ يومي) and the bottom bar (Today, Map, Leads, Visits, Orders); the row shows **Has a login** (له حساب دخول) and "Base set · 5 km" | ADM-08, REP-01 | Planned (the local stack has no real Supabase Auth); REP-01 Tested (local) |
 | S-04 | Leads near the rep (rep, phone, ~3 min) | `/ar/leads` | Read the list; open one lead | Without the Places key: the plain notice that clinic names are not available yet and each lead as **Clinic (name not loaded)**; with the key: names, address, Google attribution, nearest first. On `/ar/leads/team` (owner) **Search now** lists a run with its estimated cost | REP-03, REP-04, REP-24, OWN-17 | Tested (local) without key; with the key: Planned |
@@ -288,12 +288,10 @@ Nothing is Verified.
 
 ## Gaps found while writing this walkthrough
 
-- **No way to create a quarantine warehouse in the UI.** Returns can only be received into a
-  quarantine warehouse, but `/admin/setup` creates main warehouses only (`p_kind: "main"` in
-  `src/modules/admin/setup-actions.ts`). The local seed adds `WH-QRN` through
-  `api.create_warehouse`; on staging the owner (or the lead with SQL as the owner) must add one
-  before INV-04 / FIN-07 can be done. Needs a small UI decision (a kind selector on the setup
-  card).
+- **Closed: quarantine warehouse.** Returns can only be received into a quarantine warehouse.
+  `/admin/setup` now offers **Create the quarantine warehouse** (إنشاء مخزن الحجر) once a main
+  warehouse exists and no active quarantine one does (same `api.create_warehouse`, kind
+  `quarantine`).
 - In Chromium's location emulation, a check-in while the rep's tracking watch is running never
   gets a fix unless the permission is granted after the page loads (REP-05 does so). Real phones
   keep reporting positions, so this is not seen as an app bug; §6.1 step 4 confirms it on a

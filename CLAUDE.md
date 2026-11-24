@@ -4,9 +4,9 @@ Working rules and context for AI-assisted development of **Honest OS**, the busi
 
 ## Current state
 
-- **Phase P (make it usable), step 8 done locally.** Phases 2–5 and Phase P are Implemented and Tested in part: 3431 DB assertions (61 suites), 1971 unit tests, 77 verification lines and 348 screenshots on the local signed-in stack (`docs/TESTING.md` §7–8). All 80 migrations are on staging. **Nothing is Verified**; the owner's click-through is `docs/VERIFICATION.md`. MFA enforcement ships off.
+- **Phase P (make it usable), step 8 done locally.** Phases 2–5 and Phase P are Implemented and Tested in part: 3431 DB assertions (61 suites), 1974 unit tests, 77 verification lines and 348 screenshots on the local signed-in stack (`docs/TESTING.md` §7–8). All 80 migrations are on staging. **Nothing is Verified**; the owner's click-through is `docs/VERIFICATION.md`. MFA enforcement ships off.
 - Decisions: `docs/DECISIONS.md` (Part A open items; Part C owner decisions A–F). Staging may hold HONEST's real data (decision A); **real data never goes into Git, tests, fixtures, logs, screenshots or PR text**, and production waits for the D-03 legal review.
-- Owner actions pending: rotate the Supabase secret key and re-add the three secrets as Sensitive; Google Cloud keys and APIs with a budget alert; exposed schemas `api, service`; leaked-password protection; SMTP; activate STD-2026; create the verification test account; run the legacy import; set reps' base addresses; add a quarantine warehouse for returns (no UI for it yet).
+- Owner actions pending: rotate the Supabase secret key and re-add the three secrets as Sensitive; Google Cloud keys and APIs with a budget alert; exposed schemas `api, service`; leaked-password protection; SMTP; activate STD-2026; create the verification test account; run the legacy import; set reps' base addresses; create the quarantine warehouse for returns on `/admin/setup`.
 - Schema source of truth is `supabase/migrations/`. `docs/database/draft/` is the historical Phase 1 artefact; do not edit it.
 - Progress is tracked in `docs/ROADMAP.md` §1.
 

@@ -9,7 +9,7 @@ The business operating system for **Honest®**, an Egyptian B2B distributor of d
   approvals, inventory, invoices, payments, returns, commissions with the owner's rate editor,
   dashboards, maps (key-less state), owner setup and the old-system workbook import.
   - `pnpm test:db`: 3431 assertions in 61 suites, 0 failing.
-  - `pnpm test`: 1971 unit tests.
+  - `pnpm test`: 1974 unit tests.
   - Local signed-in stack: 77 verification lines and 348 screenshots
     ([`docs/VERIFICATION.md`](docs/VERIFICATION.md), [`docs/TESTING.md`](docs/TESTING.md) §7–8).
 - **On staging:** all 80 migrations. **Nothing is Verified**: that needs the owner's own
@@ -18,7 +18,7 @@ The business operating system for **Honest®**, an Egyptian B2B distributor of d
   Sensitive in Vercel; Google Cloud keys and APIs (Maps JS, Places API (New), Geocoding) with a
   budget alert; exposed schemas `api, service`; leaked-password protection; SMTP; activate
   STD-2026; create the verification test account(s); run the legacy import; set the reps' base
-  addresses; add a quarantine warehouse for returns.
+  addresses; create the quarantine warehouse for returns on `/admin/setup`.
 
 ## Start here
 

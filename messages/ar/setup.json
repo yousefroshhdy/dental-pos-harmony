@@ -41,7 +41,12 @@
     "code": "رمز المخزن",
     "codeHint": "ملف المخزون الافتتاحي يستخدم WH-MAIN؛ أبقِه ما لم تغيّر الملف أيضًا.",
     "name": "الاسم",
-    "defaultName": "المخزن الرئيسي"
+    "defaultName": "المخزن الرئيسي",
+    "quarantineTitle": "مخزن الحجر للمرتجعات",
+    "quarantineIntro": "تُستلم البضاعة المرتجعة في هذا المخزن ولا يُباع منه أبدًا. أنشئه مرة واحدة؛ لا يمكن استلام المرتجعات بدونه.",
+    "quarantineCreate": "إنشاء مخزن الحجر",
+    "quarantineDefaultName": "الحجر (المرتجعات)",
+    "quarantineCodeHint": "أي رمز قصير، مثل WH-QRN."
   },
   "territories": {
     "title": "2. المناطق",

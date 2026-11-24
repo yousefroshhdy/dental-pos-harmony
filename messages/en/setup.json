@@ -41,7 +41,12 @@
     "code": "Warehouse code",
     "codeHint": "The opening-stock file uses WH-MAIN; keep it unless you change the file too.",
     "name": "Name",
-    "defaultName": "Main warehouse"
+    "defaultName": "Main warehouse",
+    "quarantineTitle": "Quarantine warehouse for returns",
+    "quarantineIntro": "Returned goods are received here and are never sold from it. Create it once; returns cannot be received without it.",
+    "quarantineCreate": "Create the quarantine warehouse",
+    "quarantineDefaultName": "Quarantine (returns)",
+    "quarantineCodeHint": "Any short code, for example WH-QRN."
   },
   "territories": {
     "title": "2. Territories",

@@ -24,11 +24,12 @@ import {
   MANSOURA,
   mansouraNeedingCoverage,
   mapsLink,
+  needsQuarantineWarehouse,
   SALES_MANAGER_ROLE,
   setupRoles,
   setupSteps,
 } from "@/modules/admin/setup";
-import { addLegacyCatalog, addSetupPerson, createMainWarehouse } from "@/modules/admin/setup-actions";
+import { addLegacyCatalog, addSetupPerson, createMainWarehouse, createQuarantineWarehouse } from "@/modules/admin/setup-actions";
 import { getSetupOverview, listBaseLocations, listWarehouses } from "@/modules/admin/setup-queries";
 
 type Params = Promise<{ locale: string }>;
@@ -68,6 +69,7 @@ export default async function SetupPage({ params }: { params: Params }) {
 
   const steps = o ? setupSteps(o) : [];
   const mainWarehouses = (warehouses.ok ? warehouses.data : []).filter((w) => w.is_active);
+  const offerQuarantine = warehouses.ok && needsQuarantineWarehouse(warehouses.data);
   const activeTerritories = (territories.ok ? territories.data : []).filter((x) => x.is_active);
   const mansoura = mansouraNeedingCoverage(activeTerritories, coverage.ok ? coverage.data : []);
   const coverageByTerritory = new Map<string, string[]>();
@@ -86,6 +88,7 @@ export default async function SetupPage({ params }: { params: Params }) {
   const baseById = new Map((bases.ok ? bases.data : []).map((b) => [b.employee_id, b]));
   const people = (employees.ok ? employees.data : []).filter((e) => e.employment_status === "active");
   const newWarehouseId = crypto.randomUUID();
+  const newQuarantineId = crypto.randomUUID();
   const doneCount = steps.filter((s) => s.done).length;
   const pct = steps.length === 0 ? 0 : Math.round((doneCount / steps.length) * 100);
 
@@ -171,6 +174,21 @@ export default async function SetupPage({ params }: { params: Params }) {
               </Field>
               <Field id="wh-name" label={t("warehouse.name")}>
                 <Input id="wh-name" name="name" required maxLength={120} defaultValue={t("warehouse.defaultName")} />
+              </Field>
+            </ActionForm>
+          </Card>
+        ) : null}
+        {offerQuarantine ? (
+          <Card className="space-y-2 bg-muted/40 shadow-none">
+            <h3 className="text-sm font-semibold">{t("warehouse.quarantineTitle")}</h3>
+            <p className="text-sm text-muted-foreground">{t("warehouse.quarantineIntro")}</p>
+            <ActionForm action={createQuarantineWarehouse} submitLabel={t("warehouse.quarantineCreate")} success={t("saved")} fieldsClassName="sm:grid-cols-2">
+              <input type="hidden" name="warehouse_id" value={newQuarantineId} />
+              <Field id="whq-code" label={t("warehouse.code")} hint={t("warehouse.quarantineCodeHint")}>
+                <Input id="whq-code" name="code" required maxLength={40} dir="ltr" defaultValue="WH-QRN" />
+              </Field>
+              <Field id="whq-name" label={t("warehouse.name")}>
+                <Input id="whq-name" name="name" required maxLength={120} defaultValue={t("warehouse.quarantineDefaultName")} />
               </Field>
             </ActionForm>
           </Card>

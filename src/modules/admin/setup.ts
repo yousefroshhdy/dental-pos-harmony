@@ -93,6 +93,15 @@ export function mansouraNeedingCoverage(territories: readonly TerritoryRow[], co
   return covered ? null : t;
 }
 
+/**
+ * Returned goods are received into a quarantine warehouse (api.receive_return), which is never
+ * sellable. Offer to create one once a main warehouse exists and no active quarantine one does.
+ */
+export function needsQuarantineWarehouse(warehouses: readonly Pick<WarehouseRow, "kind" | "is_active">[]): boolean {
+  const active = warehouses.filter((w) => w.is_active);
+  return active.some((w) => w.kind === "main") && !active.some((w) => w.kind === "quarantine");
+}
+
 export type StepKey =
   | "warehouse"
   | "territories"
