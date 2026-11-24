@@ -3,8 +3,8 @@
 --   Catalogue        api.create_brand / api.create_category (catalog.product.manage, company-wide;
 --                    audited): the old system's items need brands STEP and GENERIC and the category
 --                    IMPLANT_PARTS (child of IMPLANT), which the owner adds on /admin/setup.
---   Customers        api.create_customer accepts a customer without a phone (owner decision A: 45 of
---                    the 58 migrated customers have none). api.v_customer_data_gaps lists customers
+--   Customers        api.create_customer accepts a customer without a phone (owner decision A: most
+--                    migrated customers have none). api.v_customer_data_gaps lists customers
 --                    whose phone or GPS pin is still missing, so reps complete them on the next visit.
 --   Employees        base address and point (geocoded or typed), lead radius (decision E, default
 --                    5 km): core.employees columns + api.set_employee_base_location + a read view.
