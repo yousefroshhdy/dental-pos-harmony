@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { PageHeader } from "@/components/ui/page-header";
 import { Forbidden } from "@/components/forbidden";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert, Badge, Card, Label, Select } from "@/components/ui/primitives";
@@ -50,10 +51,8 @@ export default async function CustomersMapPage({ params, searchParams }: Props) 
 
   return (
     <PageBody>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <MapTabs ctx={ctx} current="/map" />
-      </div>
+      <PageHeader title={t("title")} />
+      <MapTabs ctx={ctx} current="/map" />
 
       <Card className="p-3 sm:p-4">
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:items-end">

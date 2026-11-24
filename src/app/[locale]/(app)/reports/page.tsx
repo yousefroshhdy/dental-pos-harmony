@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
-import { Card } from "@/components/ui/primitives";
+import { FileDownIcon } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { getUserContext } from "@/lib/authz/context";
 import { ExportForm } from "@/modules/reports/components/export-form";
 import { dynamicSourcesFor, fieldSpecs, type DynamicOptions, type Option } from "@/modules/reports/forms";
@@ -41,20 +44,19 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
   const options = Object.fromEntries(await Promise.all([...needed].map(async (s) => [s, await load(s)] as const))) as Partial<Record<DynamicOptions, Option[]>>;
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("page.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("page.help")}</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title={t("page.title")} description={t("page.help")} />
 
       {kinds.length === 0 ? (
-        <Card className="text-sm text-muted-foreground">{t("page.empty")}</Card>
+        <EmptyState icon={<FileDownIcon aria-hidden="true" />} title={t("page.empty")} />
       ) : (
         <>
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>{t("page.rowCap", { count: format.number(exportRowCap()) })}</li>
-            <li>{t("page.notes")}</li>
-          </ul>
+          <Alert tone="info" role="status">
+            <ul className="space-y-1">
+              <li>{t("page.rowCap", { count: format.number(exportRowCap(), { numberingSystem: "latn" }) })}</li>
+              <li>{t("page.notes")}</li>
+            </ul>
+          </Alert>
           <div className="grid gap-4 lg:grid-cols-2">
             {kinds.map((kind) => (
               <ExportForm key={kind} kind={kind} fields={fieldSpecs(kind, ctx)} options={options} locale={locale} />

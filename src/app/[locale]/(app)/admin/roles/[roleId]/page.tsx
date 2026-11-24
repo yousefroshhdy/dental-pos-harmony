@@ -3,11 +3,12 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
+import { BackLink } from "@/components/page-kit/back-link";
+import { PageError } from "@/components/page-kit/page-error";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
-import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { PermissionRowForm } from "@/modules/admin/components/permission-row-form";
 import { canEditRole, defaultScopeFor, groupPermissionsByModule, localizedName } from "@/modules/admin/logic";
 import { getRole, listPermissions, listRolePermissions } from "@/modules/admin/queries";
@@ -30,13 +31,15 @@ export default async function RolePage({ params }: { params: Params }) {
 
   const t = await getTranslations("admin.roles");
   const tScopes = await getTranslations("scopes");
+  const tx = await getTranslations("setup.console");
   const format = await getFormatter();
 
   const [role, permissions, rolePermissions] = await Promise.all([getRole(roleId), listPermissions(), listRolePermissions(roleId)]);
-  if (!role.ok) return <ErrorMessage messageKey={role.error.messageKey} requestId={role.error.requestId} />;
+  const back = <BackLink href="/admin/roles">{t("back")}</BackLink>;
+  if (!role.ok) return <PageError back={back} error={role.error} />;
   if (!role.data) notFound();
-  if (!permissions.ok) return <ErrorMessage messageKey={permissions.error.messageKey} requestId={permissions.error.requestId} />;
-  if (!rolePermissions.ok) return <ErrorMessage messageKey={rolePermissions.error.messageKey} requestId={rolePermissions.error.requestId} />;
+  if (!permissions.ok) return <PageError back={back} error={permissions.error} />;
+  if (!rolePermissions.ok) return <PageError back={back} error={rolePermissions.error} />;
 
   const current = role.data;
   const editable = canEditRole(ctx, current);
@@ -45,32 +48,62 @@ export default async function RolePage({ params }: { params: Params }) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Link href="/admin/roles" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{localizedName(locale, current.name_en, current.name_ar)}</h1>
-          <code dir="ltr" className="text-sm text-muted-foreground">
-            {current.code}
-          </code>
-          {current.is_owner_role ? <Badge tone="info">{t("owner")}</Badge> : null}
-          {current.is_system ? <Badge>{t("system")}</Badge> : null}
-          {!current.is_active ? <Badge tone="warning">{t("inactive")}</Badge> : null}
-        </div>
-        {current.description ? <p className="text-sm text-muted-foreground">{current.description}</p> : null}
-      </div>
+      <PageHeader
+        eyebrow={back}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {localizedName(locale, current.name_en, current.name_ar)}
+            {current.is_owner_role ? <Badge tone="info">{t("owner")}</Badge> : null}
+            {current.is_system ? <Badge>{t("system")}</Badge> : null}
+            {!current.is_active ? <Badge tone="warning">{t("inactive")}</Badge> : null}
+          </span>
+        }
+        description={
+          <>
+            <code dir="ltr" className="me-2">
+              {current.code}
+            </code>
+            {current.description}
+          </>
+        }
+      />
 
       {current.is_owner_role ? (
-        <Alert tone="info">{t("ownerNote")}</Alert>
+        <Alert tone="info" role="status">
+          {t("ownerNote")}
+        </Alert>
       ) : !editable ? (
-        <Alert tone="info">{t("readOnly")}</Alert>
+        <Alert tone="info" role="status">
+          {t("readOnly")}
+        </Alert>
       ) : (
-        <p className="text-sm text-muted-foreground">{t("ceilingNote")}</p>
+        <Alert tone="info" role="status">
+          {t("ceilingNote")}
+        </Alert>
       )}
 
+      {groups.length > 1 ? (
+        <nav aria-label={tx("jumpToModule")} className="-mx-1 overflow-x-auto px-1">
+          <ul className="flex w-max gap-2">
+            {groups.map((group) => (
+              <li key={group.module}>
+                <a
+                  href={`#module-${group.module}`}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full border bg-card px-4 text-sm font-medium whitespace-nowrap hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  {moduleName(group.module)}
+                  <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">
+                    {group.grantedCount}/{group.items.length}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
+
       {groups.map((group) => (
-        <Card key={group.module} className="space-y-3">
+        <Card key={group.module} id={`module-${group.module}`} className="scroll-mt-20 space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <CardTitle>{moduleName(group.module)}</CardTitle>
             <span className="text-sm text-muted-foreground">

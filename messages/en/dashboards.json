@@ -1,15 +1,26 @@
 {
-  "nav": { "dashboard": "Dashboard" },
+  "nav": {
+    "dashboard": "Dashboard"
+  },
   "pageTitle": "Dashboard",
   "loading": "Calculating figures…",
   "retry": "Try again",
-  "title": { "own": "My performance", "team": "Team performance", "all": "Company overview" },
+  "title": {
+    "own": "My performance",
+    "team": "Team performance",
+    "all": "Company overview"
+  },
   "subtitle": {
     "own": "Your visits, orders, sales and collections for the period.",
     "team": "Totals for your team; open a name to see one person.",
     "all": "Company totals, by territory and by brand."
   },
-  "groups": { "field": "Field activity", "sales": "Sales", "cash": "Collections and receivables", "operations": "Operations" },
+  "groups": {
+    "field": "Field activity",
+    "sales": "Sales",
+    "cash": "Collections and receivables",
+    "operations": "Operations"
+  },
   "kpi": {
     "VISITS_PLANNED": {
       "name": "Planned visits",
@@ -105,7 +116,11 @@
     "stockDetail": "{reorder} below reorder point · {expiring} lots expiring",
     "live": "Live figure"
   },
-  "status": { "onTrack": "On track", "atRisk": "At risk", "behind": "Behind" },
+  "status": {
+    "onTrack": "On track",
+    "atRisk": "At risk",
+    "behind": "Behind"
+  },
   "period": {
     "label": "Period",
     "quick": "Quick periods",
@@ -174,7 +189,11 @@
     "empty": "No targets set yet.",
     "kpi": "KPI",
     "subject": "Applies to",
-    "subjects": { "employee": "Employee", "role": "Role", "territory": "Territory" },
+    "subjects": {
+      "employee": "Employee",
+      "role": "Role",
+      "territory": "Territory"
+    },
     "subjectHint": {
       "employee": "Only this person.",
       "role": "Every holder of the role, each with this target.",
@@ -191,6 +210,7 @@
     "roleSubject": "Role: {name}",
     "territorySubject": "Territory: {name}",
     "latestWins": "When targets for the same subject and period overlap, the latest one counts.",
-    "limited": "Showing the latest {count} targets."
+    "limited": "Showing the latest {count} targets.",
+    "close": "Close"
   }
 }

@@ -70,6 +70,7 @@
 - Arabic RTL screenshots (visual regression) for all rep routes and key manager routes. Mixed-direction strings (Arabic + SKU codes) render correctly.
 - Number, date and currency formatting in `ar-EG` and `en-EG`. Phone input accepts `01…` and normalises to `+201…`.
 - App shell and design system (Phase P, unit, Tested): `nav-groups` (department grouping, permission filtering, active entry, labels in both languages), `nav-bottom-bar` (who gets the field bar and which items), `ui-context-error` (context load failure vs inactive account), `ui-home-role` (owner > finance > manager > rep, home figures), `ui-components` (primitives compatibility, 44 px targets, no physical classes, FormField ARIA wiring, DataTable client/server pagination and states), `ui-helpers` (Cairo dates with Western digits, table URL state, zod → `form.*` messages). Playwright checks for the shell are listed as Planned in §6.
+- Server-paged lists (Phase P step 2b, B2c, unit, Tested): `b2c-list-query` (PostgREST range, search text sanitising and quoting so a typed value cannot add a filter, allow-listed URL filters, filter-chip links that keep search and sort and reset the page, sort-id → view-column mapping per list, the approvals inbox and coverage default orders, catalogue price range, the imports history tab). Planned e2e: each list's search / sort / page / filter round-trip in the URL on a seeded stack, and the phone card layout at 360 px.
 
 ### 2.8 Security
 - No service-role key in client bundles (CI grep on `.next/static`).

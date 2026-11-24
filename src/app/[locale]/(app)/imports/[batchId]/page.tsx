@@ -3,7 +3,8 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/page-kit/back-link";
+import { PageHeader } from "@/components/ui/page-header";
 import { getUserContext } from "@/lib/authz/context";
 import { BatchActions } from "@/modules/imports/components/batch-actions";
 import { ImportErrorMessage } from "@/modules/imports/components/import-error";
@@ -44,7 +45,14 @@ export default async function ImportBatchPage({ params }: { params: Params }) {
   const t = await getTranslations("imports");
   const format = await getFormatter();
   const batch = await getBatch(batchId);
-  if (!batch.ok) return <ImportErrorMessage messageKey={batch.error.messageKey} requestId={batch.error.requestId} />;
+  const back = <BackLink href="/imports?tab=history">{t("batch.back")}</BackLink>;
+  if (!batch.ok)
+    return (
+      <div className="space-y-6">
+        {back}
+        <ImportErrorMessage messageKey={batch.error.messageKey} requestId={batch.error.requestId} />
+      </div>
+    );
   if (!batch.data) notFound();
   const b = batch.data;
 
@@ -57,24 +65,23 @@ export default async function ImportBatchPage({ params }: { params: Params }) {
 
   return (
     <div className="space-y-6">
-      <Link href="/imports" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("batch.back")}
-      </Link>
-
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">{t(`kinds.${b.kind}.title`)}</h1>
-          <p className="text-sm break-all text-muted-foreground">{b.file_name ?? t("history.fileUnnamed")}</p>
-        </div>
-        <Badge tone={batchStatusTone(b.status)} className="text-sm">
-          {t(`status.${b.status}`)}
-        </Badge>
-      </div>
+      <PageHeader
+        eyebrow={back}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {t(`kinds.${b.kind}.title`)}
+            <Badge tone={batchStatusTone(b.status)} className="text-sm">
+              {t(`status.${b.status}`)}
+            </Badge>
+          </span>
+        }
+        description={<span className="break-all">{b.file_name ?? t("history.fileUnnamed")}</span>}
+      />
 
       <SyntheticDataNotice compact />
 
       <Card className="space-y-3">
-        <dl className="grid grid-cols-3 gap-3 text-center">
+        <dl className="grid grid-cols-3 gap-3 text-center [&>div]:rounded-md [&>div]:bg-muted/50 [&>div]:p-2">
           <div>
             <dt className="text-xs text-muted-foreground">{t("batch.rows")}</dt>
             <dd className="text-xl font-semibold tabular-nums">{b.row_count}</dd>

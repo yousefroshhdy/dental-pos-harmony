@@ -1,7 +1,9 @@
 import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
+import { rangeOf, runPaged, searchFilter, type Paged } from "@/lib/list-query";
 import { createClient } from "@/lib/supabase/server";
+import { PRODUCT_SEARCH_COLUMNS, VARIANT_SEARCH_COLUMNS } from "./tables";
 import type {
   BrandRow,
   CategoryRow,
@@ -10,6 +12,7 @@ import type {
   PriceListItemRow,
   PriceListRow,
   ProductRow,
+  ProductStatus,
   PromotionRow,
   VariantRow,
 } from "./types";
@@ -78,6 +81,47 @@ export async function listVariants(productId?: string): Promise<Result<VariantRo
   let query = db.from("v_catalog_variants").select(VARIANT_COLUMNS);
   if (productId) query = query.eq("product_id", productId);
   return run("v_catalog_variants", query.order("sku").limit(LIST_LIMIT), []);
+}
+
+/**
+ * One page of products (Phase P step 2b). The search matches the product code and
+ * names, and also any product whose variant SKU, barcode or name matches.
+ */
+export async function listProductsPage(req: {
+  offset: number;
+  pageSize: number;
+  orderBy: string;
+  desc: boolean;
+  search: string;
+  brand: string | null;
+  status: ProductStatus | null;
+}): Promise<Result<Paged<ProductRow>>> {
+  const db = await createClient();
+  let productIds: string[] = [];
+  const variantOr = searchFilter(VARIANT_SEARCH_COLUMNS, req.search);
+  if (variantOr) {
+    const hits = await run<{ product_id: string }[]>(
+      "v_catalog_variants",
+      db.from("v_catalog_variants").select("product_id").or(variantOr).limit(200),
+      [],
+    );
+    if (!hits.ok) return hits;
+    productIds = [...new Set(hits.data.map((h) => h.product_id))].filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+  }
+  let query = db.from("v_catalog_products").select(PRODUCT_COLUMNS, { count: "exact" });
+  if (req.brand) query = query.eq("brand_code", req.brand);
+  if (req.status) query = query.eq("status", req.status);
+  const productOr = searchFilter(PRODUCT_SEARCH_COLUMNS, req.search);
+  if (productOr) query = query.or(productIds.length > 0 ? `${productOr},id.in.(${productIds.join(",")})` : productOr);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_catalog_products", query.order(req.orderBy, { ascending: !req.desc, nullsFirst: false }).order("id").range(from, to));
+}
+
+/** Variants of the products on one page (price range and variant count per row). */
+export async function listVariantsFor(productIds: readonly string[]): Promise<Result<VariantRow[]>> {
+  if (productIds.length === 0) return ok([]);
+  const db = await createClient();
+  return run("v_catalog_variants", db.from("v_catalog_variants").select(VARIANT_COLUMNS).in("product_id", [...productIds]).order("sku").limit(LIST_LIMIT), []);
 }
 
 /** Sellable SKUs for pickers (price items, promotions). */

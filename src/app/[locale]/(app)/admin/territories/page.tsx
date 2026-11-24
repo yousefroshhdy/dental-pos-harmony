@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
-import { Badge, Card, CardTitle, Input, Select, Table, Td, Th } from "@/components/ui/primitives";
+import { MapIcon } from "lucide-react";
+import { ListError } from "@/components/page-kit/list-error";
+import { PageError } from "@/components/page-kit/page-error";
+import { Alert } from "@/components/ui/alert";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Badge, Card, CardTitle, Input, Select } from "@/components/ui/primitives";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { cn } from "@/lib/utils";
@@ -14,7 +22,6 @@ import {
   setTerritoryCoverage,
 } from "@/modules/admin/actions";
 import { ActionForm } from "@/modules/admin/components/action-form";
-import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { Field } from "@/modules/admin/components/field";
 import {
   buildTerritoryTree,
@@ -52,7 +59,8 @@ export default async function TerritoriesPage({ params }: { params: Promise<{ lo
     listCoverage(),
     listGovernorates(),
   ]);
-  if (!territories.ok) return <ErrorMessage messageKey={territories.error.messageKey} requestId={territories.error.requestId} />;
+  const header = <PageHeader title={t("title")} description={t("intro")} />;
+  if (!territories.ok) return <PageError back={header} error={territories.error} />;
 
   const roots = buildTerritoryTree(territories.data, counts.ok ? counts.data : []);
   const flat = flattenTree(roots);
@@ -65,17 +73,33 @@ export default async function TerritoriesPage({ params }: { params: Promise<{ lo
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("intro")}</p>
-        {!counts.ok ? <p className="text-sm text-muted-foreground">{t("countsUnavailable")}</p> : null}
-        {unassigned !== null && unassigned > 0 ? <p className="text-sm font-medium">{t("unassigned", { count: unassigned })}</p> : null}
-      </div>
+      {header}
+      {!counts.ok ? (
+        <Alert tone="warning" role="status">
+          {t("countsUnavailable")}
+        </Alert>
+      ) : null}
+      {unassigned !== null && unassigned > 0 ? (
+        <Alert tone="warning" role="status">
+          {t("unassigned", { count: unassigned })}
+        </Alert>
+      ) : null}
 
+      <Tabs defaultValue="tree" dir={directionOf(locale)}>
+        <TabsList className="w-full justify-start sm:w-auto">
+          <TabsTrigger value="tree">
+            {t("tree")}
+            <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">{flat.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="coverage">{t("coverageTitle")}</TabsTrigger>
+          <TabsTrigger value="new">{t("createTitle")}</TabsTrigger>
+        </TabsList>
+
+      <TabsContent value="tree">
       <section aria-labelledby="tree-title" className="space-y-3">
-        <CardTitle id="tree-title">{t("tree")}</CardTitle>
+        <CardTitle id="tree-title" className="sr-only">{t("tree")}</CardTitle>
         {flat.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("empty")}</p>
+          <EmptyState icon={<MapIcon aria-hidden="true" />} title={t("empty")} />
         ) : (
           <ul className="space-y-2">
             {flat.map((node) => {
@@ -193,7 +217,9 @@ export default async function TerritoriesPage({ params }: { params: Promise<{ lo
           </ul>
         )}
       </section>
+      </TabsContent>
 
+      <TabsContent value="new">
       <Card className="space-y-3">
         <div>
           <CardTitle>{t("createTitle")}</CardTitle>
@@ -231,51 +257,59 @@ export default async function TerritoriesPage({ params }: { params: Promise<{ lo
           </Field>
         </ActionForm>
       </Card>
+      </TabsContent>
 
+      <TabsContent value="coverage">
       <section aria-labelledby="coverage-title" className="space-y-3">
         <div>
           <CardTitle id="coverage-title">{t("coverageTitle")}</CardTitle>
           <p className="text-sm text-muted-foreground">{t("coverageHint")}</p>
         </div>
         {!coverage.ok ? (
-          <ErrorMessage messageKey={coverage.error.messageKey} requestId={coverage.error.requestId} />
+          <ListError compact error={coverage.error} />
         ) : coverage.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("coverageEmpty")}</p>
+          <EmptyState compact icon={<MapIcon aria-hidden="true" />} title={t("coverageEmpty")} />
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>{t("governorate")}</Th>
-                <Th>{t("city")}</Th>
-                <Th>{t("coverageTerritory")}</Th>
-                <Th>{tCommon("actions")}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {coverage.data.map((c) => (
-                <tr key={`${c.governorate_code}-${c.city}`}>
-                  <Td className="min-w-32">{localizedName(locale, c.governorate_name_en, c.governorate_name_ar)}</Td>
-                  <Td>{c.city === "*" ? <span className="text-muted-foreground">{t("wholeGovernorate")}</span> : c.city}</Td>
-                  <Td className="min-w-32">
+          <ul className="divide-y rounded-lg border bg-card">
+            {coverage.data.map((c) => (
+              <li
+                key={`${c.governorate_code}-${c.city}`}
+                className="grid gap-2 p-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-start sm:gap-4"
+              >
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("governorate")}</p>
+                  <p className="font-medium">{localizedName(locale, c.governorate_name_en, c.governorate_name_ar)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("city")}</p>
+                  <p>{c.city === "*" ? <span className="text-muted-foreground">{t("wholeGovernorate")}</span> : c.city}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("coverageTerritory")}</p>
+                  <p className="flex flex-wrap items-center gap-2">
                     {localizedName(locale, c.territory_name_en, c.territory_name_ar)}
-                    {!c.territory_active ? <Badge tone="warning" className="ms-2">{t("inactive")}</Badge> : null}
-                  </Td>
-                  <Td className="min-w-40">
-                    <ActionForm action={removeTerritoryCoverage} trigger={t("removeCoverage")} submitLabel={t("removeCoverageConfirm")} destructive>
-                      <input type="hidden" name="governorate_code" value={c.governorate_code} />
-                      <input type="hidden" name="city" value={c.city} />
-                      <p className="text-sm text-muted-foreground">{t("removeCoverageHint")}</p>
-                    </ActionForm>
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                    {!c.territory_active ? <Badge tone="warning">{t("inactive")}</Badge> : null}
+                  </p>
+                </div>
+                <div>
+                  <ActionForm action={removeTerritoryCoverage} trigger={t("removeCoverage")} submitLabel={t("removeCoverageConfirm")} destructive>
+                    <input type="hidden" name="governorate_code" value={c.governorate_code} />
+                    <input type="hidden" name="city" value={c.city} />
+                    <p className="text-sm text-muted-foreground">{t("removeCoverageHint")}</p>
+                  </ActionForm>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
 
         <Card className="space-y-3">
           <CardTitle>{t("addCoverage")}</CardTitle>
-          {!governorates.ok ? <p className="text-sm text-muted-foreground">{t("governoratesUnavailable")}</p> : null}
+          {!governorates.ok ? (
+            <Alert tone="warning" role="status">
+              {t("governoratesUnavailable")}
+            </Alert>
+          ) : null}
           {activeTerritories.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("empty")}</p>
           ) : (
@@ -311,6 +345,8 @@ export default async function TerritoriesPage({ params }: { params: Promise<{ lo
           )}
         </Card>
       </section>
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -3,13 +3,22 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
-import { Badge, Card, CardTitle, Input, Select, Table, Td, Th } from "@/components/ui/primitives";
+import { BuildingIcon, KeyRoundIcon, MapPinIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { ListError } from "@/components/page-kit/list-error";
+import { PageError } from "@/components/page-kit/page-error";
+import { Alert } from "@/components/ui/alert";
+import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Badge, Card, CardTitle, Input, Select } from "@/components/ui/primitives";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { assignEmployeeTerritory, endEmployeeTerritory, setEmploymentStatus, updateEmployee } from "@/modules/admin/actions";
 import { ActionForm } from "@/modules/admin/components/action-form";
-import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { EmployeeFields } from "@/modules/admin/components/employee-fields";
 import { Field } from "@/modules/admin/components/field";
 import { CAIRO_DATE } from "@/modules/admin/format";
@@ -50,6 +59,7 @@ export default async function EmployeePage({ params }: { params: Params }) {
   const t = await getTranslations("admin.employeeDetail");
   const tList = await getTranslations("admin.employees");
   const tCommon = await getTranslations("admin.common");
+  const tx = await getTranslations("setup.console");
   const format = await getFormatter();
   const mayManage = can(ctx, "core.employee.manage");
   const mayTerritories = can(ctx, "core.territory.manage") && canChangeOwnScope(ctx, employeeId);
@@ -63,7 +73,8 @@ export default async function EmployeePage({ params }: { params: Params }) {
     mayManage ? listDepartments() : Promise.resolve(null),
     mayManage ? listOffices() : Promise.resolve(null),
   ]);
-  if (!employee.ok) return <ErrorMessage messageKey={employee.error.messageKey} requestId={employee.error.requestId} />;
+  const back = <BackLink href="/admin/employees">{t("back")}</BackLink>;
+  if (!employee.ok) return <PageError back={back} error={employee.error} />;
   if (!employee.data) notFound();
 
   const e = employee.data;
@@ -78,33 +89,51 @@ export default async function EmployeePage({ params }: { params: Params }) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Link href="/admin/employees" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{name}</h1>
-          <Badge tone={employmentTone(e.employment_status)}>{tList(`statuses.${e.employment_status}`)}</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          <span dir="ltr">{e.employee_no}</span> · {e.job_title}
-          {e.terminated_on ? ` · ${t("terminatedOn", { date: format.dateTime(new Date(e.terminated_on), CAIRO_DATE) })}` : null}
-        </p>
-        <p className="text-sm">
-          {e.user_id ? (
+      <PageHeader
+        eyebrow={back}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {name}
+            <Badge tone={employmentTone(e.employment_status)}>{tList(`statuses.${e.employment_status}`)}</Badge>
+          </span>
+        }
+        description={
+          <>
+            <span dir="ltr">{e.employee_no}</span> · {e.job_title}
+            {e.terminated_on ? ` · ${t("terminatedOn", { date: format.dateTime(new Date(e.terminated_on), CAIRO_DATE) })}` : null}
+          </>
+        }
+        actions={
+          e.user_id ? (
             can(ctx, "admin.user.read") ? (
-              <Link href={`/admin/users/${e.user_id}`} className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+              <Link href={`/admin/users/${e.user_id}`} className={buttonVariants({ variant: "outline" })}>
+                <KeyRoundIcon aria-hidden="true" />
                 {t("loginLinked")}
               </Link>
             ) : (
-              t("loginLinked")
+              <Badge tone="success">{t("loginLinked")}</Badge>
             )
           ) : (
-            <span className="text-muted-foreground">{t("noLogin")}</span>
-          )}
-        </p>
-      </div>
+            <Badge>{t("noLogin")}</Badge>
+          )
+        }
+      />
 
+      <Tabs defaultValue="details" dir={directionOf(locale)}>
+        <TabsList className="w-full justify-start sm:w-auto">
+          <TabsTrigger value="details">{t("details")}</TabsTrigger>
+          <TabsTrigger value="territories">
+            {t("territoriesTitle")}
+            <Count n={open.length} />
+          </TabsTrigger>
+          <TabsTrigger value="held">
+            {tx("heldTab")}
+            <Count n={heldRows.length} />
+          </TabsTrigger>
+          {targets.length > 0 || ctx.employee?.id === e.id ? <TabsTrigger value="status">{t("statusTitle")}</TabsTrigger> : null}
+        </TabsList>
+
+        <TabsContent value="details" className="space-y-6">
       <Card className="space-y-4">
         <CardTitle>{t("details")}</CardTitle>
         {mayManage ? (
@@ -144,45 +173,64 @@ export default async function EmployeePage({ params }: { params: Params }) {
         )}
       </Card>
 
+      {reports.length > 0 ? (
+        <section className="space-y-3" aria-labelledby="reports-title">
+          <CardTitle id="reports-title">{t("reportsTitle", { count: reports.length })}</CardTitle>
+          <ul className="flex flex-wrap gap-2">
+            {reports.map((r) => (
+              <li key={r.id}>
+                <Link
+                  href={`/admin/employees/${r.id}`}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-md border bg-card px-3 text-sm hover:bg-muted"
+                >
+                  {localizedName(locale, r.full_name_en, r.full_name_ar)}
+                  <Badge tone={employmentTone(r.employment_status)}>{tList(`statuses.${r.employment_status}`)}</Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+        </TabsContent>
+
+        <TabsContent value="held">
       <section className="space-y-3" aria-labelledby="held-title">
         <CardTitle id="held-title">{t("heldTitle", { count: heldRows.length })}</CardTitle>
         <p className="text-sm text-muted-foreground">{t("heldHint")}</p>
         {!held.ok ? (
-          <ErrorMessage messageKey={held.error.messageKey} requestId={held.error.requestId} />
+          <ListError compact error={held.error} />
         ) : heldRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("heldEmpty")}</p>
+          <EmptyState compact icon={<BuildingIcon aria-hidden="true" />} title={t("heldEmpty")} />
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>{t("customerNo")}</Th>
-                <Th>{t("customer")}</Th>
-                <Th>{t("role")}</Th>
-                <Th>{t("territory")}</Th>
-                <Th>{t("since")}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {heldRows.map((h) => (
-                <tr key={`${h.customer_id}-${h.role}`}>
-                  <Td>
-                    <span dir="ltr" className="whitespace-nowrap">
-                      {h.customer_no}
-                    </span>
-                  </Td>
-                  <Td className="min-w-40">{h.display_name}</Td>
-                  <Td>{t(`roles.${h.role}`)}</Td>
-                  <Td>
-                    <span dir="ltr">{h.territory_code ?? "—"}</span>
-                  </Td>
-                  <Td className="whitespace-nowrap">{format.dateTime(new Date(h.assigned_since), CAIRO_DATE)}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <ul className="divide-y rounded-lg border bg-card">
+            {heldRows.map((h) => (
+              <li key={`${h.customer_id}-${h.role}`} className="flex flex-col gap-1 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <div className="min-w-0">
+                  <p className="font-medium">{h.display_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    <span dir="ltr">{h.customer_no}</span>
+                    {h.territory_code ? (
+                      <>
+                        {" · "}
+                        <span dir="ltr">{h.territory_code}</span>
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <Badge>{t(`roles.${h.role}`)}</Badge>
+                  <span className="text-muted-foreground tabular-nums">
+                    {t("since")}: {format.dateTime(new Date(h.assigned_since), CAIRO_DATE)}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
+        </TabsContent>
 
+        <TabsContent value="status">
       {targets.length > 0 ? (
         <Card className="space-y-4">
           <div>
@@ -218,59 +266,63 @@ export default async function EmployeePage({ params }: { params: Params }) {
           </ActionForm>
         </Card>
       ) : ctx.employee?.id === e.id ? (
-        <p className="text-sm text-muted-foreground">{t("selfStatus")}</p>
+        <Alert tone="info" role="status">
+          {t("selfStatus")}
+        </Alert>
       ) : null}
+        </TabsContent>
 
+        <TabsContent value="territories">
       <section className="space-y-3" aria-labelledby="territories-title">
         <CardTitle id="territories-title">{t("territoriesTitle")}</CardTitle>
         <p className="text-sm text-muted-foreground">{t("territoriesHint")}</p>
         {!assignments.ok ? (
-          <ErrorMessage messageKey={assignments.error.messageKey} requestId={assignments.error.requestId} />
+          <ListError compact error={assignments.error} />
         ) : open.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("noTerritories")}</p>
+          <EmptyState compact icon={<MapPinIcon aria-hidden="true" />} title={t("noTerritories")} />
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>{t("territory")}</Th>
-                <Th>{t("assignment")}</Th>
-                <Th>{t("since")}</Th>
-                {mayTerritories ? <Th>{tCommon("actions")}</Th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {open.map((a) => (
-                <tr key={a.id}>
-                  <Td className="min-w-40">
+          <ul className="divide-y rounded-lg border bg-card">
+            {open.map((a) => (
+              <li key={a.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="min-w-0 space-y-1">
+                  <p className="flex flex-wrap items-center gap-2 font-medium">
                     {localizedName(locale, a.territory_name_en, a.territory_name_ar)}
-                    <code dir="ltr" className="block text-xs text-muted-foreground">
+                    <code dir="ltr" className="text-xs font-normal text-muted-foreground">
                       {a.territory_code}
                     </code>
                     {!a.territory_active ? <Badge tone="warning">{t("territoryInactive")}</Badge> : null}
-                  </Td>
-                  <Td>{t(`assignments.${a.assignment}`)}</Td>
-                  <Td className="whitespace-nowrap">{format.dateTime(new Date(a.valid_from), CAIRO_DATE)}</Td>
-                  {mayTerritories ? (
-                    <Td className="min-w-48">
-                      <ActionForm action={endEmployeeTerritory} trigger={t("end")} submitLabel={t("endConfirm")} destructive>
-                        <input type="hidden" name="employee_territory_id" value={a.id} />
-                        <input type="hidden" name="employee_id" value={e.id} />
-                        <Field id={`end-reason-${a.id}`} label={tCommon("reason")} optionalLabel={t("optional")}>
-                          <Input id={`end-reason-${a.id}`} name="reason" maxLength={500} autoComplete="off" />
-                        </Field>
-                      </ActionForm>
-                    </Td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                  </p>
+                  <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <Badge tone={a.assignment === "manager" ? "info" : "neutral"}>{t(`assignments.${a.assignment}`)}</Badge>
+                    <span className="tabular-nums">
+                      {t("since")}: {format.dateTime(new Date(a.valid_from), CAIRO_DATE)}
+                    </span>
+                  </p>
+                </div>
+                {mayTerritories ? (
+                  <div className="shrink-0 sm:min-w-48">
+                    <ActionForm action={endEmployeeTerritory} trigger={t("end")} submitLabel={t("endConfirm")} destructive>
+                      <input type="hidden" name="employee_territory_id" value={a.id} />
+                      <input type="hidden" name="employee_id" value={e.id} />
+                      <Field id={`end-reason-${a.id}`} label={tCommon("reason")} optionalLabel={t("optional")}>
+                        <Input id={`end-reason-${a.id}`} name="reason" maxLength={500} autoComplete="off" />
+                      </Field>
+                    </ActionForm>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         )}
 
         {mayTerritories && e.employment_status !== "terminated" ? (
           <Card className="space-y-3">
             <CardTitle>{t("assignTitle")}</CardTitle>
-            {territories && !territories.ok ? <p className="text-sm text-muted-foreground">{t("territoriesUnavailable")}</p> : null}
+            {territories && !territories.ok ? (
+              <Alert tone="warning" role="status">
+                {t("territoriesUnavailable")}
+              </Alert>
+            ) : null}
             {territoryChoices.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noTerritoryChoices")}</p>
             ) : (
@@ -298,28 +350,18 @@ export default async function EmployeePage({ params }: { params: Params }) {
             )}
           </Card>
         ) : can(ctx, "core.territory.manage") && !canChangeOwnScope(ctx, employeeId) ? (
-          <p className="text-sm text-muted-foreground">{t("selfTerritories")}</p>
+          <Alert tone="info" role="status">
+            {t("selfTerritories")}
+          </Alert>
         ) : null}
       </section>
+        </TabsContent>
+      </Tabs>
 
-      {reports.length > 0 ? (
-        <section className="space-y-3" aria-labelledby="reports-title">
-          <CardTitle id="reports-title">{t("reportsTitle", { count: reports.length })}</CardTitle>
-          <ul className="flex flex-wrap gap-2">
-            {reports.map((r) => (
-              <li key={r.id}>
-                <Link
-                  href={`/admin/employees/${r.id}`}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm hover:bg-muted"
-                >
-                  {localizedName(locale, r.full_name_en, r.full_name_ar)}
-                  <Badge tone={employmentTone(r.employment_status)}>{tList(`statuses.${r.employment_status}`)}</Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
+}
+
+function Count({ n }: { n: number }) {
+  return <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">{n}</span>;
 }

@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { MapPinIcon } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { localizedName } from "@/modules/crm/logic";
-import { Empty, Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
+import { Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
 import { MapTabs } from "@/modules/maps/components/map-tabs";
 import { TeamMap } from "@/modules/maps/components/team-map";
 import { freshness, minutesSince, teamPoints } from "@/modules/maps/logic";
@@ -45,15 +48,12 @@ export default async function TeamMapPage({ params }: Props) {
 
   return (
     <PageBody>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <MapTabs ctx={ctx} current="/map/team" />
-        <p className="text-sm text-muted-foreground">{t("explain")}</p>
-      </div>
+      <PageHeader title={t("title")} description={t("explain")} />
+      <MapTabs ctx={ctx} current="/map/team" />
       {!result.ok ? (
         <Alert>{tErrors(result.error.messageKey, { requestId: result.error.requestId ?? "—" })}</Alert>
       ) : result.data.length === 0 ? (
-        <Empty>{t("empty")}</Empty>
+        <EmptyState icon={<MapPinIcon aria-hidden="true" />} title={t("empty")} />
       ) : (
         <>
           <TeamMap apiKey={mapsBrowserKey()} locale={lang} points={teamPoints(result.data)} day={day} />

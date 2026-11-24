@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { TargetIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
@@ -100,20 +102,25 @@ export default async function DashboardPage({ params, searchParams }: { params: 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">{t(`title.${scope}`)}</h1>
-          <p className="text-sm text-muted-foreground">{t(`subtitle.${scope}`)}</p>
-        </div>
-        {can(ctx, "perf.target.manage") ? (
-          <Link href="/dashboard/targets" className={buttonVariants({ variant: "outline" })}>
-            {t("targets.manage")}
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        title={t(`title.${scope}`)}
+        description={t(`subtitle.${scope}`)}
+        actions={
+          can(ctx, "perf.target.manage") ? (
+            <Link href="/dashboard/targets" className={buttonVariants({ variant: "outline" })}>
+              <TargetIcon aria-hidden="true" />
+              {t("targets.manage")}
+            </Link>
+          ) : null
+        }
+      />
 
       <PeriodPicker period={period} employeeId={employeeId} />
-      {period.invalid ? <Alert tone="info">{t("period.invalid")}</Alert> : null}
+      {period.invalid ? (
+        <Alert tone="info" role="status">
+          {t("period.invalid")}
+        </Alert>
+      ) : null}
       {employeeId ? (
         <Alert tone="info" role="status" className="flex flex-wrap items-center justify-between gap-2">
           <span>{filteredName ? t("filter.showing", { name: filteredName }) : t("filter.showingOne")}</span>

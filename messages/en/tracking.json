@@ -243,5 +243,11 @@
       "battery": "Battery saver",
       "reported": "Phone report"
     }
+  },
+  "teamTable": {
+    "search": "Search by rep",
+    "filter": "Show",
+    "everyone": "Everyone",
+    "flaggedOnly": "To review"
   }
 }

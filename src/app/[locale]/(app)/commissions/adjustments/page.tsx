@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
-import { Badge, Card, CardTitle } from "@/components/ui/primitives";
+import { ReceiptTextIcon } from "lucide-react";
+import { FormSheet } from "@/components/page-kit/form-sheet";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Badge } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
@@ -47,23 +51,23 @@ export default async function CommissionAdjustmentsPage({ params }: { params: Pr
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("adjust.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("adjust.intro")}</p>
-      </div>
-
-      {canAdjust ? (
-        <Card className="space-y-4">
-          <CardTitle>{t("adjust.new")}</CardTitle>
-          {employees && !employees.ok ? (
-            <CommissionError code={commissionErrorCode(employees.error)} requestId={employees.error.requestId} />
-          ) : periods && !periods.ok ? (
-            <CommissionError code={commissionErrorCode(periods.error)} requestId={periods.error.requestId} />
-          ) : (
-            <AdjustmentForm employees={employees?.ok ? employees.data : []} months={months} />
-          )}
-        </Card>
-      ) : null}
+      <PageHeader
+        title={t("adjust.title")}
+        description={t("adjust.intro")}
+        actions={
+          canAdjust ? (
+            <FormSheet trigger={t("adjust.new")} title={t("adjust.new")} description={t("adjust.intro")} closeLabel={t("tables.close")}>
+              {employees && !employees.ok ? (
+                <CommissionError code={commissionErrorCode(employees.error)} requestId={employees.error.requestId} />
+              ) : periods && !periods.ok ? (
+                <CommissionError code={commissionErrorCode(periods.error)} requestId={periods.error.requestId} />
+              ) : (
+                <AdjustmentForm employees={employees?.ok ? employees.data : []} months={months} />
+              )}
+            </FormSheet>
+          ) : null
+        }
+      />
 
       <section className="space-y-3" aria-labelledby="adjustment-requests">
         <h2 id="adjustment-requests" className="text-lg font-semibold">
@@ -72,7 +76,7 @@ export default async function CommissionAdjustmentsPage({ params }: { params: Pr
         {!requests.ok ? (
           <CommissionError code={commissionErrorCode(requests.error)} requestId={requests.error.requestId} />
         ) : requests.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("adjust.requestsEmpty")}</p>
+          <EmptyState icon={<ReceiptTextIcon aria-hidden="true" />} title={t("adjust.requestsEmpty")} />
         ) : (
           <ul className="divide-y rounded-lg border bg-card">
             {requests.data.map((r) => (

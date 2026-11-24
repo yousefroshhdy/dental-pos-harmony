@@ -1,5 +1,6 @@
 "use client";
 
+import { KeyRoundIcon, Loader2Icon, MailIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ export function LoginForm({ locale, next }: { locale: string; next?: string }) {
       </div>
 
       {codeAsked ? (
-        <div className="space-y-2 rounded-md border p-3">
+        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
           {verifyState.status === "code_error" ? <Alert>{t("otpInvalid")}</Alert> : <Alert tone="info">{t("otpSent")}</Alert>}
           <Label htmlFor="otp">{t("otpCode")}</Label>
           <Input
@@ -67,15 +68,22 @@ export function LoginForm({ locale, next }: { locale: string; next?: string }) {
         <Input id="password" name="password" type="password" autoComplete="current-password" dir="ltr" />
       </div>
 
-      <Button type="submit" className="w-full" variant={codeAsked ? "outline" : "default"} disabled={loggingIn}>
+      <Button type="submit" size="lg" className="w-full" variant={codeAsked ? "outline" : "default"} disabled={loggingIn}>
+        {loggingIn ? <Loader2Icon aria-hidden="true" className="animate-spin" /> : null}
         {t("submit")}
       </Button>
-      <Button type="submit" variant="link" className="w-full" formAction={codeAction} formNoValidate disabled={sendingCode}>
-        {t("otpSend")}
-      </Button>
-      <Button type="submit" variant="link" className="w-full" formAction={linkAction} formNoValidate disabled={sendingLink}>
-        {t("magicLink")}
-      </Button>
+
+      {/* Passwordless options: same form, so the email and the hidden `next` go with them. */}
+      <div className="grid gap-1 border-t pt-3">
+        <Button type="submit" variant="ghost" className="w-full text-primary" formAction={codeAction} formNoValidate disabled={sendingCode}>
+          <KeyRoundIcon aria-hidden="true" />
+          {t("otpSend")}
+        </Button>
+        <Button type="submit" variant="ghost" className="w-full text-primary" formAction={linkAction} formNoValidate disabled={sendingLink}>
+          <MailIcon aria-hidden="true" />
+          {t("magicLink")}
+        </Button>
+      </div>
     </form>
   );
 }

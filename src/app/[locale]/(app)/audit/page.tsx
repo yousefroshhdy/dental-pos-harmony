@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { buttonVariants } from "@/components/ui/button";
-import { Alert, Card } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
+import { Alert } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { AccessNotice } from "@/modules/audit/components/access-notice";
-import { AuditEntryCard } from "@/modules/audit/components/audit-entry";
+import { AuditChanges, AuditEntryCard, tableLabel } from "@/modules/audit/components/audit-entry";
 import { AuditError } from "@/modules/audit/components/audit-error";
+import { AuditResultsTable, type AuditResultRow } from "@/modules/audit/components/results-table";
 import { AuditSearchForm } from "@/modules/audit/components/search-form";
-import { filtersToQuery, maskedCategories, nextBeforeId, withQuery } from "@/modules/audit/logic";
+import { CAIRO_DATE_TIME } from "@/modules/audit/format";
+import { actionTone, actorName, filtersToQuery, historyHref, maskedCategories, nextBeforeId, recordHref, tableRef, withQuery } from "@/modules/audit/logic";
 import { listActors, listAuditedTables, PAGE_SIZE, searchAudit } from "@/modules/audit/queries";
 import { parseAuditSearch, type SearchParams } from "@/modules/audit/schemas";
 
@@ -42,13 +45,31 @@ export default async function AuditSearchPage({
 
   const query = filtersToQuery(filters);
   const before = entries.ok ? nextBeforeId(entries.data, PAGE_SIZE) : null;
+  const format = await getFormatter();
+  const rows: AuditResultRow[] = await Promise.all(
+    (entries.ok ? entries.data : []).map(async (entry) => {
+      const who = actorName(locale, entry);
+      return {
+        id: String(entry.id),
+        action: entry.action,
+        actionTone: actionTone(entry.action),
+        tableLabel: await tableLabel(entry.table_schema, entry.table_name),
+        tableRef: tableRef(entry.table_schema, entry.table_name),
+        occurredAt: entry.occurred_at,
+        when: format.dateTime(new Date(entry.occurred_at), CAIRO_DATE_TIME),
+        actor: who ?? t("entry.system"),
+        recordId: entry.record_id,
+        historyHref: historyHref(entry.table_schema, entry.table_name, entry.record_id),
+        recordHref: recordHref(entry),
+        changes: <AuditChanges entry={entry} defaultOpen={false} />,
+        card: <AuditEntryCard entry={entry} showRecord bare />,
+      };
+    }),
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title={t("title")} description={t("subtitle")} />
 
       <AuditSearchForm filters={filters} tables={tables.ok ? tables.data : []} actors={actors?.ok ? actors.data : null} />
 
@@ -71,19 +92,7 @@ export default async function AuditSearchPage({
         <h2 id="audit-results-heading" className="text-lg font-semibold">
           {t("list.heading")}
         </h2>
-        {!entries.ok ? (
-          <AuditError error={entries.error} />
-        ) : entries.data.length === 0 ? (
-          <Card className="text-sm text-muted-foreground">{t("list.empty")}</Card>
-        ) : (
-          <ul className="space-y-3">
-            {entries.data.map((entry) => (
-              <li key={entry.id}>
-                <AuditEntryCard entry={entry} showRecord />
-              </li>
-            ))}
-          </ul>
-        )}
+        <AuditResultsTable rows={rows} pageSize={PAGE_SIZE} error={entries.ok ? undefined : <AuditError error={entries.error} />} />
         <nav aria-label={t("list.paging")} className="flex flex-col gap-2 sm:flex-row sm:justify-between">
           {filters.beforeId ? (
             <Link href={withQuery("/audit", query)} prefetch={false} className={buttonVariants({ variant: "outline" })}>

@@ -3,7 +3,14 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
+import { TagIcon, UsersIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { PageError } from "@/components/page-kit/page-error";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { endCustomerPriceList, removePriceItem } from "@/modules/catalog/actions";
@@ -50,7 +57,8 @@ export default async function PriceListPage({ params }: { params: Params }) {
   const day = (d: string) => format.dateTime(dateOnly(d), { dateStyle: "medium", timeZone: "UTC", numberingSystem: "latn" });
 
   const list = await getPriceList(id);
-  if (!list.ok) return <CatalogErrorMessage messageKey={list.error.messageKey} requestId={list.error.requestId} />;
+  const back = <BackLink href="/catalog/price-lists">{t("back")}</BackLink>;
+  if (!list.ok) return <PageError back={back} error={list.error} />;
   if (!list.data) notFound();
   const l = list.data;
 
@@ -62,32 +70,38 @@ export default async function PriceListPage({ params }: { params: Params }) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Link href="/catalog/price-lists" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{l.name}</h1>
-          <code dir="ltr" className="text-sm text-muted-foreground">
-            {l.code}
-          </code>
-          <Badge tone={priceListKindTone(l.kind)}>{t(`kinds.${l.kind}`)}</Badge>
-          {l.is_default ? <Badge tone="info">{t("default")}</Badge> : null}
-          {l.is_current ? <Badge tone="success">{t("current")}</Badge> : <Badge>{l.is_active ? t("notInForce") : t("inactive")}</Badge>}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {l.valid_to ? t("fromTo", { from: day(l.valid_from), to: day(l.valid_to) }) : t("fromOpen", { from: day(l.valid_from) })} ·{" "}
-          {t("priorityValue", { priority: l.priority })}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={back}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {l.name}
+            <Badge tone={priceListKindTone(l.kind)}>{t(`kinds.${l.kind}`)}</Badge>
+            {l.is_default ? <Badge tone="info">{t("default")}</Badge> : null}
+            {l.is_current ? <Badge tone="success">{t("current")}</Badge> : <Badge>{l.is_active ? t("notInForce") : t("inactive")}</Badge>}
+          </span>
+        }
+        description={
+          <>
+            <code dir="ltr" className="me-2">
+              {l.code}
+            </code>
+            {l.valid_to ? t("fromTo", { from: day(l.valid_from), to: day(l.valid_to) }) : t("fromOpen", { from: day(l.valid_from) })} ·{" "}
+            {t("priorityValue", { priority: l.priority })}
+          </>
+        }
+      />
 
-      {manage ? (
-        <Card className="space-y-4">
-          <CardTitle>{t("details")}</CardTitle>
-          <PriceListForm list={l} today={today} />
-        </Card>
-      ) : null}
+      <Tabs defaultValue="items" dir={directionOf(locale)}>
+        <TabsList className="w-full justify-start sm:w-auto">
+          <TabsTrigger value="items">
+            {tItems("title")}
+            <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">{items.ok ? items.data.length : "—"}</span>
+          </TabsTrigger>
+          {l.kind === "customer" ? <TabsTrigger value="customers">{tCustomers("title")}</TabsTrigger> : null}
+          {manage ? <TabsTrigger value="details">{t("details")}</TabsTrigger> : null}
+        </TabsList>
 
+        <TabsContent value="items">
       <Card className="space-y-4">
         <div className="space-y-1">
           <CardTitle>{tItems("title")}</CardTitle>
@@ -96,7 +110,7 @@ export default async function PriceListPage({ params }: { params: Params }) {
         {!items.ok ? (
           <CatalogErrorMessage messageKey={items.error.messageKey} requestId={items.error.requestId} />
         ) : items.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{tItems("empty")}</p>
+          <EmptyState compact icon={<TagIcon aria-hidden="true" />} title={tItems("empty")} />
         ) : (
           <Table>
             <thead>
@@ -159,8 +173,10 @@ export default async function PriceListPage({ params }: { params: Params }) {
           </div>
         ) : null}
       </Card>
+        </TabsContent>
 
       {l.kind === "customer" ? (
+        <TabsContent value="customers">
         <Card className="space-y-4">
           <div className="space-y-1">
             <CardTitle>{tCustomers("title")}</CardTitle>
@@ -169,7 +185,7 @@ export default async function PriceListPage({ params }: { params: Params }) {
           {assignments && !assignments.ok ? (
             <CatalogErrorMessage messageKey={assignments.error.messageKey} requestId={assignments.error.requestId} />
           ) : !assignments || assignments.data.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{tCustomers("empty")}</p>
+            <EmptyState compact icon={<UsersIcon aria-hidden="true" />} title={tCustomers("empty")} />
           ) : (
             <Table>
               <thead>
@@ -226,7 +242,19 @@ export default async function PriceListPage({ params }: { params: Params }) {
             </div>
           ) : null}
         </Card>
+        </TabsContent>
       ) : null}
+
+      {manage ? (
+        <TabsContent value="details">
+        <Card className="space-y-4">
+          <CardTitle>{t("details")}</CardTitle>
+          <PriceListForm list={l} today={today} />
+        </Card>
+        </TabsContent>
+      ) : null}
+
+      </Tabs>
     </div>
   );
 }

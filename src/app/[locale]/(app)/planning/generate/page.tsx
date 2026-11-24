@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { getFormatter, getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { UserXIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Input, Label, Select } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
@@ -43,7 +47,7 @@ export default async function GeneratePlanPage({ params, searchParams }: { param
     const error = !settingsResult.ok ? settingsResult.error : !employeesResult.ok ? employeesResult.error : null;
     return (
       <PageBody>
-        <h1 className="text-2xl font-semibold">{t("generate.title")}</h1>
+        <PageHeader eyebrow={<BackLink href="/planning">{t("week.title")}</BackLink>} title={t("generate.title")} />
         <Alert>{tErrors(error?.messageKey ?? "UNKNOWN", { requestId: error?.requestId ?? "—" })}</Alert>
       </PageBody>
     );
@@ -55,8 +59,8 @@ export default async function GeneratePlanPage({ params, searchParams }: { param
   if (!employee) {
     return (
       <PageBody>
-        <h1 className="text-2xl font-semibold">{t("generate.title")}</h1>
-        <Empty>{t("errors.NO_EMPLOYEE_PROFILE")}</Empty>
+        <PageHeader eyebrow={<BackLink href="/planning">{t("week.title")}</BackLink>} title={t("generate.title")} />
+        <EmptyState icon={<UserXIcon aria-hidden="true" />} title={t("errors.NO_EMPLOYEE_PROFILE")} />
       </PageBody>
     );
   }
@@ -89,12 +93,13 @@ export default async function GeneratePlanPage({ params, searchParams }: { param
 
   return (
     <PageBody>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("generate.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("generate.subtitle")}</p>
-      </div>
+      <PageHeader
+        eyebrow={<BackLink href={`/planning?${query}`}>{t("week.title")}</BackLink>}
+        title={t("generate.title")}
+        description={t("generate.subtitle")}
+      />
 
-      <form method="get" className="flex flex-wrap items-end gap-2">
+      <form method="get" className="flex flex-wrap items-end gap-2 rounded-lg border bg-card p-3 shadow-sm">
         {employees.length > 1 ? (
           <div className="min-w-0 flex-1 space-y-1 sm:flex-none">
             <Label htmlFor="generate-employee">{t("week.employee")}</Label>

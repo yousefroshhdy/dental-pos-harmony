@@ -122,5 +122,10 @@
     "saving": "Saving…",
     "saveClass": "Save class",
     "classSaved": "Visit class saved."
+  },
+  "coverageTable": {
+    "customer": "Customer",
+    "status": "Status",
+    "search": "Search by customer name or no."
   }
 }

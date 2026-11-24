@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { KeyRoundIcon, ShieldCheckIcon } from "lucide-react";
 import NextLink from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
 import { EnrolTotp } from "@/modules/security/components/enrol-totp";
 import { RemoveFactorButton } from "@/modules/security/components/remove-factor-button";
@@ -43,11 +46,8 @@ export default async function AccountSecurityPage({
   const standing = status.ok && factors.ok ? mfaStanding(status.data, rows) : null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("intro")}</p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader title={t("title")} description={t("intro")} />
 
       {returnTo && standing !== "protected" ? (
         <Alert tone="info" role="status">
@@ -56,7 +56,10 @@ export default async function AccountSecurityPage({
       ) : null}
 
       <Card className="space-y-3">
-        <CardTitle>{t("status.title")}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <ShieldCheckIcon aria-hidden="true" className="size-5 text-primary" />
+          {t("status.title")}
+        </CardTitle>
         {!status.ok ? (
           <Alert>{t("status.loadFailed")}</Alert>
         ) : (
@@ -115,7 +118,7 @@ export default async function AccountSecurityPage({
         {!factors.ok ? (
           <Alert>{t("factors.loadFailed")}</Alert>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("factors.empty")}</p>
+          <EmptyState compact icon={<KeyRoundIcon aria-hidden="true" />} title={t("factors.empty")} />
         ) : (
           <ul className="divide-y">
             {rows.map((factor) => (

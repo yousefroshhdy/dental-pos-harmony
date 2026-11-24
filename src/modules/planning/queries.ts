@@ -1,8 +1,10 @@
 import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
+import { rangeOf, runPaged, searchFilter, type Paged } from "@/lib/list-query";
 import { createClient } from "@/lib/supabase/server";
 import type { CoverageFilter } from "./logic";
+import { COVERAGE_SEARCH_COLUMNS, coverageOrder } from "./tables";
 import type {
   CoverageRow,
   GeneratedPlan,
@@ -114,4 +116,24 @@ export async function listCoverage(opts: { employeeId?: string; filter: Coverage
     query.order("overdue_days", { ascending: false, nullsFirst: true }).order("customer_name").limit(COVERAGE_LIMIT),
     [],
   );
+}
+
+/** One page of this month's coverage (Phase P step 2b), with the exact count. */
+export async function listCoveragePage(opts: {
+  employeeId?: string;
+  filter: CoverageFilter;
+  offset: number;
+  pageSize: number;
+  sort?: { id: string; desc: boolean };
+  search: string;
+}): Promise<Result<Paged<CoverageRow>>> {
+  const db = await createClient();
+  let query = db.from("v_coverage").select(COVERAGE_COLUMNS, { count: "exact" });
+  if (opts.employeeId) query = query.eq("employee_id", opts.employeeId);
+  if (opts.filter === "overdue") query = query.eq("is_overdue", true);
+  const or = searchFilter(COVERAGE_SEARCH_COLUMNS, opts.search);
+  if (or) query = query.or(or);
+  for (const term of coverageOrder(opts.sort)) query = query.order(term.column, { ascending: term.ascending, nullsFirst: term.nullsFirst });
+  const [from, to] = rangeOf(opts.offset, opts.pageSize);
+  return runPaged("v_coverage", query.range(from, to));
 }
