@@ -9,6 +9,8 @@ next-env.d.ts
 *.tsbuildinfo
 
 # testing
+# local signed-in stack (scripts/e2e-local): PostgREST binary, per-run secrets, logs
+/.cache/
 /coverage/
 playwright-report/
 test-results/

@@ -36,6 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: { default: t("name"), template: `%s · ${t("name")}` },
     description: t("tagline"),
     applicationName: t("name"),
+    // Without a declared icon browsers request /favicon.ico, which does not exist (404 on every page).
+    icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }] },
     robots: { index: false, follow: false }, // internal system
   };
 }

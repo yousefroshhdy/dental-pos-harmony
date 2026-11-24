@@ -179,7 +179,7 @@ export function FilterTabs({
             replace
             scroll={false}
             aria-current={active ? "page" : undefined}
-            className={cn(buttonVariants({ variant: active ? "default" : "outline", size: "sm" }), "min-h-11 shrink-0")}
+            className={cn(buttonVariants({ variant: active ? "default" : "outline", size: "sm" }), "min-h-11 min-w-11 shrink-0")}
           >
             {i.text}
           </Link>

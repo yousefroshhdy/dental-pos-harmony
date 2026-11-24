@@ -321,7 +321,7 @@ export function ReverseAllocationForm({ allocationId, paymentId, locale }: { all
         <input type="hidden" name="locale" value={locale} />
         <Label htmlFor={reasonId}>{t("reverseReason")}</Label>
         <Input id={reasonId} name="reason" required minLength={3} maxLength={500} autoComplete="off" />
-        <Button type="submit" variant="destructive" size="sm" disabled={pending}>
+        <Button type="submit" variant="destructive" size="sm" className="min-h-11" disabled={pending}>
           {t("reverseConfirm")}
         </Button>
         <FinanceActionMessage state={state} />
