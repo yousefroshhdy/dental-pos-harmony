@@ -53,7 +53,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
   const mayManageTasks = can(ctx, "work.task.manage");
   const mayOrder = can(ctx, "sales.order.create");
   // Same gate as the /leads entry of the field bottom bar (src/lib/nav.ts).
-  const mayLeads = can(ctx, "field.visit.create");
+  const mayLeads = can(ctx, "crm.lead.read");
 
   const today = await listMyToday();
   const dateLine = format.dateTime(now, { dateStyle: "full", timeZone: "Africa/Cairo", numberingSystem: "latn" });
