@@ -116,7 +116,7 @@ export function visibleNavGroups(ctx: UserContext, sources: readonly { group: Na
 export const BOTTOM_BAR: readonly NavItem[] = [
   { href: "/today", labelKey: "nav.bottom.today", permission: "field.visit.create" },
   { href: "/map", labelKey: "nav.bottom.map", permission: null, anyPermission: ["field.visit.read", "crm.customer.read"] },
-  { href: "/leads", labelKey: "nav.bottom.leads", permission: "field.visit.create" },
+  { href: "/leads", labelKey: "nav.bottom.leads", permission: "crm.lead.read" },
   { href: "/visits", labelKey: "nav.bottom.visits", permission: "field.visit.read" },
   { href: "/orders", labelKey: "nav.bottom.orders", permission: "sales.order.read" },
 ];

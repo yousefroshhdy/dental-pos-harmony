@@ -18,7 +18,7 @@ describe("field bottom bar", () => {
   });
 
   it("a rep gets all five", () => {
-    const rep = ctx({ "field.visit.create": "own", "field.visit.read": "own", "crm.customer.read": "own", "sales.order.read": "own" });
+    const rep = ctx({ "field.visit.create": "own", "field.visit.read": "own", "crm.customer.read": "own", "sales.order.read": "own", "crm.lead.read": "own" });
     expect(showBottomBar(rep)).toBe(true);
     expect(hrefs(rep)).toEqual(["/today", "/map", "/leads", "/visits", "/orders"]);
   });
@@ -34,16 +34,17 @@ describe("field bottom bar", () => {
     expect(showBottomBar(ctx({ "field.visit.create": "own" }, { active: false }))).toBe(false);
   });
 
-  it("Map needs field.visit.read or crm.customer.read; Leads needs field.visit.create", () => {
-    const base = { "field.visit.create": "own" } as const;
+  it("Map needs field.visit.read or crm.customer.read; Leads needs crm.lead.read", () => {
+    const base = { "field.visit.create": "own", "crm.lead.read": "own" } as const;
     expect(hrefs(ctx(base))).toEqual(["/today", "/leads"]);
+    expect(hrefs(ctx({ "field.visit.create": "own" }))).toEqual(["/today"]);
     expect(hrefs(ctx({ ...base, "crm.customer.read": "own" }))).toEqual(["/today", "/map", "/leads"]);
     expect(hrefs(ctx({ ...base, "field.visit.read": "own" }))).toEqual(["/today", "/map", "/leads", "/visits"]);
-    expect(BOTTOM_BAR.find((i) => i.href === "/leads")?.permission).toBe("field.visit.create");
+    expect(BOTTOM_BAR.find((i) => i.href === "/leads")?.permission).toBe("crm.lead.read");
   });
 
   it("an area manager who also visits gets it, with the same filtering", () => {
-    const manager = ctx({ "field.visit.create": "own", "field.visit.read": "team", "perf.kpi.read": "team", "sales.order.read": "team" });
+    const manager = ctx({ "field.visit.create": "own", "field.visit.read": "team", "perf.kpi.read": "team", "sales.order.read": "team", "crm.lead.read": "team" });
     expect(hrefs(manager)).toEqual(["/today", "/map", "/leads", "/visits", "/orders"]);
   });
 
