@@ -107,7 +107,22 @@
     "overdueDays": "{count, plural, one {# day overdue} other {# days overdue}}",
     "due": "Due {date}",
     "openAmount": "Open {amount}",
-    "export": "Export invoices (CSV)"
+    "export": "Export invoices (CSV)",
+    "intro": "Invoices of the customers you may see. Search by invoice number, customer or order.",
+    "searchPlaceholder": "Invoice number, customer or order",
+    "customerSearch": "Search customers",
+    "noCustomer": "No customer with this name.",
+    "clearFilters": "Clear filters",
+    "emptyHint": "Try another status or clear the filters.",
+    "columns": {
+      "number": "Invoice no.",
+      "customer": "Customer",
+      "status": "Status",
+      "issued": "Issued",
+      "due": "Due",
+      "total": "Total",
+      "open": "Open"
+    }
   },
   "issue": {
     "title": "Issue invoice",
@@ -146,7 +161,9 @@
     "discount": "Discount",
     "vat": "VAT",
     "total": "Total",
-    "credited": "{count} credited"
+    "credited": "{count} credited",
+    "bonus": "Free / bonus",
+    "free": "Free"
   },
   "invoice": {
     "metaTitle": "Invoice",
@@ -178,7 +195,16 @@
     "creditNotes": "Credit notes",
     "noCredits": "No credit notes.",
     "creditPending": "A credit note of {amount} is waiting for approval.",
-    "openApproval": "Open the approval"
+    "openApproval": "Open the approval",
+    "collect": "Record a payment",
+    "summaryLabel": "Invoice summary",
+    "tabsLabel": "Invoice sections",
+    "tabs": {
+      "lines": "Lines ({count})",
+      "payments": "Payments ({count})",
+      "credits": "Credit notes ({count})"
+    },
+    "vatAtRate": "VAT {rate}% on {taxable}"
   },
   "credit": {
     "title": "Request a credit note",
@@ -214,7 +240,19 @@
     },
     "empty": "No payments here.",
     "unallocated": "{amount} not allocated",
-    "export": "Export payments (CSV)"
+    "export": "Export payments (CSV)",
+    "intro": "Recorded collections. Finance verifies them, then allocates them to invoices.",
+    "searchPlaceholder": "Receipt number, customer or reference",
+    "emptyHint": "Record a collection from the customer page or with \"Record a payment\".",
+    "columns": {
+      "number": "Receipt no.",
+      "customer": "Customer",
+      "status": "Status",
+      "collector": "Collected by",
+      "received": "Received",
+      "amount": "Amount",
+      "unallocated": "Unallocated"
+    }
   },
   "record": {
     "title": "Record a payment",
@@ -233,7 +271,12 @@
     "submit": "Record payment",
     "invalidAmount": "Enter a positive amount with at most 2 decimals.",
     "invalidReceivedAt": "The time received cannot be in the future.",
-    "noCustomers": "You have no customers to record a payment for."
+    "noCustomers": "You have no customers to record a payment for.",
+    "intro": "Record the money you have just received. Finance verifies it before it reaches the customer's account.",
+    "customerSearch": "Search by name or customer number",
+    "noCustomerMatch": "No customer with this name or number.",
+    "chequeDueRequired": "Choose the cheque due date.",
+    "chooseDate": "Choose a date"
   },
   "payment": {
     "metaTitle": "Payment",
@@ -253,7 +296,8 @@
     "actions": "Payment actions",
     "allocations": "Allocations",
     "noAllocations": "Not allocated to any invoice yet.",
-    "invoice": "Invoice"
+    "invoice": "Invoice",
+    "summaryLabel": "Payment summary"
   },
   "paymentActions": {
     "confirm": "Confirm payment",
@@ -326,7 +370,10 @@
     "empty": "No open receivables.",
     "statement": "Statement",
     "customer": "Customer",
-    "export": "Export aging (CSV)"
+    "export": "Export aging (CSV)",
+    "searchPlaceholder": "Customer name or number",
+    "totalsLabel": "Aging totals",
+    "allOverdue": "Show every overdue invoice"
   },
   "collections": {
     "title": "Collections",

@@ -2,6 +2,9 @@ import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
+import { cleanSearch, ilikeAny, type Page, type PageRequest } from "@/modules/orders/kit/paging";
+import { runPage } from "@/modules/orders/kit/run-page";
+import { AVAILABLE_LIST, MOVEMENT_LIST, RECEIPT_LIST, STOCK_LIST } from "./lists";
 import { addDays, cairoDayStartUtc, type MovementFilters, type StockFilters } from "./logic";
 import type {
   AvailableRow,
@@ -157,4 +160,118 @@ export async function listTransferLines(transferIds: string[]): Promise<Result<T
   if (transferIds.length === 0) return ok([]);
   const db = await createClient();
   return run("v_transfer_lines", db.from("v_transfer_lines").select(TRANSFER_LINE_COLUMNS).in("transfer_id", transferIds).order("sku"), []);
+}
+
+// ---------------------------------------------------------------------------
+// Server-paginated lists (Phase P): one window plus the total that matches.
+// ---------------------------------------------------------------------------
+
+const windowOf = (page: PageRequest) => [page.offset, page.offset + page.limit - 1] as const;
+
+/**
+ * Inventory roles: one page of stock rows. The alert filter runs in the database
+ * (near expiry, expired, not sellable from the row; below reorder = a sellable row
+ * of a variant in `belowReorderIds`, the v_reorder_alerts answer).
+ */
+export async function listStockPage(filter: StockFilters, belowReorderIds: readonly string[], page: PageRequest): Promise<Result<Page<StockRow>>> {
+  const db = await createClient();
+  let q = db.from("v_inventory_stock").select(STOCK_COLUMNS, { count: "exact" });
+  if (filter.warehouse) q = q.eq("warehouse_id", filter.warehouse);
+  if (filter.brand) q = q.eq("brand_id", filter.brand);
+  if (filter.product) q = q.eq("product_id", filter.product);
+  switch (filter.alert) {
+    case "near_expiry":
+      q = q.gt("near_expiry_qty", 0);
+      break;
+    case "expired":
+      q = q.gt("expired_qty", 0);
+      break;
+    case "not_sellable":
+      q = q.eq("is_sellable", false);
+      break;
+    case "below_reorder":
+      if (belowReorderIds.length === 0) return ok({ rows: [], total: 0 });
+      q = q.eq("is_sellable", true).in("variant_id", [...belowReorderIds]);
+      break;
+    default:
+      break;
+  }
+  const search = ilikeAny(STOCK_LIST.searchColumns ?? [], page.search);
+  if (search) q = q.or(search);
+  const [from, to] = windowOf(page);
+  const ordered = q
+    .order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false })
+    .order("product_name")
+    .order("sku")
+    .order("is_sellable", { ascending: false })
+    .order("warehouse_code");
+  return runPage("inventory", "v_inventory_stock", ordered.range(from, to));
+}
+
+/** Everyone with inventory.stock.read: one page of sellable availability. */
+export async function listAvailablePage(filter: { warehouse?: string; variantIds?: string[] }, page: PageRequest): Promise<Result<Page<AvailableRow>>> {
+  if (filter.variantIds && filter.variantIds.length === 0) return ok({ rows: [], total: 0 });
+  const db = await createClient();
+  let q = db.from("v_stock_available").select(AVAILABLE_COLUMNS, { count: "exact" });
+  if (filter.warehouse) q = q.eq("warehouse_id", filter.warehouse);
+  if (filter.variantIds) q = q.in("variant_id", filter.variantIds);
+  const search = ilikeAny(AVAILABLE_LIST.searchColumns ?? [], page.search);
+  if (search) q = q.or(search);
+  const [from, to] = windowOf(page);
+  const ordered = q.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("sku").order("warehouse_code");
+  return runPage("inventory", "v_stock_available", ordered.range(from, to));
+}
+
+/** One page of the stock ledger (newest first by default; the ledger itself is append-only). */
+export async function listMovementsPage(filter: MovementFilters, page: PageRequest): Promise<Result<Page<MovementRow>>> {
+  const db = await createClient();
+  let q = db.from("v_movements").select(MOVEMENT_COLUMNS, { count: "exact" });
+  if (filter.warehouse) q = q.eq("warehouse_id", filter.warehouse);
+  if (filter.variant) q = q.eq("variant_id", filter.variant);
+  if (filter.type) q = q.eq("movement_type", filter.type);
+  if (filter.sourceType) q = q.eq("source_doc_type", filter.sourceType);
+  if (filter.sourceId) q = q.eq("source_doc_id", filter.sourceId);
+  if (filter.from) q = q.gte("created_at", cairoDayStartUtc(filter.from));
+  if (filter.to) q = q.lt("created_at", cairoDayStartUtc(addDays(filter.to, 1)));
+  const search = ilikeAny(MOVEMENT_LIST.searchColumns ?? [], page.search);
+  if (search) q = q.or(search);
+  const [from, to] = windowOf(page);
+  // One transaction stamps all its movements with the same time: id keeps the order stable.
+  const ordered = q.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("created_at", { ascending: false }).order("id");
+  return runPage("inventory", "v_movements", ordered.range(from, to));
+}
+
+export async function listReceiptsPage(filter: { status?: ReceiptStatus; warehouse?: string }, page: PageRequest): Promise<Result<Page<ReceiptRow>>> {
+  const db = await createClient();
+  let q = db.from("v_goods_receipts").select(RECEIPT_COLUMNS, { count: "exact" });
+  if (filter.status) q = q.eq("status", filter.status);
+  if (filter.warehouse) q = q.eq("warehouse_id", filter.warehouse);
+  const search = ilikeAny(RECEIPT_LIST.searchColumns ?? [], page.search);
+  if (search) q = q.or(search);
+  const [from, to] = windowOf(page);
+  const ordered = q.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("received_at", { ascending: false }).order("id");
+  return runPage("inventory", "v_goods_receipts", ordered.range(from, to));
+}
+
+/** How many transfers are in transit (for the banner), with the same warehouse filter as the list. */
+export async function countInTransit(warehouse?: string): Promise<Result<number>> {
+  const db = await createClient();
+  let q = db.from("v_transfers").select("id", { count: "exact", head: true }).eq("status", "in_transit");
+  if (warehouse) q = q.or(`from_warehouse_id.eq.${warehouse},to_warehouse_id.eq.${warehouse}`);
+  const page = await runPage<never>("inventory", "v_transfers", q);
+  return page.ok ? ok(page.data.total) : page;
+}
+
+export async function listTransfersPage(filter: { status?: TransferStatus; warehouse?: string }, page: PageRequest): Promise<Result<Page<TransferRow>>> {
+  const db = await createClient();
+  let q = db.from("v_transfers").select(TRANSFER_COLUMNS, { count: "exact" });
+  if (filter.status) q = q.eq("status", filter.status);
+  // The warehouse id is validated as a uuid in parseStockFilters before it reaches or().
+  if (filter.warehouse) q = q.or(`from_warehouse_id.eq.${filter.warehouse},to_warehouse_id.eq.${filter.warehouse}`);
+  // One searched column, so a plain ilike (the warehouse filter above already uses or()).
+  const search = cleanSearch(page.search);
+  if (search) q = q.ilike("transfer_no", `*${search}*`);
+  const [from, to] = windowOf(page);
+  const ordered = q.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("created_at", { ascending: false }).order("id");
+  return runPage("inventory", "v_transfers", ordered.range(from, to));
 }

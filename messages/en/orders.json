@@ -16,7 +16,18 @@
     "emptyFiltered": "No orders with this status.",
     "limited": "Showing the latest {count} orders.",
     "exportOrders": "Export orders (CSV)",
-    "exportLines": "Export order lines (CSV)"
+    "exportLines": "Export order lines (CSV)",
+    "intro": "Every order you may see. Search by order number, customer or rep.",
+    "searchPlaceholder": "Order number, customer or rep",
+    "emptyHint": "Start the first order from a customer visit or with \"New order\".",
+    "columns": {
+      "number": "Order no.",
+      "customer": "Customer",
+      "rep": "Rep",
+      "status": "Status",
+      "date": "Date",
+      "total": "Total"
+    }
   },
   "filters": {
     "all": "All",
@@ -104,7 +115,10 @@
     "invoiceDiscountHint": "Spread over the lines by value (the last line takes the rounding). It counts as a manual discount for the approval limits.",
     "preview": "Calculate prices on the server",
     "previewing": "Calculating…",
-    "previewOffline": "The server's prices need a connection. You can still save the draft on this device."
+    "previewOffline": "The server's prices need a connection. You can still save the draft on this device.",
+    "noCustomerMatch": "No customer with this name or number.",
+    "decrease": "Decrease quantity of {name}",
+    "increase": "Increase quantity of {name}"
   },
   "detail": {
     "metaTitle": "Order",
@@ -145,7 +159,16 @@
     "coversAll": "covers all lines",
     "shortLines": "{count, plural, one {short on # line} other {short on # lines}}",
     "issueInvoice": "Issue invoice",
-    "requestReturn": "Request return"
+    "requestReturn": "Request return",
+    "tabsLabel": "Order sections",
+    "tabs": {
+      "lines": "Lines ({count})",
+      "details": "Details",
+      "history": "History"
+    },
+    "actionsOpen": "Actions",
+    "actionsHint": "What you can do with this order now. The database checks your permission at every step.",
+    "close": "Close"
   },
   "actions": {
     "submit": "Submit order",
@@ -278,7 +301,8 @@
     "ofWhichInvoiceDiscount": "of which invoice discount",
     "vatAtRate": "VAT {rate}% on {taxable}",
     "vatTotal": "VAT",
-    "total": "Total"
+    "total": "Total",
+    "linesLabel": "Order lines"
   },
   "offerAdmin": {
     "title": "Offers and packages",

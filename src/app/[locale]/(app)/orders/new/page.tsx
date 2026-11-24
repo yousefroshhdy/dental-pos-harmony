@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { OrderBuilder } from "@/modules/orders/components/order-builder";
 import { OrderError } from "@/modules/orders/components/order-error";
+import { hasBottomNav } from "@/modules/orders/kit/bottom-nav";
 import { orderErrorCode } from "@/modules/orders/logic";
 import { listSellableCustomers } from "@/modules/orders/queries";
 
@@ -40,19 +42,22 @@ export default async function NewOrderPage({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Link href="/orders" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("back")}
-        </Link>
-        <h1 className="text-2xl font-semibold">{t("newTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("intro")}</p>
-      </div>
+      <PageHeader
+        eyebrow={
+          <Link href="/orders" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {t("back")}
+          </Link>
+        }
+        title={t("newTitle")}
+        description={t("intro")}
+      />
       {!ctx.user_id ? null : !customers.ok ? (
         <OrderError code={orderErrorCode(customers.error)} requestId={customers.error.requestId} />
       ) : (
         <OrderBuilder
           locale={locale}
           userId={ctx.user_id}
+          aboveBottomNav={hasBottomNav(ctx)}
           customers={customers.data}
           initial={{ customerId: optionalId(sp.customer), visitId: optionalId(sp.visit) }}
         />

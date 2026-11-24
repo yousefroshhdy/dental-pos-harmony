@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useId, useRef } from "react";
+import { useActionState, useContext, useId, useRef } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { useOnline } from "@/modules/offline/use-offline-queue";
 import type { OrderActionResult, OrderActionState } from "../types";
+import { FulfilKeyContext } from "./order-actions-panel";
 import { OrderActionMessage } from "./order-error";
 
 type Action = (prev: OrderActionState, form: FormData) => Promise<OrderActionResult>;
@@ -183,10 +184,13 @@ export function ReserveForm({
  * Post the fulfilment. The idempotency key is generated on the device at the
  * first attempt and reused for every retry from this form, so a retry after a
  * lost response replays the same fulfilment instead of posting a second one.
+ * Inside OrderActionsPanel the key is the panel's, shared by the desktop card and
+ * the phone sheet, so closing the sheet never loses it.
  */
 export function FulfilForm({ action, orderId, locale, label }: { action: Action; orderId: string; locale: string; label: string }) {
   const [state, dispatch, pending] = useActionState(action, null);
-  const keyRef = useRef<string | null>(null);
+  const localKey = useRef<string | null>(null);
+  const keyRef = useContext(FulfilKeyContext) ?? localKey;
   function submit(form: FormData) {
     keyRef.current ??= crypto.randomUUID();
     form.set("idempotency_key", keyRef.current);

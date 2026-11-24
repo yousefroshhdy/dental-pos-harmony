@@ -3,8 +3,12 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { useActionState, useId, useMemo, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Alert, Input, Label, Select } from "@/components/ui/primitives";
+import { Combobox } from "@/components/ui/combobox";
+import { DatePicker } from "@/components/ui/date-picker";
+import { FormField } from "@/components/ui/form-field";
+import { Alert, Input, Label } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
+import { StickyActionBar } from "@/modules/orders/kit/sticky-bar";
 import { allocatePayment, confirmPayment, recordPayment, rejectPayment, reverseAllocation, reversePayment } from "../actions";
 import { checkAllocations, fifoPreview, parseAmount, type OpenInvoice } from "../logic";
 import { RECORDABLE_METHODS, type CustomerOption, type RecordableMethod } from "../types";
@@ -14,31 +18,49 @@ const EGP = { style: "currency", currency: "EGP", numberingSystem: "latn" } as c
 import { useIdempotentAction } from "./use-idempotent-action";
 
 /**
- * Record money received. Built for a phone in the field: big inputs, numeric
- * keypad, the submit button pinned to the bottom of the screen on mobile. The
- * client_ref is generated once per attempt so a retry never records twice.
+ * Record money received. Built for a phone in the field: a searchable customer
+ * picker, a big amount field with the numeric keypad, the method as large
+ * choices, and the submit button kept in reach (sticky above the bottom bar).
+ * The client_ref is generated once per attempt so a retry never records twice.
  */
 export function RecordPaymentForm({
   customers,
   defaultCustomerId,
   locale,
+  aboveBottomNav = false,
 }: {
   customers: CustomerOption[];
   defaultCustomerId: string | null;
   locale: string;
+  /** The shell shows its phone bottom bar: the sticky submit bar sits above it. */
+  aboveBottomNav?: boolean;
 }) {
   const t = useTranslations("finance.record");
   const tm = useTranslations("finance.method");
   const [method, setMethod] = useState<RecordableMethod>("cash");
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(defaultCustomerId);
+  const [chequeDue, setChequeDue] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<{ field: "customer" | "amount" | "cheque" | "received"; text: string } | null>(null);
   const { state, submit: send, pending } = useIdempotentAction(recordPayment, "client_ref");
   const ids = { customer: useId(), amount: useId(), method: useId(), reference: useId(), due: useId(), received: useId() };
+  const customerOptions = useMemo(
+    () => customers.map((c) => ({ value: c.id, label: c.display_name, description: c.customer_no ?? undefined, keywords: c.customer_no ? [c.customer_no] : [] })),
+    [customers],
+  );
 
   function submit(form: FormData) {
     setLocalError(null);
+    if (!customerId) {
+      setLocalError({ field: "customer", text: t("chooseCustomer") });
+      return;
+    }
     const amount = parseAmount(String(form.get("amount") ?? ""));
     if (amount === null) {
-      setLocalError(t("invalidAmount"));
+      setLocalError({ field: "amount", text: t("invalidAmount") });
+      return;
+    }
+    if (method === "cheque" && !chequeDue) {
+      setLocalError({ field: "cheque", text: t("chequeDueRequired") });
       return;
     }
     form.set("amount", amount.toFixed(2));
@@ -48,7 +70,7 @@ export function RecordPaymentForm({
     if (local) {
       const at = new Date(local);
       if (Number.isNaN(at.getTime()) || at.getTime() > Date.now() + 10 * 60_000) {
-        setLocalError(t("invalidReceivedAt"));
+        setLocalError({ field: "received", text: t("invalidReceivedAt") });
         return;
       }
       form.set("received_at", at.toISOString());
@@ -57,60 +79,60 @@ export function RecordPaymentForm({
   }
 
   if (customers.length === 0) return <Alert tone="info">{t("noCustomers")}</Alert>;
+  const errorFor = (field: "customer" | "amount" | "cheque" | "received") => (localError?.field === field ? localError.text : undefined);
 
   return (
-    <form action={submit} className="flex flex-col gap-4 pb-24 sm:pb-0">
+    <form action={submit} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="locale" value={locale} />
-      <div className="flex flex-col gap-1">
-        <Label htmlFor={ids.customer}>{t("customer")}</Label>
-        <Select id={ids.customer} name="customer_id" required defaultValue={defaultCustomerId ?? ""} className="w-full">
-          <option value="" disabled>
-            {t("chooseCustomer")}
-          </option>
-          {customers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.display_name} ({c.customer_no})
-            </option>
-          ))}
-        </Select>
-      </div>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor={ids.amount}>{t("amount")}</Label>
-        <Input id={ids.amount} name="amount" inputMode="decimal" autoComplete="off" required placeholder="0.00" className="text-lg" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor={ids.method}>{t("method")}</Label>
-        <Select id={ids.method} name="method" value={method} onChange={(e) => setMethod(e.target.value as RecordableMethod)} className="w-full">
+      <FormField id={ids.customer} label={t("customer")} error={errorFor("customer")} required>
+        <Combobox
+          name="customer_id"
+          options={customerOptions}
+          value={customerId}
+          onValueChange={setCustomerId}
+          placeholder={t("chooseCustomer")}
+          searchPlaceholder={t("customerSearch")}
+          emptyText={t("noCustomerMatch")}
+          clearable={false}
+        />
+      </FormField>
+      <FormField id={ids.amount} label={t("amount")} error={errorFor("amount")} required>
+        <Input name="amount" inputMode="decimal" autoComplete="off" required placeholder="0.00" dir="ltr" className="min-h-14 text-start text-2xl font-semibold tabular-nums sm:text-2xl" />
+      </FormField>
+      <fieldset className="space-y-1.5">
+        <legend className="text-sm font-medium">{t("method")}</legend>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {RECORDABLE_METHODS.map((m) => (
-            <option key={m} value={m}>
+            <label
+              key={m}
+              className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border bg-card px-3 text-sm font-medium transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:text-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/50"
+            >
+              <input type="radio" name="method" value={m} checked={method === m} onChange={() => setMethod(m)} className="sr-only" />
               {tm(m)}
-            </option>
+            </label>
           ))}
-        </Select>
-      </div>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor={ids.reference}>{method === "cheque" ? t("chequeNo") : t("reference")}</Label>
-        <Input id={ids.reference} name="reference" maxLength={100} autoComplete="off" required={method === "cheque"} dir="ltr" />
-      </div>
-      {method === "cheque" ? (
-        <div className="flex flex-col gap-1">
-          <Label htmlFor={ids.due}>{t("chequeDueDate")}</Label>
-          <Input id={ids.due} name="cheque_due_date" type="date" required />
         </div>
+      </fieldset>
+      <FormField id={ids.reference} label={method === "cheque" ? t("chequeNo") : t("reference")} required={method === "cheque"}>
+        <Input name="reference" maxLength={100} autoComplete="off" required={method === "cheque"} dir="ltr" />
+      </FormField>
+      {method === "cheque" ? (
+        <FormField id={ids.due} label={t("chequeDueDate")} error={errorFor("cheque")} required>
+          <DatePicker name="cheque_due_date" value={chequeDue} onChange={setChequeDue} lang={locale === "ar" ? "ar" : "en"} placeholder={t("chooseDate")} />
+        </FormField>
       ) : null}
-      <div className="flex flex-col gap-1">
-        <Label htmlFor={ids.received}>{t("receivedAt")}</Label>
-        <Input id={ids.received} name="received_local" type="datetime-local" />
-        <p className="text-xs text-muted-foreground">{t("receivedAtHelp")}</p>
-      </div>
-      <p className="text-sm text-muted-foreground">{t("verificationNote")}</p>
-      {localError ? <Alert>{localError}</Alert> : null}
+      <FormField id={ids.received} label={t("receivedAt")} hint={t("receivedAtHelp")} error={errorFor("received")}>
+        <Input name="received_local" type="datetime-local" dir="ltr" />
+      </FormField>
+      <Alert tone="info" role="note">
+        {t("verificationNote")}
+      </Alert>
       <FinanceActionMessage state={state} />
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card p-3 sm:static sm:border-0 sm:bg-transparent sm:p-0">
+      <StickyActionBar aboveBottomNav={aboveBottomNav}>
         <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto">
           {pending ? t("saving") : t("submit")}
         </Button>
-      </div>
+      </StickyActionBar>
     </form>
   );
 }

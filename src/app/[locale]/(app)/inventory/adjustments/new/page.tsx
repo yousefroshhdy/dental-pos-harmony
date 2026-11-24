@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Card } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
@@ -46,13 +47,15 @@ export default async function NewAdjustmentPage({ params, searchParams }: { para
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <Link href="/inventory" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("back")}
-      </Link>
-      <div>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("intro")}</p>
-      </div>
+      <PageHeader
+        eyebrow={
+          <Link href="/inventory" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {t("back")}
+          </Link>
+        }
+        title={t("title")}
+        description={t("intro")}
+      />
       <Alert tone="info" role="note">
         {limit === null ? t("limitNone") : t("limit", { n: limit ?? 0 })}
       </Alert>

@@ -14,7 +14,20 @@
     "emptyFiltered": "No returns with this status.",
     "units": "{count, plural, one {{formatted} unit} other {{formatted} units}}",
     "estimate": "estimate",
-    "limited": "Showing the latest {count} returns."
+    "limited": "Showing the latest {count} returns.",
+    "intro": "Customer returns: requested, approved, received into quarantine, then credited.",
+    "searchPlaceholder": "Return number, customer or order",
+    "emptyHint": "A return starts from a delivered order.",
+    "columns": {
+      "number": "Return no.",
+      "customer": "Customer",
+      "order": "Order",
+      "status": "Status",
+      "rep": "Rep",
+      "date": "Date",
+      "units": "Units",
+      "amount": "Value"
+    }
   },
   "filters": {
     "all": "All",
@@ -123,7 +136,20 @@
     "creditSplit": "{amount} + VAT {vat}",
     "cancelledAt": "Cancelled",
     "cancelReason": "Why it was cancelled",
-    "customerCredit": "The invoice was already paid: {amount} of this credit is kept as customer credit and offsets the customer’s next invoices. It is never paid out in cash."
+    "customerCredit": "The invoice was already paid: {amount} of this credit is kept as customer credit and offsets the customer’s next invoices. It is never paid out in cash.",
+    "progressLabel": "Return progress",
+    "steps": {
+      "requested": "Requested",
+      "approved": "Approved",
+      "received": "Received",
+      "credited": "Credited"
+    },
+    "stepState": {
+      "done": "done",
+      "current": "current step",
+      "todo": "not started",
+      "stopped": "stopped here"
+    }
   },
   "lines": {
     "sku": "Item",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { PageHeader } from "@/components/ui/page-header";
 import { Forbidden } from "@/components/forbidden";
 import { Badge, Card } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
@@ -57,7 +58,7 @@ export default async function CollectionsPage({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">{t("collections.title")}</h1>
+      <PageHeader title={t("collections.title")} />
       <FilterLinks
         label={t("collections.filterLabel")}
         items={FILTERS.map((f) => ({

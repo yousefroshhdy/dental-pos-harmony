@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Forbidden } from "@/components/forbidden";
+import { PrinterIcon } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
@@ -60,21 +62,27 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
 
   return (
     <div className="space-y-6 pb-6">
-      <div className="space-y-2">
-        <BackLink href="/finance/payments" label={t("payment.back")} />
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">
+      <PageHeader
+        eyebrow={<BackLink href="/finance/payments" label={t("payment.back")} />}
+        title={
+          <span className="flex flex-wrap items-center gap-2">
             <span dir="ltr">{p.payment_no}</span>
-          </h1>
-          <Badge tone={paymentStatusTone(p.status)}>{t(`paymentStatus.${p.status}`)}</Badge>
-          {hasReceipt(p) ? (
-            <Link href={`/finance/payments/${p.id}/print`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "ms-auto min-h-11")}>
+            <Badge tone={paymentStatusTone(p.status)} className="text-sm">
+              {t(`paymentStatus.${p.status}`)}
+            </Badge>
+            <Badge className="text-sm">{t(`method.${p.method}`)}</Badge>
+          </span>
+        }
+        description={p.customer_name ?? "—"}
+        actions={
+          hasReceipt(p) ? (
+            <Link href={`/finance/payments/${p.id}/print`} className={buttonVariants({ variant: "outline" })}>
+              <PrinterIcon aria-hidden="true" />
               {t("print.printReceipt")}
             </Link>
-          ) : null}
-        </div>
-        <p className="text-sm text-muted-foreground">{p.customer_name ?? "—"}</p>
-      </div>
+          ) : null
+        }
+      />
 
       {recorded ? (
         <Alert tone="success" role="status">
@@ -83,20 +91,24 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
       ) : null}
       {p.status_reason ? <Alert tone="info">{t("payment.reason", { reason: p.status_reason })}</Alert> : null}
 
+      <section aria-label={t("payment.summaryLabel")} className="grid grid-cols-3 gap-2">
+        <Tile label={t("payment.amount")} value={money(p.amount)} strong />
+        <Tile label={t("payment.allocated")} value={money(p.allocated)} />
+        <Tile label={t("payment.unallocated")} value={money(p.unallocated)} warn={toNumber(p.unallocated) > 0} />
+      </section>
+
       <Card className="grid gap-3 text-sm sm:grid-cols-3">
-        <Field label={t("payment.amount")} value={money(p.amount)} />
         <Field label={t("payment.method")} value={t(`method.${p.method}`)} />
         <Field label={t("payment.reference")} value={p.reference ?? "—"} dir="ltr" />
         {p.cheque_due_date ? <Field label={t("payment.chequeDueDate")} value={format.dateTime(dateOnly(p.cheque_due_date), CAIRO_DATE)} /> : null}
         <Field label={t("payment.receivedAt")} value={format.dateTime(new Date(p.received_at), CAIRO_DATE_TIME)} />
         <Field label={t("payment.collectedBy")} value={localizedName(locale, p.collected_by_name_en, p.collected_by_name_ar) || "—"} />
-        <Field label={t("payment.allocated")} value={money(p.allocated)} />
-        <Field label={t("payment.unallocated")} value={money(p.unallocated)} />
         {p.confirmed_at ? <Field label={t("payment.confirmedAt")} value={format.dateTime(new Date(p.confirmed_at), CAIRO_DATE_TIME)} /> : null}
       </Card>
 
       {actions.confirm || actions.reject || actions.reverse ? (
-        <section className="grid gap-3 sm:grid-cols-2" aria-label={t("payment.actions")}>
+        <Card className="grid gap-3 sm:grid-cols-2" role="region" aria-label={t("payment.actions")}>
+          <CardTitle className="text-base sm:col-span-2">{t("payment.actions")}</CardTitle>
           {actions.confirm ? (
             <ConfirmPaymentForm
               paymentId={p.id}
@@ -107,7 +119,7 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
           ) : null}
           {actions.reject ? <PaymentReasonForm paymentId={p.id} locale={locale} kind="reject" /> : null}
           {actions.reverse ? <PaymentReasonForm paymentId={p.id} locale={locale} kind="reverse" /> : null}
-        </section>
+        </Card>
       ) : null}
 
       {actions.allocate && open ? (
@@ -161,6 +173,15 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+function Tile({ label, value, strong = false, warn = false }: { label: string; value: string; strong?: boolean; warn?: boolean }) {
+  return (
+    <div className={cn("min-w-0 rounded-lg border bg-card p-3", warn && "border-warning/60 bg-warning/10")}>
+      <div className="truncate text-xs text-muted-foreground">{label}</div>
+      <div className={cn("truncate tabular-nums", strong ? "text-lg font-semibold" : "font-medium")}>{value}</div>
     </div>
   );
 }
