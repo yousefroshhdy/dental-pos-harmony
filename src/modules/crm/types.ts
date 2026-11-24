@@ -1,4 +1,5 @@
 import type { TranslatedCode } from "@/lib/errors";
+import type { VerificationStatus, VisitOutcome, VisitStatus } from "@/modules/field/types";
 
 /**
  * Row shapes of the api.v_* views used by the CRM screens
@@ -77,7 +78,11 @@ export interface CustomerRow {
   archived_at: string | null;
 }
 
-/** The columns the list screen needs (keeps the payload small on mobile). */
+/**
+ * api.v_customer_list (20261126000200): the columns the list screen needs (keeps the payload
+ * small on mobile) plus the data-gap and overdue flags. `balance`, `is_overdue` are NULL when
+ * masked (no crm.customer_balance.read for that customer).
+ */
 export type CustomerListRow = Pick<
   CustomerRow,
   | "id"
@@ -91,11 +96,51 @@ export type CustomerListRow = Pick<
   | "governorate_code"
   | "territory_name_en"
   | "territory_name_ar"
+  | "primary_rep_employee_id"
   | "primary_rep_name_en"
   | "primary_rep_name_ar"
   | "location_verified"
   | "latitude"
->;
+  | "balance"
+> & {
+  phone_missing: boolean;
+  location_missing: boolean;
+  is_overdue: boolean | null;
+};
+
+/** A visit on the customer page (api.v_visits). */
+export interface CustomerVisitRow {
+  id: string;
+  employee_name_en: string | null;
+  employee_name_ar: string | null;
+  planned_for: string | null;
+  status: VisitStatus;
+  check_in_at: string | null;
+  verification_status: VerificationStatus;
+  outcome: VisitOutcome | null;
+}
+
+/** An order on the customer page (api.v_orders). */
+export interface CustomerOrderRow {
+  id: string;
+  order_no: string | null;
+  status: string;
+  total: number | string | null;
+  created_at: string;
+  submitted_at: string | null;
+}
+
+/** An invoice on the customer page (api.v_invoices). */
+export interface CustomerInvoiceRow {
+  id: string;
+  invoice_no: string;
+  status: string;
+  issue_date: string;
+  due_date: string;
+  total: number | string;
+  open_amount: number | string;
+  is_overdue: boolean;
+}
 
 export interface TimelineRow {
   id: string;
@@ -204,6 +249,8 @@ export const CRM_ERROR_CODES = [
   "CUSTOMER_BLOCKED",
   "LOCATION_UNAVAILABLE",
   "LOCATION_INACCURATE",
+  /** A saved primary phone was cleared on the edit form (api.update_customer refuses it). */
+  "PHONE_REQUIRED",
 ] as const;
 export type CrmErrorCode = (typeof CRM_ERROR_CODES)[number];
 

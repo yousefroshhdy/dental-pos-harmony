@@ -16,7 +16,9 @@ import { FieldError } from "@/modules/field/components/field-error";
 import { PageBody } from "@/modules/field/components/layout-bits";
 import { CAIRO_DATE, CAIRO_DATE_TIME, METRES, dateOnly } from "@/modules/field/format";
 import { canCheckOut, canRequestException, localizedName, needsException, toMetres } from "@/modules/field/logic";
-import { getVisit } from "@/modules/field/queries";
+import { getCustomer, getVisit } from "@/modules/field/queries";
+import { AddPhoneForm } from "@/modules/crm/components/add-phone-form";
+import { GapBadges } from "@/modules/crm/components/gap-badges";
 import { ANOMALY_FLAGS } from "@/modules/field/types";
 
 type Params = Promise<{ locale: string; id: string }>;
@@ -52,6 +54,11 @@ export default async function VisitPage({ params, searchParams }: { params: Para
   if (!visit.data) notFound(); // missing, or outside the caller's scope (RLS)
   const v = visit.data;
 
+  // "Phone missing": the rep adds it while at the clinic (open visits only; RLS scopes the read).
+  const openVisit = v.status === "in_progress" || v.status === "planned";
+  const pick = openVisit && can(ctx, "crm.customer.update") ? await getCustomer(v.customer_id) : null;
+  const missingPhone = pick?.ok && pick.data && !pick.data.phone_primary ? pick.data : null;
+
   const distance = toMetres(v.check_in_distance_m);
   const accuracy = toMetres(v.check_in_accuracy_m);
   const mine = v.employee_id === ctx.employee?.id;
@@ -84,6 +91,13 @@ export default async function VisitPage({ params, searchParams }: { params: Para
           </p>
         ) : null}
       </div>
+
+      {missingPhone ? (
+        <Alert tone="warning" role="status" className="flex flex-wrap items-center justify-between gap-2">
+          <GapBadges gaps={["phone_missing"]} />
+          <AddPhoneForm customerId={missingPhone.id} version={missingPhone.version} customerName={missingPhone.display_name} variant="default" />
+        </Alert>
+      ) : null}
 
       {checkedOut && v.status === "completed" ? (
         <Alert tone="success" role="status">

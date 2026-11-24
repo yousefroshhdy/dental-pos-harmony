@@ -1,4 +1,5 @@
 import type { AppError } from "@/lib/errors";
+import type { CustomerListParams } from "./schemas";
 import {
   CRM_ERROR_CODES,
   OPPORTUNITY_STAGES,
@@ -126,6 +127,128 @@ export function listQuery(params: Record<string, string | number | null | undefi
 }
 
 // ---------------------------------------------------------------------------
+// Customer list (api.v_customer_list): filters, order, links
+// ---------------------------------------------------------------------------
+
+/** One condition on api.v_customer_list; queries.ts applies them to the PostgREST builder. */
+export type CustomerListFilter = { op: "eq"; column: string; value: string | boolean } | { op: "or"; value: string };
+
+/** URL filter keys in the order links are written (search first, sort last). */
+const FILTER_KEYS = ["stage", "territory", "specialty", "rep", "overdue", "phone", "location"] as const;
+export type CustomerFilterKey = (typeof FILTER_KEYS)[number];
+
+/** The list filters as column conditions. Every one is UX: RLS decides which rows exist. */
+export function customerListFilters(params: CustomerListParams): CustomerListFilter[] {
+  const out: CustomerListFilter[] = [];
+  const search = customerSearchFilter(params.q);
+  if (search) out.push({ op: "or", value: search });
+  if (params.stage) out.push({ op: "eq", column: "lifecycle_stage", value: params.stage });
+  if (params.territory) out.push({ op: "eq", column: "territory_id", value: params.territory });
+  if (params.specialty) out.push({ op: "eq", column: "specialty_code", value: params.specialty });
+  if (params.rep) out.push({ op: "eq", column: "primary_rep_employee_id", value: params.rep });
+  // A masked overdue flag is NULL, so "= true" never matches a customer whose balance is hidden.
+  if (params.overdue) out.push({ op: "eq", column: "is_overdue", value: true });
+  if (params.phone) out.push({ op: "eq", column: "phone_missing", value: true });
+  if (params.location) out.push({ op: "eq", column: "location_missing", value: true });
+  return out;
+}
+
+/** Columns the customers list can be sorted by (DataTable column ids = view columns). */
+export const CUSTOMER_SORTS = ["display_name", "customer_no", "created_at", "balance"] as const;
+
+/** ORDER BY for the list: a known column (default the name), then the id so pages never overlap. */
+export function customerListOrder(sorting: readonly { id: string; desc: boolean }[]): { column: string; ascending: boolean }[] {
+  const first = sorting[0];
+  const known = first && (CUSTOMER_SORTS as readonly string[]).includes(first.id) ? first : null;
+  return [
+    { column: known?.id ?? "display_name", ascending: known ? !known.desc : true },
+    { column: "id", ascending: true },
+  ];
+}
+
+/** The filters that are set (for the "clear filters" link and the active count). */
+export function activeCustomerFilters(params: CustomerListParams): CustomerFilterKey[] {
+  return FILTER_KEYS.filter((key) => Boolean(params[key]));
+}
+
+/**
+ * `/customers?…` with `change` applied (undefined clears one filter; `null` clears every
+ * filter but keeps the search). Always back to page 1; the sort is kept.
+ */
+export function customerListHref(
+  params: CustomerListParams & { sort?: string },
+  change: Partial<Record<CustomerFilterKey, string | undefined>> | null,
+): string {
+  const next: Record<string, string | undefined> = { q: params.q };
+  for (const key of FILTER_KEYS) next[key] = change === null ? undefined : key in change ? change[key] : params[key];
+  next.sort = params.sort;
+  return `/customers${listQuery(next)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Data gaps and contact links
+// ---------------------------------------------------------------------------
+
+/** Same rules as api.v_customer_data_gaps: no primary phone, no GPS pin. */
+export type CustomerGap = "phone_missing" | "location_missing";
+
+export function customerGaps(row: {
+  phone_primary: string | null;
+  latitude: number | string | null;
+  phone_missing?: boolean | null;
+  location_missing?: boolean | null;
+}): CustomerGap[] {
+  const phone = row.phone_missing ?? !row.phone_primary;
+  const location = row.location_missing ?? (row.latitude === null || row.latitude === undefined || row.latitude === "");
+  const gaps: CustomerGap[] = [];
+  if (phone) gaps.push("phone_missing");
+  if (location) gaps.push("location_missing");
+  return gaps;
+}
+
+/** `tel:` link for a stored (E.164) Egyptian number; null when there is none. */
+export function telHref(e164: string | null | undefined): string | null {
+  return e164 && EGYPT_E164.test(e164) ? `tel:${e164}` : null;
+}
+
+/** WhatsApp click-to-chat (wa.me takes the digits without "+"); Egyptian mobiles only. */
+export function whatsappHref(e164: string | null | undefined): string | null {
+  return e164 && /^\+201[0125][0-9]{8}$/.test(e164) ? `https://wa.me/${e164.slice(1)}` : null;
+}
+
+/** Clearing a saved primary phone (api.update_customer refuses it: "cannot be removed"). */
+export function phoneRemoved(current: string | null | undefined, input: string | null | undefined): boolean {
+  return Boolean(current) && (input ?? "").trim() === "";
+}
+
+// ---------------------------------------------------------------------------
+// Customer detail tabs
+// ---------------------------------------------------------------------------
+
+export const CUSTOMER_TABS = ["overview", "visits", "orders", "invoices", "activity"] as const;
+export type CustomerTab = (typeof CUSTOMER_TABS)[number];
+
+/** The read permission each tab's data needs (the views check it again through RLS). */
+const TAB_PERMISSION: Partial<Record<CustomerTab, string>> = {
+  visits: "field.visit.read",
+  orders: "sales.order.read",
+  invoices: "finance.invoice.read",
+};
+
+export function customerTabs(may: (permission: string) => boolean): CustomerTab[] {
+  return CUSTOMER_TABS.filter((tab) => {
+    const permission = TAB_PERMISSION[tab];
+    return permission === undefined || may(permission);
+  });
+}
+
+/** `?tab=` → a tab the user may open; anything else is the overview. */
+export function parseCustomerTab(raw: string | string[] | undefined, allowed: readonly CustomerTab[]): CustomerTab {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return allowed.find((tab) => tab === value) ?? "overview";
+}
+
+// ---------------------------------------------------------------------------
 // Customer lifecycle (mirror of crm.stage_transition_allowed)
 // ---------------------------------------------------------------------------
 
@@ -213,7 +336,8 @@ export interface CustomerInput {
   display_name?: string;
   kind: string;
   specialty_code?: string;
-  phone_primary: string;
+  /** Optional since Phase P (a customer may have no phone yet). */
+  phone_primary?: string;
   phone_secondary?: string;
   email?: string;
   address_line?: string;
@@ -247,8 +371,11 @@ export function customerChanges(current: CustomerRow, input: CustomerInput): Rec
   if (input.governorate_code.toUpperCase() !== blank(current.governorate_code).toUpperCase()) {
     changes.governorate_code = input.governorate_code.toUpperCase();
   }
-  if ((normalizeEgyptPhone(input.phone_primary) ?? input.phone_primary) !== (current.phone_primary ?? "")) {
-    changes.phone_primary = input.phone_primary;
+  // An empty phone is "no change": a missing phone stays missing, and removing a saved one is
+  // refused before this is called (phoneRemoved), as the command refuses it.
+  const primary = blank(input.phone_primary);
+  if (primary !== "" && (normalizeEgyptPhone(primary) ?? primary) !== (current.phone_primary ?? "")) {
+    changes.phone_primary = primary;
   }
   const secondary = input.phone_secondary ? (normalizeEgyptPhone(input.phone_secondary) ?? input.phone_secondary) : "";
   if (secondary !== (current.phone_secondary ?? "")) changes.phone_secondary = input.phone_secondary || null;

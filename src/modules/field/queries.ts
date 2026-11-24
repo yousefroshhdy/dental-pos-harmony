@@ -89,20 +89,18 @@ export async function listTasks(filters: TaskFilters, employeeId: string | null,
   );
 }
 
+const PICK_COLUMNS = "id, customer_no, display_name, city, location_verified, phone_primary, version";
+
 /** Customers in the caller's scope for an unplanned check-in (RLS limits rows to assigned/territory customers). */
 export async function searchCustomers(q: string): Promise<Result<CustomerPick[]>> {
   const term = sanitizeSearch(q);
   const db = await createClient();
-  let query = db.from("v_customers").select("id, customer_no, display_name, city, location_verified").is("archived_at", null);
+  let query = db.from("v_customers").select(PICK_COLUMNS).is("archived_at", null);
   if (term) query = query.or(`display_name.ilike.*${term}*,customer_no.ilike.*${term}*`);
   return run("v_customers", query.order("display_name").limit(20), []);
 }
 
 export async function getCustomer(customerId: string): Promise<Result<CustomerPick | null>> {
   const db = await createClient();
-  return run(
-    "v_customers",
-    db.from("v_customers").select("id, customer_no, display_name, city, location_verified").eq("id", customerId).maybeSingle(),
-    null,
-  );
+  return run("v_customers", db.from("v_customers").select(PICK_COLUMNS).eq("id", customerId).maybeSingle(), null);
 }
