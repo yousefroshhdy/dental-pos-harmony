@@ -1,0 +1,194 @@
+{
+  "nav": {
+    "map": "Customers map",
+    "team": "Team map",
+    "proposals": "Pin proposals"
+  },
+  "tabs": {
+    "label": "Maps",
+    "customers": "Customers",
+    "team": "Team",
+    "proposals": "Pin proposals"
+  },
+  "map": {
+    "noKeyTitle": "Map key not configured",
+    "noKeyBody": "The Google Maps browser key (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) is not set, so no map is loaded. The lists on this page still work.",
+    "loading": "Loading the map…",
+    "errorTitle": "The map could not load",
+    "errorBody": "Check the connection and reload the page. The lists on this page still work.",
+    "rejectedTitle": "Google rejected the map key",
+    "rejectedBody": "The key may not allow this website, or the Maps JavaScript API is not enabled. Ask the owner to check the key in Google Cloud.",
+    "cluster": "{count} customers here. Zoom in to see them.",
+    "searchAddress": "Search for an address",
+    "searchFailed": "The address search is not available right now. Drop the pin on the map instead."
+  },
+  "customers": {
+    "title": "Customers map",
+    "mapLabel": "Map of customers",
+    "summary": "On the map: {pinned} · Without a location: {unpinned}",
+    "truncated": "Only the first {limit} customers are on the map. Narrow the filters to see the rest.",
+    "empty": "No customers yet.",
+    "emptyFiltered": "No customers match these filters.",
+    "unpinnedHint": "{count} matching customers have no location yet. A rep's first check-in proposes one, or an office user sets it on the customer page.",
+    "toCustomers": "Open the customer list",
+    "listTitle": "Customers on the map ({count})",
+    "overdueBadge": "Overdue",
+    "filters": {
+      "rep": "Rep",
+      "territory": "Territory",
+      "stage": "Stage",
+      "lastVisit": "Last visit",
+      "all": "All",
+      "anyVisit": "Any time",
+      "visit": {
+        "30": "Not visited in 30 days",
+        "60": "Not visited in 60 days",
+        "90": "Not visited in 90 days",
+        "never": "Never visited"
+      },
+      "overdue": "Overdue payments only",
+      "apply": "Show",
+      "clear": "Clear filters"
+    },
+    "legend": {
+      "label": "Pin colours",
+      "overdue": "Overdue payment",
+      "active": "Active",
+      "prospect": "Prospect",
+      "lead": "Lead",
+      "inactive": "Dormant, lost or blocked"
+    },
+    "info": {
+      "rep": "Rep: {name}",
+      "noRep": "No rep assigned",
+      "overdue": "Overdue: {days} days",
+      "lastVisit": "Last visit: {date}",
+      "neverVisited": "Never visited",
+      "unverified": "Location not verified",
+      "open": "Open customer",
+      "directions": "Directions"
+    }
+  },
+  "team": {
+    "title": "Team map",
+    "explain": "Where each rep was last seen today, only while their working day is open. A rep who has ended the day, or not started it, is not shown.",
+    "empty": "No rep in your team has an open working day right now.",
+    "mapLabel": "Map of reps on shift",
+    "unnamed": "Rep",
+    "lastPoint": "Last point at {time}",
+    "startPoint": "Start of the day (no point yet)",
+    "minutesAgo": "{minutes} min ago",
+    "accuracy": "Accuracy ± {metres} m",
+    "openDay": "Open the day"
+  },
+  "proposals": {
+    "title": "Pin proposals",
+    "explain": "When a rep checks in at a clinic that has no location, their check-in position is proposed here. Approve it to make it the clinic's verified pin, or reject it with a reason.",
+    "viewLabel": "Which proposals",
+    "pending": "Waiting",
+    "decidedTab": "Decided",
+    "emptyPending": "No proposal is waiting.",
+    "emptyDecided": "No decided proposals yet.",
+    "mapLabel": "Map of proposed clinic pins",
+    "by": "Proposed by {name}",
+    "openInMaps": "Open in Google Maps",
+    "proposedBy": "{name} · check-in at {time}",
+    "accuracy": "Accuracy ± {metres} m",
+    "accuracyUnknown": "Accuracy unknown",
+    "status": {
+      "pending": "Waiting",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "superseded": "Replaced"
+    },
+    "decidedBy": "Decided by {name} at {time}",
+    "supersededNote": "Replaced: the clinic got its location another way.",
+    "decided": "Done. The decision is saved.",
+    "inaccurateHint": "This position is not accurate enough to become the clinic pin. Reject it, or set the pin on the customer page.",
+    "reason": "Reason for rejecting",
+    "confirmReject": "Reject",
+    "cancel": "Cancel",
+    "approve": "Approve as clinic pin",
+    "reject": "Reject"
+  },
+  "visitFlags": {
+    "clock_skew": "Device clock differs",
+    "impossible_travel": "Impossible travel",
+    "duplicate_fix": "Repeated position",
+    "late_sync": "Sent late"
+  },
+  "customer": {
+    "title": "Map",
+    "mapLabel": "Map of {name}",
+    "clinicPin": "Clinic location",
+    "proposal": "Proposed location",
+    "proposalBy": "Proposed by {name}",
+    "you": "You are here",
+    "accuracy": "Accuracy ± {metres} m",
+    "newPin": "New pin",
+    "noPin": "This clinic has no location yet.",
+    "directions": "Directions",
+    "locating": "Finding you…",
+    "distance": "Distance from me",
+    "move": "Move the pin",
+    "set": "Set the location",
+    "distanceIs": "{km} km from you (your position ± {metres} m).",
+    "geo": {
+      "denied": "Location permission is off. Allow it in the browser to see the distance.",
+      "unavailable": "Your position is not available right now.",
+      "timeout": "Finding your position took too long. Try again.",
+      "unsupported": "This browser cannot share its position."
+    },
+    "saved": "The clinic location is saved and verified.",
+    "editHint": "Search for the address, or tap the map to drop the pin. Drag the pin to adjust it.",
+    "editNoKey": "The map key is not configured, so the pin cannot be placed on a map. While at the clinic, use \"Use my current location\" in the clinic location card.",
+    "outsideEgypt": "The pin must be inside Egypt.",
+    "saveMove": "Save the new location",
+    "save": "Save the location",
+    "cancel": "Cancel",
+    "pendingTitle": "Proposed locations ({count})",
+    "proposalLine": "{name} · check-in at {time} · ± {metres} m",
+    "awaiting": "Waiting for a manager to approve."
+  },
+  "day": {
+    "title": "Route map",
+    "fixesUnavailable": "Visit check-ins could not be loaded; the route is shown without them.",
+    "empty": "Nothing to draw for this day: no points and no visit check-ins.",
+    "legend": "Stops and visits in order",
+    "stopShort": "Stop",
+    "stopFlaggedShort": "Stop away from customers",
+    "visitUnnamed": "Visit",
+    "checkIn": "check-in {time}",
+    "gapsNote": "Dashed lines: {count} gaps with no points (straight line, not the real path).",
+    "visitsWithoutFix": "{count} visits of the day have no check-in position and are not on the map.",
+    "mapLabel": "Map of the day's route",
+    "start": "Start of the day",
+    "end": "End of the day",
+    "stopTitle": "Stop {n}",
+    "stopFlagged": "Stop {n}, away from visits and customers",
+    "range": "{from} to {to}",
+    "minutes": "{minutes} min",
+    "visitTitle": "{n}. {name}",
+    "verification": {
+      "pending": "Not checked yet",
+      "verified": "Verified at the clinic",
+      "out_of_range": "Outside the clinic radius",
+      "low_accuracy": "Position not accurate",
+      "no_customer_location": "Clinic had no location",
+      "no_device_location": "No device position",
+      "exception_requested": "Exception requested",
+      "exception_approved": "Exception approved",
+      "exception_rejected": "Exception rejected"
+    }
+  },
+  "errors": {
+    "ALREADY_PINNED": "This clinic already has a location. Move the pin on the customer page instead.",
+    "LOCATION_INACCURATE": "This position is not accurate enough to become the clinic pin.",
+    "OUTSIDE_EGYPT": "The location must be inside Egypt."
+  },
+  "routeError": {
+    "title": "This map could not be shown",
+    "body": "Something went wrong while loading it. Try again.",
+    "retry": "Try again"
+  }
+}

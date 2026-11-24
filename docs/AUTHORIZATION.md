@@ -277,6 +277,9 @@ Approval limits are **data**, not code:
 | `api.request_invoice_write_off` | `finance.collection.manage` with the customer in scope; decided through `finance.write_off` by `wf.decide.write_off` (no self-approval) | `WRITE_OFF_PENDING`, `EXCEEDS_INVOICE_OPEN_AMOUNT` |
 | `api.adjust_commission` | `perf.commission.adjust` with scope over the employee; never for yourself; decided through `perf.commission_adjustment` | `SELF_ADJUSTMENT` |
 | `api.import_*` | `admin.import.run` at scope all plus the posting permission of the kind (customers `crm.customer.create`, products `catalog.product.manage`, customer prices `catalog.price.manage`, opening stock `inventory.receipt.post`, opening AR none) at scope all | `PERMISSION_DENIED` |
+| `api.decide_customer_location_proposal` | `crm.customer_location.verify` with the customer in scope (the same right that sets a location directly, so self-approval by a verifier adds no power). A rep's own check-in only **proposes** (rule of 2026-10-29 kept). Approve only while the customer has no location and the fix is within `field.max_accuracy_m`. | `PERMISSION_DENIED`, `ALREADY_PINNED`, `LOCATION_INACCURATE`, `REASON_REQUIRED`, `INVALID_STATE` |
+| `api.v_team_last_location` | own, or `field.tracking.read` scope (same RLS as the tracking tables); open shifts only (D-14) | no rows |
+| `api.tracking_day_visit_fixes` | the tracking day's scope; fixes only with `field.location.read` over the rep (or own) | `PERMISSION_DENIED`; empty set without `field.location.read` |
 
 ## 9. Admin console (owner/admin capabilities)
 
