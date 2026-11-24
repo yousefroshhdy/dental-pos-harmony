@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { PageHeader } from "@/components/ui/page-header";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
@@ -43,9 +44,7 @@ export default async function IssueInvoicePage({
     const queue = await listInvoiceableOrders();
     return (
       <div className="space-y-4">
-        <BackLink href="/finance/invoices" label={t("issue.back")} />
-        <h1 className="text-2xl font-semibold">{t("issue.queueTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("issue.queueHelp")}</p>
+        <PageHeader eyebrow={<BackLink href="/finance/invoices" label={t("issue.back")} />} title={t("issue.queueTitle")} description={t("issue.queueHelp")} />
         {!queue.ok ? (
           <FinanceError code={financeErrorCode(queue.error)} requestId={queue.error.requestId} />
         ) : queue.data.length === 0 ? (
@@ -89,8 +88,7 @@ export default async function IssueInvoicePage({
 
   return (
     <div className="space-y-6 pb-6">
-      <BackLink href="/finance/invoices/new" label={t("issue.backToQueue")} />
-      <h1 className="text-2xl font-semibold">{t("issue.title")}</h1>
+      <PageHeader eyebrow={<BackLink href="/finance/invoices/new" label={t("issue.backToQueue")} />} title={t("issue.title")} />
 
       {!order.data ? (
         <Alert tone="info" className="space-y-2">

@@ -26,7 +26,9 @@
     "apply": "Apply",
     "reset": "Clear",
     "actions": "Actions",
-    "notSellable": "Not sellable"
+    "notSellable": "Not sellable",
+    "loading": "Loading stock…",
+    "retry": "Try again"
   },
   "kinds": {
     "main": "Main",
@@ -72,7 +74,10 @@
     "earliestExpiry": "Earliest expiry",
     "flags": "Alerts",
     "truncated": "Showing the first {n} rows. Narrow the filters to see the rest.",
-    "export": "Export stock (CSV)"
+    "export": "Export stock (CSV)",
+    "searchPlaceholder": "SKU, product or brand",
+    "productSearch": "Search products",
+    "noProduct": "No product with this name."
   },
   "detail": {
     "metaTitle": "Stock by lot",
@@ -106,7 +111,13 @@
     "reverses": "Reverses {ref}",
     "approved": "Approved request {ref}",
     "newest": "Newest",
-    "older": "Older movements"
+    "older": "Older movements",
+    "searchPlaceholder": "SKU, lot number or reason",
+    "skuSearch": "Search by SKU or name",
+    "noSku": "No SKU matches.",
+    "anyDate": "Any date",
+    "clearDate": "Clear date",
+    "adjustmentsLink": "Stock adjustments"
   },
   "movementTypes": {
     "receipt": "Receipt",
@@ -141,7 +152,14 @@
     "intro": "Supplier deliveries. A draft moves no stock until it is posted.",
     "new": "New receipt",
     "empty": "No goods receipts yet.",
-    "lines": "Lines: {lines} · units: {units}"
+    "lines": "Lines: {lines} · units: {units}",
+    "searchPlaceholder": "Receipt number, supplier or shipment ref",
+    "columns": {
+      "number": "Receipt no.",
+      "supplier": "Supplier",
+      "units": "Lines and units",
+      "date": "Date"
+    }
   },
   "receiptStatus": {
     "draft": "Draft",
@@ -222,7 +240,14 @@
     "receiveConfirm": "Confirm: received in full",
     "receiveHint": "{units} units are added to {to}.",
     "receivedOk": "Received. Destination stock updated.",
-    "releaseNeeded": "Receiving this transfer releases quarantined stock and needs the quarantine release permission. Ask your inventory manager."
+    "releaseNeeded": "Receiving this transfer releases quarantined stock and needs the quarantine release permission. Ask your inventory manager.",
+    "searchPlaceholder": "Transfer number",
+    "columns": {
+      "number": "Transfer no.",
+      "route": "From → to",
+      "items": "Items",
+      "dates": "Dates"
+    }
   },
   "transferStatus": {
     "draft": "Draft",
@@ -301,5 +326,11 @@
     "APPROVAL_REQUIRED": "This needs approval first.",
     "NO_LINES": "Add at least one line.",
     "SAME_WAREHOUSE": "The source and destination must be different warehouses."
+  },
+  "adjustments": {
+    "title": "Stock adjustments",
+    "intro": "Stock movements that came from adjustments: count corrections, damage, expiry and stock found.",
+    "new": "New adjustment",
+    "appendOnly": "An adjustment is a new movement in the ledger; no movement is edited or deleted. Large adjustments need approval."
   }
 }

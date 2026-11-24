@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
+import { PackageSearchIcon } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
@@ -40,15 +43,13 @@ export default async function NewReturnPage({
     const orders = await listReturnableOrders();
     return (
       <div className="space-y-4">
-        <BackLink href="/returns" label={t("request.back")} />
-        <h1 className="text-2xl font-semibold">{t("request.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("request.pickOrder")}</p>
+        <PageHeader eyebrow={<BackLink href="/returns" label={t("request.back")} />} title={t("request.title")} description={t("request.pickOrder")} />
         {!orders.ok ? (
           <ReturnsError code={returnErrorCode(orders.error)} requestId={orders.error.requestId} />
         ) : orders.data.length === 0 ? (
-          <Card className="text-sm text-muted-foreground">{t("request.noOrders")}</Card>
+          <EmptyState icon={<PackageSearchIcon aria-hidden="true" />} title={t("request.noOrders")} />
         ) : (
-          <ul className="space-y-2">
+          <ul className="grid gap-2 md:grid-cols-2">
             {orders.data.map((o) => (
               <li key={o.id}>
                 <Link
@@ -64,7 +65,7 @@ export default async function NewReturnPage({
                       {format.dateTime(new Date(o.submitted_at ?? o.created_at), CAIRO_DATE_TIME)}
                     </span>
                   </span>
-                  <span className="text-sm font-semibold whitespace-nowrap sm:text-end">{format.number(toNumber(o.total), "egp")}</span>
+                  <span className="text-sm font-semibold whitespace-nowrap tabular-nums sm:text-end">{format.number(toNumber(o.total), "egp")}</span>
                 </Link>
               </li>
             ))}
@@ -87,8 +88,7 @@ export default async function NewReturnPage({
 
   return (
     <div className="space-y-4 pb-6">
-      <BackLink href={`/orders/${o.id}`} label={t("request.backToOrder")} />
-      <h1 className="text-2xl font-semibold">{t("request.title")}</h1>
+      <PageHeader eyebrow={<BackLink href={`/orders/${o.id}`} label={t("request.backToOrder")} />} title={t("request.title")} />
 
       <Card className="grid gap-3 text-sm sm:grid-cols-3">
         <Field label={t("detail.order")} value={<span dir="ltr">{o.order_no ?? "—"}</span>} />

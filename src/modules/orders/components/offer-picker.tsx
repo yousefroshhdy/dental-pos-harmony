@@ -3,10 +3,12 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge, Card, CardTitle, Input, Label } from "@/components/ui/primitives";
+import { GiftIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { Badge, Input, Label } from "@/components/ui/primitives";
 import { loadEligibleOffers } from "../actions";
 import { localizedName, MAX_QUANTITY, toNumber, type OrderErrorCode } from "../logic";
 import type { BuilderOffer, OfferOption } from "../types";
+import { Section } from "./builder-section";
 import { OrderError } from "./order-error";
 
 /**
@@ -67,21 +69,23 @@ export function OfferPicker({
   };
 
   return (
-    <Card className="space-y-3">
-      <CardTitle>{t("title")}</CardTitle>
+    <Section step={2} title={t("title")}>
       <p className="text-xs text-muted-foreground">{t("intro")}</p>
 
       {offers.length > 0 ? (
-        <ul className="divide-y" aria-label={t("chosen")}>
+        <ul className="space-y-2" aria-label={t("chosen")}>
           {offers.map((o) => {
             const option = optionOf(o.offer_id);
             const invalid = !(Number.isInteger(o.packages) && o.packages >= 1 && o.packages <= MAX_QUANTITY);
             const qtyId = `${ids}-pk-${o.offer_id}`;
             return (
-              <li key={o.offer_id} className="space-y-2 py-3">
+              <li key={o.offer_id} className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="min-w-0 flex-1 basis-48">
-                    <p className="font-medium break-words">{option ? localizedName(locale, option.name_en, option.name_ar) : o.name || o.code}</p>
+                    <p className="flex items-center gap-1.5 font-medium break-words">
+                      <GiftIcon aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                      {option ? localizedName(locale, option.name_en, option.name_ar) : o.name || o.code}
+                    </p>
                     <p dir="ltr" className="text-xs text-muted-foreground text-start">
                       {o.code}
                     </p>
@@ -98,10 +102,18 @@ export function OfferPicker({
                       value={o.packages === 0 ? "" : o.packages}
                       onChange={(e) => setPackages(o.offer_id, e.target.value)}
                       aria-invalid={invalid || undefined}
+                      className="text-center tabular-nums"
                     />
                   </div>
-                  <Button type="button" variant="ghost" onClick={() => onChange(offers.filter((x) => x.offer_id !== o.offer_id))} aria-label={t("removeOffer", { code: o.code })}>
-                    {t("remove")}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onChange(offers.filter((x) => x.offer_id !== o.offer_id))}
+                    aria-label={t("removeOffer", { code: o.code })}
+                    title={t("remove")}
+                  >
+                    <Trash2Icon aria-hidden="true" />
                   </Button>
                 </div>
                 {option ? <OfferItems option={option} packages={Math.max(o.packages, 1)} money={money} /> : <p className="text-xs text-muted-foreground">{t("itemsOnServer")}</p>}
@@ -122,11 +134,11 @@ export function OfferPicker({
       ) : options.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("none")}</p>
       ) : (
-        <ul className="divide-y" aria-label={t("available")}>
+        <ul className="grid gap-2 sm:grid-cols-2" aria-label={t("available")}>
           {options
             .filter((o) => !offers.some((x) => x.offer_id === o.offer_id))
             .map((o) => (
-              <li key={o.offer_id} className="flex flex-wrap items-center gap-3 py-2">
+              <li key={o.offer_id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
                 <div className="min-w-0 flex-1 basis-48">
                   <p className="font-medium break-words">{localizedName(locale, o.name_en, o.name_ar)}</p>
                   <p className="text-xs text-muted-foreground break-words">
@@ -137,20 +149,21 @@ export function OfferPicker({
                   </p>
                 </div>
                 <Button type="button" variant="outline" onClick={() => add(o)} aria-label={t("addOffer", { code: o.code })}>
+                  <PlusIcon aria-hidden="true" />
                   {t("add")}
                 </Button>
               </li>
             ))}
         </ul>
       )}
-    </Card>
+    </Section>
   );
 }
 
 function OfferItems({ option, packages, money }: { option: OfferOption; packages: number; money: (v: number | string | null | undefined) => string }) {
   const t = useTranslations("orders.offers");
   return (
-    <ul className="space-y-1 rounded-md bg-muted/50 p-2 text-xs">
+    <ul className="space-y-1 rounded-md bg-card/70 p-2 text-xs">
       {option.items.map((i) => (
         <li key={i.line_no} className="flex flex-wrap items-center gap-2">
           <span className="font-medium">{i.quantity * packages} ×</span>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { Card } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { VatRateForm } from "@/modules/catalog/components/vat-rate-form";
@@ -36,13 +37,15 @@ export default async function VatPage({ params }: { params: Params }) {
 
   return (
     <div className="space-y-6">
-      <Link href="/offers" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("back")}
-      </Link>
-      <div>
-        <h1 className="text-2xl font-semibold">{t("vatTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("vatIntro")}</p>
-      </div>
+      <PageHeader
+        eyebrow={
+          <Link href="/offers" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {t("back")}
+          </Link>
+        }
+        title={t("vatTitle")}
+        description={t("vatIntro")}
+      />
       {!products.ok ? (
         <OfferError code={offerErrorCode(products.error)} requestId={products.error.requestId} />
       ) : products.data.length === 0 ? (

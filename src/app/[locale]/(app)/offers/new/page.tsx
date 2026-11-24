@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { OfferForm } from "@/modules/offers/components/offer-form";
@@ -23,10 +24,14 @@ export default async function NewOfferPage({ params }: { params: Params }) {
   const t = await getTranslations("orders.offerAdmin");
   return (
     <div className="space-y-4">
-      <Link href="/offers" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("back")}
-      </Link>
-      <h1 className="text-2xl font-semibold">{t("newTitle")}</h1>
+      <PageHeader
+        eyebrow={
+          <Link href="/offers" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {t("back")}
+          </Link>
+        }
+        title={t("newTitle")}
+      />
       <OfferForm
         initial={{
           offerId: crypto.randomUUID(),

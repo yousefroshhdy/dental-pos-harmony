@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge, Card, Table, Td, Th } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
@@ -48,18 +49,23 @@ export default async function ReceiptPage({ params }: { params: Params }) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      <Link href="/inventory/receipts" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("back")}
-      </Link>
-
       <div className="space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold" dir="ltr">
-            {r.receipt_no}
-          </h1>
-          <Badge tone={receiptStatusTone(r.status)}>{tStatus(r.status)}</Badge>
-        </div>
-        <p className="text-sm">{r.supplier}</p>
+        <PageHeader
+          eyebrow={
+            <Link href="/inventory/receipts" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+              {t("back")}
+            </Link>
+          }
+          title={
+            <span className="flex flex-wrap items-center gap-2">
+              <span dir="ltr">{r.receipt_no}</span>
+              <Badge tone={receiptStatusTone(r.status)} className="text-sm">
+                {tStatus(r.status)}
+              </Badge>
+            </span>
+          }
+          description={r.supplier}
+        />
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span>
             {r.warehouse_code} · {r.warehouse_name}

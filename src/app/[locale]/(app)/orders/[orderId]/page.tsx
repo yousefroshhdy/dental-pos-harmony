@@ -4,15 +4,20 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
 import { buttonVariants } from "@/components/ui/button";
-import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
+import { Alert, Badge, Card } from "@/components/ui/primitives";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@/i18n/navigation";
+import { directionOf } from "@/i18n/routing";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { approveOrder, cancelOrder, fulfilOrder, rejectOrder, reserveOrder, submitOrder } from "@/modules/orders/actions";
 import { CommandForm, FulfilForm, OnlineOnlyCommandForm, ReasonForm, ReserveForm } from "@/modules/orders/components/order-action-forms";
+import { OrderActionsPanel } from "@/modules/orders/components/order-actions-panel";
 import { OrderError } from "@/modules/orders/components/order-error";
 import { PricedLinesTable, PricedTotals } from "@/modules/orders/components/order-pricing";
 import { CAIRO_DATE_TIME } from "@/modules/orders/format";
+import { hasBottomNav } from "@/modules/orders/kit/bottom-nav";
 import {
   approvalReasons,
   availableActions,
@@ -72,20 +77,28 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   const anyAction =
     actions.edit || actions.submit || actions.approve || actions.reject || actions.reserve || actions.fulfil || actions.cancel !== null;
 
+  const canInvoice = ["fulfilled", "partially_fulfilled", "invoiced"].includes(o.status) && can(ctx, "finance.invoice.issue");
+  const canReturn = ["partially_fulfilled", "fulfilled", "invoiced", "closed"].includes(o.status) && can(ctx, "sales.return.request");
+  const showPanel = anyAction || canInvoice || canReturn;
+
   return (
     <div className="space-y-6 pb-6">
-      <div className="space-y-2">
-        <Link href="/orders" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("detail.back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">
+      <PageHeader
+        eyebrow={
+          <Link href="/orders" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {t("detail.back")}
+          </Link>
+        }
+        title={
+          <span className="flex flex-wrap items-center gap-2">
             <span dir="ltr">{o.order_no ?? t("draftNo")}</span>
-          </h1>
-          <Badge tone={statusTone(o.status)}>{t(`status.${o.status}`)}</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">{[o.customer_name, o.employee_name].filter(Boolean).join(" · ")}</p>
-      </div>
+            <Badge tone={statusTone(o.status)} className="text-sm">
+              {t(`status.${o.status}`)}
+            </Badge>
+          </span>
+        }
+        description={[o.customer_name, o.employee_name].filter(Boolean).join(" · ")}
+      />
 
       {/* Outcome of the last step, read back from the database (never from the URL). */}
       {sp.submitted && o.status === "submitted" ? (
@@ -128,73 +141,100 @@ export default async function OrderDetailPage({ params, searchParams }: { params
         </Alert>
       ) : null}
 
-      <Card className="grid gap-3 text-sm sm:grid-cols-2">
-        <Field label={t("detail.customer")} value={o.customer_name ?? "—"} />
-        <Field label={t("detail.rep")} value={o.employee_name ?? "—"} />
-        <Field label={t("detail.createdAt")} value={format.dateTime(new Date(o.created_at), CAIRO_DATE_TIME)} />
-        <Field label={t("detail.submittedAt")} value={o.submitted_at ? format.dateTime(new Date(o.submitted_at), CAIRO_DATE_TIME) : "—"} />
-        <Field label={t("detail.paymentTerms")} value={t("detail.days", { count: o.payment_terms_days })} />
-        {o.notes ? <Field label={t("detail.notes")} value={o.notes} /> : null}
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <Tabs defaultValue="lines" dir={directionOf(locale)} className="min-w-0">
+          <TabsList aria-label={t("detail.tabsLabel")}>
+            <TabsTrigger value="lines">{t("detail.tabs.lines", { count: lines.data.length })}</TabsTrigger>
+            <TabsTrigger value="details">{t("detail.tabs.details")}</TabsTrigger>
+            <TabsTrigger value="history">{t("detail.tabs.history")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="lines" className="space-y-3">
+            <h2 className="sr-only">{t("detail.lines")}</h2>
+            {lines.data.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("detail.noLines")}</p>
+            ) : (
+              <PricedLinesTable
+                lines={lines.data.map((l) => ({
+                  key: l.order_item_id,
+                  sku: l.sku,
+                  name: l.variant_name,
+                  quantity: l.quantity,
+                  is_bonus: l.is_bonus,
+                  offer_code: l.offer_code,
+                  list_price: l.list_price,
+                  applied_discount_pct: l.applied_discount_pct,
+                  line_subtotal: l.line_subtotal,
+                  line_discount: l.line_discount,
+                  invoice_discount_share: l.invoice_discount_share,
+                  requested_net_price: l.requested_net_price,
+                  tax_rate_pct: l.tax_rate_pct,
+                  line_tax: l.line_tax,
+                  line_total: l.line_total,
+                  extra: showStock ? [l.reserved_qty, l.fulfilled_qty] : undefined,
+                }))}
+                extraHeads={showStock ? [t("detail.reserved"), t("detail.fulfilled")] : []}
+              />
+            )}
 
-      <section className="space-y-3" aria-labelledby="order-lines">
-        <CardTitle id="order-lines">{t("detail.lines")}</CardTitle>
-        {lines.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("detail.noLines")}</p>
-        ) : (
-          <PricedLinesTable
-            lines={lines.data.map((l) => ({
-              key: l.order_item_id,
-              sku: l.sku,
-              name: l.variant_name,
-              quantity: l.quantity,
-              is_bonus: l.is_bonus,
-              offer_code: l.offer_code,
-              list_price: l.list_price,
-              applied_discount_pct: l.applied_discount_pct,
-              line_subtotal: l.line_subtotal,
-              line_discount: l.line_discount,
-              invoice_discount_share: l.invoice_discount_share,
-              requested_net_price: l.requested_net_price,
-              tax_rate_pct: l.tax_rate_pct,
-              line_tax: l.line_tax,
-              line_total: l.line_total,
-              extra: showStock ? [l.reserved_qty, l.fulfilled_qty] : undefined,
-            }))}
-            extraHeads={showStock ? [t("detail.reserved"), t("detail.fulfilled")] : []}
-          />
-        )}
+            <PricedTotals
+              subtotal={o.subtotal}
+              discountTotal={o.discount_total}
+              taxTotal={o.tax_total}
+              total={o.total}
+              invoiceDiscount={lines.data.reduce((sum, l) => sum + toNumber(l.invoice_discount_share), 0)}
+              lines={lines.data}
+              hint={isDraft ? t("detail.indicativeHint") : t("detail.serverPricedHint")}
+            />
+          </TabsContent>
+          <TabsContent value="details">
+            <Card className="grid gap-3 text-sm sm:grid-cols-2">
+              <Field label={t("detail.customer")} value={o.customer_name ?? "—"} />
+              <Field label={t("detail.rep")} value={o.employee_name ?? "—"} />
+              <Field label={t("detail.createdAt")} value={format.dateTime(new Date(o.created_at), CAIRO_DATE_TIME)} />
+              <Field label={t("detail.submittedAt")} value={o.submitted_at ? format.dateTime(new Date(o.submitted_at), CAIRO_DATE_TIME) : "—"} />
+              <Field label={t("detail.paymentTerms")} value={t("detail.days", { count: o.payment_terms_days })} />
+              {o.notes ? <Field label={t("detail.notes")} value={o.notes} /> : null}
+            </Card>
+          </TabsContent>
+          <TabsContent value="history" className="space-y-3">
+            <h2 className="sr-only">{t("detail.history")}</h2>
+            {!history.ok ? (
+              <OrderError code={orderErrorCode(history.error)} requestId={history.error.requestId} />
+            ) : historyRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("detail.noHistory")}</p>
+            ) : (
+              <ol className="space-y-2">
+                {historyRows.map((h) => (
+                  <li key={h.id} className="rounded-md border bg-card p-3 text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={statusTone(h.to_status)}>{t(`status.${h.to_status}`)}</Badge>
+                      <span className="text-xs text-muted-foreground">{format.dateTime(new Date(h.changed_at), CAIRO_DATE_TIME)}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {h.is_mine ? t("detail.byYou") : localizedName(locale, h.changed_by_name_en, h.changed_by_name_ar) || t("detail.bySystem")}
+                    </p>
+                    <HistoryReasonText reason={describeHistoryReason(h)} t={t} />
+                  </li>
+                ))}
+              </ol>
+            )}
+          </TabsContent>
+        </Tabs>
 
-        <PricedTotals
-          subtotal={o.subtotal}
-          discountTotal={o.discount_total}
-          taxTotal={o.tax_total}
-          total={o.total}
-          invoiceDiscount={lines.data.reduce((sum, l) => sum + toNumber(l.invoice_discount_share), 0)}
-          lines={lines.data}
-          hint={isDraft ? t("detail.indicativeHint") : t("detail.serverPricedHint")}
-        />
-      </section>
-
-      {["fulfilled", "partially_fulfilled", "invoiced"].includes(o.status) && can(ctx, "finance.invoice.issue") ? (
-        <div>
-          <Link href={`/finance/invoices/new?order=${o.id}`} className={buttonVariants({ variant: "outline" })}>
-            {t("detail.issueInvoice")}
-          </Link>
-        </div>
-      ) : null}
-      {["partially_fulfilled", "fulfilled", "invoiced", "closed"].includes(o.status) && can(ctx, "sales.return.request") ? (
-        <div>
-          <Link href={`/returns/new?order=${o.id}`} className={buttonVariants({ variant: "outline" })}>
-            {t("detail.requestReturn")}
-          </Link>
-        </div>
-      ) : null}
-
-      {anyAction ? (
-        <Card className="space-y-4">
-          <CardTitle>{t("detail.actions")}</CardTitle>
-          <div className="grid gap-3 sm:grid-cols-2">
+        {showPanel ? (
+          <OrderActionsPanel
+            title={t("detail.actions")}
+            description={t("detail.actionsHint")}
+            openLabel={t("detail.actionsOpen")}
+            closeLabel={t("detail.close")}
+            aboveBottomNav={hasBottomNav(ctx)}
+            summary={
+              <>
+                <span className="block text-xs text-muted-foreground">{t("pricing.total")}</span>
+                <span className="font-semibold tabular-nums">{format.number(toNumber(o.total), "egp")}</span>
+              </>
+            }
+          >
             {actions.submit ? (
               <OnlineOnlyCommandForm
                 action={submitOrder}
@@ -248,33 +288,19 @@ export default async function OrderDetailPage({ params, searchParams }: { params
                 requestedSuccess={t("actions.cancelRequested")}
               />
             ) : null}
-          </div>
-        </Card>
-      ) : null}
-
-      <section className="space-y-3" aria-labelledby="order-history">
-        <CardTitle id="order-history">{t("detail.history")}</CardTitle>
-        {!history.ok ? (
-          <OrderError code={orderErrorCode(history.error)} requestId={history.error.requestId} />
-        ) : historyRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("detail.noHistory")}</p>
-        ) : (
-          <ol className="space-y-2">
-            {historyRows.map((h) => (
-              <li key={h.id} className="rounded-md border bg-card p-3 text-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={statusTone(h.to_status)}>{t(`status.${h.to_status}`)}</Badge>
-                  <span className="text-xs text-muted-foreground">{format.dateTime(new Date(h.changed_at), CAIRO_DATE_TIME)}</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {h.is_mine ? t("detail.byYou") : localizedName(locale, h.changed_by_name_en, h.changed_by_name_ar) || t("detail.bySystem")}
-                </p>
-                <HistoryReasonText reason={describeHistoryReason(h)} t={t} />
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+            {canInvoice ? (
+              <Link href={`/finance/invoices/new?order=${o.id}`} className={buttonVariants({ variant: "outline" })}>
+                {t("detail.issueInvoice")}
+              </Link>
+            ) : null}
+            {canReturn ? (
+              <Link href={`/returns/new?order=${o.id}`} className={buttonVariants({ variant: "outline" })}>
+                {t("detail.requestReturn")}
+              </Link>
+            ) : null}
+          </OrderActionsPanel>
+        ) : null}
+      </div>
     </div>
   );
 }

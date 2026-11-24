@@ -2,6 +2,9 @@ import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
+import { ilikeAny, type Page, type PageRequest } from "@/modules/orders/kit/paging";
+import { runPage } from "@/modules/orders/kit/run-page";
+import { RETURN_LIST } from "./lists";
 import { RETURNABLE_ORDER_STATUSES, STATUS_FILTERS, type StatusFilter } from "./logic";
 import type { ReturnableLineRow, ReturnCreditNoteRow, ReturnLineRow, ReturnOrderRow, ReturnRow, WarehouseOption } from "./types";
 
@@ -50,6 +53,18 @@ export async function listReturns(filter: StatusFilter, orderId: string | null =
   if (statuses.length > 0) query = query.in("status", [...statuses]);
   if (orderId) query = query.eq("order_id", orderId);
   return run("v_returns", query.order("created_at", { ascending: false }).limit(LIST_LIMIT), [] as ReturnRow[]);
+}
+
+/** One page of the returns list (server pagination), with the total the filters match. */
+export async function listReturnsPage(filter: StatusFilter, page: PageRequest): Promise<Result<Page<ReturnRow>>> {
+  const db = await createClient();
+  let query = db.from("v_returns").select(RETURN_COLUMNS, { count: "exact" });
+  const statuses = STATUS_FILTERS[filter];
+  if (statuses.length > 0) query = query.in("status", [...statuses]);
+  const search = ilikeAny(RETURN_LIST.searchColumns ?? [], page.search);
+  if (search) query = query.or(search);
+  const ordered = query.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("created_at", { ascending: false }).order("id");
+  return runPage("returns", "v_returns", ordered.range(page.offset, page.offset + page.limit - 1));
 }
 
 export async function getReturn(id: string): Promise<Result<ReturnRow | null>> {

@@ -2,6 +2,9 @@ import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
+import { ilikeAny, type Page, type PageRequest } from "./kit/paging";
+import { runPage } from "./kit/run-page";
+import { ORDER_LIST } from "./lists";
 import { sanitizeSearch, toNumber } from "./logic";
 import type { CachedVariant } from "./offline-logic";
 import type { CustomerOption, OrderHistoryRow, OrderLineRow, OrderRow, OrderStatus, SellableVariant, StockAvailableRow } from "./types";
@@ -46,6 +49,18 @@ export async function listOrders(statuses: readonly OrderStatus[]): Promise<Resu
   let query = db.from("v_orders").select(ORDER_COLUMNS);
   if (statuses.length > 0) query = query.in("status", [...statuses]);
   return run("v_orders", query.order("created_at", { ascending: false }).limit(ORDER_LIST_LIMIT), []);
+}
+
+/** One page of the orders list (server pagination): the window, sort, search and the total that matches. */
+export async function listOrdersPage(statuses: readonly OrderStatus[], page: PageRequest): Promise<Result<Page<OrderRow>>> {
+  const db = await createClient();
+  let query = db.from("v_orders").select(ORDER_COLUMNS, { count: "exact" });
+  if (statuses.length > 0) query = query.in("status", [...statuses]);
+  const search = ilikeAny(ORDER_LIST.searchColumns ?? [], page.search);
+  if (search) query = query.or(search);
+  query = query.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false });
+  if (page.sort.column !== "created_at") query = query.order("created_at", { ascending: false });
+  return runPage("orders", "v_orders", query.order("id").range(page.offset, page.offset + page.limit - 1));
 }
 
 export async function getOrder(orderId: string): Promise<Result<OrderRow | null>> {

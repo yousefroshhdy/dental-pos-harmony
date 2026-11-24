@@ -29,6 +29,7 @@ const ROUTES = [
   "/inventory/receipts/new",
   "/inventory/transfers",
   "/inventory/transfers/new",
+  "/inventory/adjustments",
   "/inventory/adjustments/new",
   "/catalog",
   "/catalog/products/new",
