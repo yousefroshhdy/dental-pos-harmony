@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { callCommand } from "@/lib/command";
 import type { AppError } from "@/lib/errors";
-import { buildRows, MAX_FILE_BYTES, type BuildError } from "./logic";
+import { buildRows, MAX_FILE_BYTES, type BatchDefaults, type BuildError } from "./logic";
 import { batchActionSchema, commitSchema, formToObject, uploadSchema } from "./schemas";
 import type { ActionResult, ActionState, BatchStatus, UploadProblem } from "./types";
 
@@ -59,7 +59,7 @@ function decodeUtf8(bytes: ArrayBuffer): string | null {
 export async function uploadBatch(_prev: ActionState, form: FormData): Promise<ActionResult> {
   const parsed = uploadSchema.safeParse(formToObject(form));
   if (!parsed.success) return invalid();
-  const { kind, idempotency_key, locale } = parsed.data;
+  const { kind, idempotency_key, locale, default_governorate_code } = parsed.data;
 
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) return problem({ code: "no_file" });
@@ -67,7 +67,8 @@ export async function uploadBatch(_prev: ActionState, form: FormData): Promise<A
   const text = decodeUtf8(await file.arrayBuffer());
   if (text === null) return problem({ code: "not_text" });
 
-  const built = buildRows(kind, text);
+  const defaults: BatchDefaults = kind === "customers" && default_governorate_code ? { governorate_code: default_governorate_code } : {};
+  const built = buildRows(kind, text, defaults);
   if (!built.ok) return problem(fromBuildError(built.error));
 
   const result = await callCommand<{ batch_id: string }>("import_create_batch", {

@@ -15,12 +15,26 @@ import { ActionMessage } from "./import-error";
  * (UTF-8)"); a device-generated idempotency key is kept for every retry of the same
  * attempt, so a retried upload opens the same batch instead of staging it twice.
  */
-export function UploadForm({ kinds, defaultKind, locale }: { kinds: ImportKind[]; defaultKind?: ImportKind; locale: string }) {
+export function UploadForm({
+  kinds,
+  defaultKind,
+  locale,
+  governorates = [],
+}: {
+  kinds: ImportKind[];
+  defaultKind?: ImportKind;
+  locale: string;
+  /** Choices for the customers batch default (code + name in the viewer's language). */
+  governorates?: { code: string; name: string }[];
+}) {
   const t = useTranslations("imports.upload");
   const tKinds = useTranslations("imports.kinds");
   const kindId = useId();
   const fileId = useId();
   const hintId = useId();
+  const govId = useId();
+  const govHintId = useId();
+  const [kind, setKind] = useState<ImportKind | undefined>(defaultKind ?? kinds[0]);
   const keyRef = useRef<string | null>(null);
   const [tooLarge, setTooLarge] = useState(false);
   const [, startTransition] = useTransition();
@@ -53,7 +67,14 @@ export function UploadForm({ kinds, defaultKind, locale }: { kinds: ImportKind[]
       <input type="hidden" name="locale" value={locale} />
       <div className="space-y-1">
         <Label htmlFor={kindId}>{t("kind")}</Label>
-        <Select id={kindId} name="kind" defaultValue={defaultKind ?? kinds[0]} className="w-full" required>
+        <Select
+          id={kindId}
+          name="kind"
+          defaultValue={defaultKind ?? kinds[0]}
+          className="w-full"
+          required
+          onChange={(event) => setKind(event.currentTarget.value as ImportKind)}
+        >
           {kinds.map((k) => (
             <option key={k} value={k}>
               {tKinds(`${k}.title`)}
@@ -76,6 +97,22 @@ export function UploadForm({ kinds, defaultKind, locale }: { kinds: ImportKind[]
           {t("fileHint")}
         </p>
       </div>
+      {kind === "customers" && governorates.length > 0 ? (
+        <div className="space-y-1 sm:col-span-full">
+          <Label htmlFor={govId}>{t("defaultGovernorate")}</Label>
+          <Select id={govId} name="default_governorate_code" defaultValue="" aria-describedby={govHintId} className="w-full sm:max-w-md">
+            <option value="">{t("defaultGovernorateNone")}</option>
+            {governorates.map((g) => (
+              <option key={g.code} value={g.code}>
+                {g.name} ({g.code})
+              </option>
+            ))}
+          </Select>
+          <p id={govHintId} className="text-xs text-muted-foreground">
+            {t("defaultGovernorateHint")}
+          </p>
+        </div>
+      ) : null}
       <Button type="submit" disabled={pending} aria-busy={pending || undefined} className="w-full sm:w-auto">
         {pending ? t("uploading") : t("submit")}
       </Button>

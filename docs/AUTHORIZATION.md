@@ -67,6 +67,7 @@ flowchart LR
 | Module | Permission | Scopes | Sensitive | Default holders | Migration |
 |--------|------------|--------|:---------:|-----------------|-----------|
 | admin | `admin.import.run` (MFA) | all | ✅ | owner only (implicit) | `20261103000100` |
+| inventory | `inventory.warehouse.manage` | all | — | owner only (implicit); not MFA-gated, so suites 39/48 are unchanged | `20261125000100` |
 | audit | `audit.row_image.read` | all | ✅ | owner only (implicit); only an owner can delegate it | `20261103001100` |
 | audit | `audit.row_image.unmask` (MFA) | all | ✅ | owner only (implicit) | `20261103001100` |
 | field | `field.visit.plan` | own, team, territory, all | — | rep own; area manager team; sales director team | `20261103000900` |
@@ -280,6 +281,12 @@ Approval limits are **data**, not code:
 | `api.decide_customer_location_proposal` | `crm.customer_location.verify` with the customer in scope (the same right that sets a location directly, so self-approval by a verifier adds no power). A rep's own check-in only **proposes** (rule of 2026-10-29 kept). Approve only while the customer has no location and the fix is within `field.max_accuracy_m`. | `PERMISSION_DENIED`, `ALREADY_PINNED`, `LOCATION_INACCURATE`, `REASON_REQUIRED`, `INVALID_STATE` |
 | `api.v_team_last_location` | own, or `field.tracking.read` scope (same RLS as the tracking tables); open shifts only (D-14) | no rows |
 | `api.tracking_day_visit_fixes` | the tracking day's scope; fixes only with `field.location.read` over the rep (or own) | `PERMISSION_DENIED`; empty set without `field.location.read` |
+| `api.create_goods_receipt` item `cost_unknown` | an unknown (NULL) cost only with `admin.import.run` at scope all (opening stock); supplier receipts keep needing a cost | `VALIDATION` |
+| `api.set_employee_base_location` | `core.employee.manage` with the employee in scope; an owner's record only by an owner; nobody but an owner changes their own base (it decides which leads they get) | `PERMISSION_DENIED`, `OWNER_ONLY`, `SELF_GRANT_FORBIDDEN` |
+| `api.create_warehouse` | `inventory.warehouse.manage` at scope all; `allow_negative` always false | `PERMISSION_DENIED` |
+| `api.create_brand`, `api.create_category` | `catalog.product.manage` at scope all | `PERMISSION_DENIED` |
+| `api.setup_overview` | owner only | `OWNER_ONLY` |
+| `api.authorize_sign_in_link` | `admin.user.create` **and** owner; never for an owner login, a suspended login, yourself or an employee who is not active; logs `sign_in_link_issued` (warning) before the server mints the link with the service role | `OWNER_ONLY`, `PERMISSION_DENIED`, `INVALID_STATE`, `VALIDATION` |
 
 ## 9. Admin console (owner/admin capabilities)
 
@@ -295,6 +302,7 @@ Approval limits are **data**, not code:
 | Territory tree and coverage | Admin → Territories | `api.create_territory`, `api.rename_territory`, `api.move_territory`, `api.set_territory_active`, `api.set_territory_coverage`, `api.remove_territory_coverage` (`core.territory.manage`; a region, a move to the top level or coverage taken from outside your scope needs scope `all`) |
 | System settings | Admin → Settings | `api.update_setting` (`admin.settings.manage`; whitelisted keys only; owner-only families, §7) |
 | Data import | Imports | `api.import_*` (`admin.import.run`, owner only by default) |
+| Owner setup: main warehouse, legacy brands/category, territories, people, logins with roles, reps' base addresses, import order | Admin → Setup (`/admin/setup`, owner only) | `api.setup_overview`, `api.create_warehouse`, `api.create_brand`, `api.create_category`, `api.create_territory`, `api.set_territory_coverage`, `api.create_employee`, `api.authorize_sign_in_link` + Auth `generateLink`, `api.register_user`, `api.assign_employee_territory`, `api.grant_role`, `api.set_employee_base_location`. Decision B's "sales manager" is the seeded role `sales_director`. |
 | Read row-image diffs | Audit (`/audit`) | `api.audit_search`, `api.audit_record_history` (`audit.row_image.read`; reveal needs `audit.row_image.unmask`); every read is logged |
 | Restrict modules | Roles (module permissions) | — |
 | Review access history | Access review | reads `audit.security_events`, `audit.audit_log` (authz tables) |

@@ -29,7 +29,9 @@ import {
 import { adminNav } from "@/modules/admin/nav";
 import type { AdminEmployeeRow, SettingRow, TerritoryRow } from "@/modules/admin/types";
 import ar from "../../messages/ar.json";
+import setupAr from "../../messages/ar/setup.json";
 import en from "../../messages/en.json";
+import setupEn from "../../messages/en/setup.json";
 
 const ME = "11111111-1111-4111-8111-111111111111";
 
@@ -102,16 +104,21 @@ describe("admin error codes", () => {
 
 describe("admin nav", () => {
   it("every label resolves in both languages", () => {
+    // Core admin.* strings, plus the owner setup screen's own module (messages/<locale>/setup.json).
+    const enTree = { ...en, setup: setupEn };
+    const arTree = { ...ar, setup: setupAr };
     for (const item of adminNav) {
-      expect(item.labelKey.startsWith("admin.")).toBe(true);
-      expect(lookup(en, item.labelKey)).toEqual(expect.any(String));
-      expect(lookup(ar, item.labelKey)).toEqual(expect.any(String));
+      expect(item.labelKey.startsWith("admin.") || item.labelKey.startsWith("setup.")).toBe(true);
+      expect(lookup(enTree, item.labelKey)).toEqual(expect.any(String));
+      expect(lookup(arTree, item.labelKey)).toEqual(expect.any(String));
     }
   });
 
   it("gates every admin screen by a permission", () => {
     expect(adminNav.every((i) => i.permission !== null)).toBe(true);
     expect(adminNav.map((i) => i.href)).toContain("/admin/settings");
+    // Owner only: no role is granted inventory.warehouse.manage (suite 55).
+    expect(adminNav.find((i) => i.href === "/admin/setup")?.permission).toBe("inventory.warehouse.manage");
   });
 });
 

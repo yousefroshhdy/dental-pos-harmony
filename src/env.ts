@@ -26,6 +26,11 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   CRON_SECRET: z.string().min(32),
   OUTBOX_SIGNING_SECRET: z.string().min(32),
+  /**
+   * Google Maps Platform server key (decision F): Geocoding and Places only, never sent to the
+   * browser. Optional: without it geocoding answers "not configured" and admins type the point.
+   */
+  GOOGLE_MAPS_SERVER_KEY: z.string().min(20).optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicSchema>;

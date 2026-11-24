@@ -1,8 +1,9 @@
 import { getTranslations } from "next-intl/server";
 
 /**
- * D-03: until the PDPL legal review clears real personal data, only synthetic data may
- * be imported. Shown on every import screen; it is a reminder, not a technical control.
+ * Owner decision A (2026-11-24): HONEST's real data may be loaded into staging; D-03 (PDPL
+ * legal review) still gates production. Shown on every import screen; it is a reminder, not a
+ * technical control.
  */
 export async function SyntheticDataNotice({ compact = false }: { compact?: boolean }) {
   const t = await getTranslations("imports.synthetic");

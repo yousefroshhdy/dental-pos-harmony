@@ -10,6 +10,8 @@ import { UploadForm } from "@/modules/imports/components/upload-form";
 import { IMPORT_KINDS, isImportKind, KIND_SPECS } from "@/modules/imports/kinds";
 import { batchStatusTone, canImportKind, canRunImports, MAX_ROWS } from "@/modules/imports/logic";
 import { listBatches } from "@/modules/imports/queries";
+import { localizedName } from "@/modules/admin/logic";
+import { listGovernorates } from "@/modules/admin/queries";
 
 type Params = Promise<{ locale: string }>;
 type Search = Promise<{ kind?: string | string[] }>;
@@ -31,7 +33,11 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
   const t = await getTranslations("imports");
   const format = await getFormatter();
   const kinds = IMPORT_KINDS.filter((k) => canImportKind(ctx, k));
-  const batches = await listBatches();
+  const [batches, governorates] = await Promise.all([listBatches(), listGovernorates()]);
+  const governorateChoices = (governorates.ok ? governorates.data : []).map((g) => ({
+    code: g.code,
+    name: localizedName(locale, g.name_en, g.name_ar),
+  }));
 
   return (
     <div className="space-y-6">
@@ -52,7 +58,12 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
         {kinds.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("upload.noKinds")}</p>
         ) : (
-          <UploadForm kinds={kinds} defaultKind={isImportKind(requested) && kinds.includes(requested) ? requested : undefined} locale={locale} />
+          <UploadForm
+            kinds={kinds}
+            defaultKind={isImportKind(requested) && kinds.includes(requested) ? requested : undefined}
+            locale={locale}
+            governorates={governorateChoices}
+          />
         )}
       </Card>
 

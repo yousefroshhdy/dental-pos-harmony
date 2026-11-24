@@ -57,6 +57,18 @@ describe("buildRows", () => {
     expect(buildRows("opening_ar", "amount\n1\n2,3")).toEqual({ ok: false, error: { code: "extra_cells", line: 3 } });
   });
 
+  it("fills a batch default into empty cells, even when the column is missing (customers' governorate)", () => {
+    const withColumn = buildRows("customers", "clinic_name,phone_primary,governorate_code\nA,,\nB,,EG-C\n", { governorate_code: "EG-DK" });
+    expect(withColumn.ok && withColumn.rows.map((r) => r.governorate_code)).toEqual(["EG-DK", "EG-C"]);
+    const without = buildRows("customers", "clinic_name,phone_primary\nA,\n", { governorate_code: "EG-DK" });
+    expect(without).toEqual({ ok: true, headers: ["clinic_name", "phone_primary", "governorate_code"], rows: [{ clinic_name: "A", phone_primary: null, governorate_code: "EG-DK" }] });
+    // Without a default the required column is still required.
+    expect(buildRows("customers", "clinic_name,phone_primary\nA,\n")).toEqual({ ok: false, error: { code: "missing_columns", columns: ["governorate_code"] } });
+    // Only whitelisted columns of the kind can be defaulted.
+    expect(buildRows("opening_ar", "amount\n5\n", { governorate_code: "EG-DK" })).toEqual({ ok: true, headers: ["amount"], rows: [{ amount: "5" }] });
+    expect(buildRows("customers", "clinic_name,phone_primary\nA,\n", { phone_primary: "01000000001", governorate_code: "" }).ok).toBe(false);
+  });
+
   it("refuses more rows than one batch may hold", () => {
     const text = "amount\n" + "1\n".repeat(MAX_ROWS + 1);
     expect(buildRows("opening_ar", text)).toEqual({ ok: false, error: { code: "too_many_rows", count: MAX_ROWS + 1 } });

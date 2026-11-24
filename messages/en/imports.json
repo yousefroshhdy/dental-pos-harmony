@@ -1,5 +1,7 @@
 {
-  "nav": { "imports": "Data import" },
+  "nav": {
+    "imports": "Data import"
+  },
   "title": "Data import",
   "summary": "Move customers, products, prices, opening stock and opening balances in from spreadsheets. Every row is checked first; nothing is posted until you commit, and a commit posts all rows or none.",
   "loading": "Loading imports…",
@@ -7,8 +9,8 @@
   "errorBody": "Something went wrong while loading the import. Nothing was changed.",
   "retry": "Try again",
   "synthetic": {
-    "title": "Synthetic data only",
-    "body": "Until the legal review of personal data (decision D-03) is complete, import only made-up test data. Do not upload real customer names, phone numbers, addresses or balances."
+    "title": "Real data: staging only",
+    "body": "HONEST's real records may be imported into the staging project (owner decision A). Production stays closed to real personal data until the D-03 legal review clears it. Never put real data into a shared preview, a test or a screenshot."
   },
   "steps": {
     "one": "Download the template for what you are importing and fill it in a spreadsheet.",
@@ -36,7 +38,10 @@
       "unknown_columns": "These columns are not part of this template: {columns}. Use the template's header row.",
       "missing_columns": "These required columns are missing: {columns}.",
       "extra_cells": "Line {line} has more values than the header has columns."
-    }
+    },
+    "defaultGovernorate": "Governorate for rows without one",
+    "defaultGovernorateHint": "Customers only. Fills every empty governorate_code cell before the file is checked (Mansoura is Dakahlia, EG-DK).",
+    "defaultGovernorateNone": "None (every row must have one)"
   },
   "templates": {
     "title": "Templates",
@@ -48,23 +53,23 @@
   "kinds": {
     "customers": {
       "title": "Customers",
-      "description": "Clinics, doctors, hospitals and labs. Each becomes a lead with source “import”; a phone already registered is rejected."
+      "description": "Clinics, doctors, hospitals and labs. Each becomes a lead with source “import”. A phone already registered is rejected; a row without a phone is imported and marked “phone missing” for the rep to complete."
     },
     "products": {
       "title": "Products and variants",
       "description": "One row per SKU. Rows with the same product code create one product; an existing product code adds variants to it."
     },
     "customer_prices": {
-      "title": "Customer price lists",
-      "description": "Customer-specific prices. A new list code creates a customer price list; each customer in the file is assigned to it."
+      "title": "Price lists (base or customer)",
+      "description": "A row without a customer sets a price on a standard list (DEFAULT is the base list every order falls back to). A row with a customer sets a customer-specific price and assigns the customer to that list."
     },
     "opening_stock": {
       "title": "Opening stock",
-      "description": "Stock on hand by warehouse, lot and expiry. Posted as goods receipts, so every unit is a receipt movement in the inventory ledger."
+      "description": "Stock on hand by warehouse, lot and expiry. Posted as goods receipts, so every unit is a receipt movement in the inventory ledger. An unknown purchase cost is marked cost_unknown = yes (stored as unknown, never 0)."
     },
     "opening_ar": {
       "title": "Opening balances (AR)",
-      "description": "What each customer owes on the start date: one opening balance entry in the customer ledger. Negative = credit in the customer's favour."
+      "description": "What each customer owes on the start date: one opening balance entry in the customer ledger. Positive = the customer owes HONEST; negative = credit in the customer's favour."
     }
   },
   "columns": {
@@ -73,7 +78,7 @@
     "display_name": "Name shown in lists (optional; built from clinic and doctor when empty).",
     "kind": "clinic, doctor, hospital, university, lab or distributor (default clinic).",
     "specialty_code": "Specialty code, e.g. IMPLANTOLOGY, ENDO, ORTHO, GP.",
-    "phone_primary": "Main phone, Egyptian format: 01xxxxxxxxx or +201xxxxxxxxx. Must be unique.",
+    "phone_primary": "Main phone, Egyptian format: 01xxxxxxxxx or +201xxxxxxxxx. Must be unique. Leave empty if unknown: the customer is marked “phone missing”.",
     "phone_secondary": "Second phone (optional).",
     "email": "Email (optional).",
     "governorate_code": "Governorate code, e.g. EG-C (Cairo), EG-GZ (Giza), EG-ALX (Alexandria).",
@@ -94,9 +99,9 @@
     "barcode": "Barcode (optional, unique).",
     "uom": "Unit of measure (default unit).",
     "reorder_point": "Reorder point, whole number (default 0).",
-    "customer_no": "Customer number (CUS-…). Customer number or phone is required.",
+    "customer_no": "Customer number (CUS-…). Leave the three customer columns empty for a base-list price.",
     "customer_phone": "Customer's main phone. Customer number or phone is required.",
-    "price_list_code": "Price list code. A new code creates a customer price list.",
+    "price_list_code": "Price list code. DEFAULT = the base list. A new code creates a standard list (rows without a customer) or a customer list.",
     "price_list_name": "Price list name (needed once for a new list).",
     "unit_price": "Price in EGP, at most 2 decimals, no thousands separators.",
     "min_qty": "Minimum quantity for this price (default 1).",
@@ -105,8 +110,11 @@
     "lot_no": "Lot number (NO-LOT for products without lots).",
     "expiry_date": "Expiry date YYYY-MM-DD (required when the product tracks expiry).",
     "quantity": "Quantity on hand, whole number above 0.",
-    "unit_cost": "Purchase cost per unit in EGP (optional when the catalogue has a cost).",
-    "amount": "Amount owed in EGP on the start date; negative for a credit."
+    "unit_cost": "Purchase cost per unit in EGP. Leave empty only when the catalogue has a cost, or mark cost_unknown.",
+    "amount": "Balance in EGP on the start date: positive = the customer owes HONEST, negative = a credit.",
+    "legacy_ref": "Account number in the old system (optional, unique). Opening balances and prices can then name the customer by it.",
+    "customer_legacy_ref": "The customer's old-system account number (from the customers import). Customer number, phone or this is required, except for base-list prices.",
+    "cost_unknown": "yes when the purchase cost is not known: it is stored as unknown, never as 0 (leave unit_cost empty)."
   },
   "history": {
     "title": "Import history",
@@ -189,7 +197,10 @@
     "lines": "Stock lines",
     "units": "Units received",
     "entries": "Opening balance entries",
-    "total_amount": "Total opening balance"
+    "total_amount": "Total opening balance",
+    "phone_missing": "Customers without a phone (to complete)",
+    "legacy_refs": "Old-system account numbers kept",
+    "cost_unknown_lines": "Stock lines with unknown cost"
   },
   "rowErrors": {
     "required": "is required",
