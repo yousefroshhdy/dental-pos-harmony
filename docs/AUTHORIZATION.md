@@ -287,6 +287,7 @@ Approval limits are **data**, not code:
 | `api.create_warehouse` | `inventory.warehouse.manage` at scope all; `allow_negative` always false | `PERMISSION_DENIED` |
 | `api.create_brand`, `api.create_category` | `catalog.product.manage` at scope all | `PERMISSION_DENIED` |
 | `api.setup_overview` | owner only | `OWNER_ONLY` |
+| `api.legacy_import_check`, `_start`, `_restage`, `_abandon`; views `api.v_legacy_import_*` | `admin.import.run` at scope all (MFA-gated, checked first) **and** the owner role; the steps' dry run and commit are the existing `api.import_validate` / `api.import_commit` (+ the kind's permission), refused out of order (`LEGACY_ORDER`). No new permission, so suites 39/48 are unchanged. `authz.is_owner()` is now executable by `authenticated` because the session tables' RLS calls it (rule (e) of 2026-10-29) | `PERMISSION_DENIED`, `MFA_REQUIRED`, `OWNER_ONLY`; views return no rows |
 | `api.authorize_sign_in_link` | `admin.user.create` **and** owner; never for an owner login, a suspended login, yourself or an employee who is not active; logs `sign_in_link_issued` (warning) before the server mints the link with the service role | `OWNER_ONLY`, `PERMISSION_DENIED`, `INVALID_STATE`, `VALIDATION` |
 
 ## 9. Admin console (owner/admin capabilities)
@@ -304,6 +305,7 @@ Approval limits are **data**, not code:
 | System settings | Admin → Settings | `api.update_setting` (`admin.settings.manage`; whitelisted keys only; owner-only families, §7) |
 | Data import | Imports | `api.import_*` (`admin.import.run`, owner only by default) |
 | Owner setup: main warehouse, legacy brands/category, territories, people, logins with roles, reps' base addresses, import order | Admin → Setup (`/admin/setup`, owner only) | `api.setup_overview`, `api.create_warehouse`, `api.create_brand`, `api.create_category`, `api.create_territory`, `api.set_territory_coverage`, `api.create_employee`, `api.authorize_sign_in_link` + Auth `generateLink`, `api.register_user`, `api.assign_employee_territory`, `api.grant_role`, `api.set_employee_base_location`. Decision B's "sales manager" is the seeded role `sales_director`. |
+| Import the old-system workbook from the browser: upload, reconciliation, decisions (negative stock, credit balances), five ordered steps with dry run and commit, data to complete | Admin → Setup → Import the old-system workbook (`/admin/setup/legacy-import`, owner only, MFA) | `POST /api/legacy-import` (route handler: Origin check, then `api.legacy_import_check` before parsing), `api.legacy_import_start`, `api.import_validate`, `api.import_commit`, `api.legacy_import_restage`, `api.legacy_import_abandon` |
 | Read row-image diffs | Audit (`/audit`) | `api.audit_search`, `api.audit_record_history` (`audit.row_image.read`; reveal needs `audit.row_image.unmask`); every read is logged |
 | Restrict modules | Roles (module permissions) | — |
 | Review access history | Access review | reads `audit.security_events`, `audit.audit_log` (authz tables) |
