@@ -8,7 +8,7 @@
 | Item | Value |
 |------|-------|
 | Supabase project | `honest-os-staging`, ref `hhdctubhbdqriyqwjgfk`, eu-central-1, Free plan |
-| Database | All 68 migrations applied (2026-10-31, each fetched from GitHub at a pinned commit with an md5 check). All 52 suites (2687 pgTAP assertions) passed there in a rolled-back transaction; after the duplicate-index and export-permission migrations, suites 39, 40, 48, 52 and the new 54 passed again. Nothing persisted. Advisors: no security findings beyond the documented ones; performance shows only expected unused indexes on an empty database, 4 duplicate indexes (dropping them needs owner approval, rule 9) and 4 intentional multi-policy tables |
+| Database | All 77 migrations applied (Phase P wave A added 9 on 2026-11-24/25) (2026-10-31, each fetched from GitHub at a pinned commit with an md5 check). All 52 suites (2687 pgTAP assertions) passed there in a rolled-back transaction; after the duplicate-index and export-permission migrations, suites 39, 40, 48, 52 and the new 54 passed again. Nothing persisted. Advisors: no security findings beyond the documented ones; performance shows only expected unused indexes on an empty database, 4 duplicate indexes (dropping them needs owner approval, rule 9) and 4 intentional multi-policy tables |
 | Vercel project | `honest-os-staging` (Hobby), linked to `yousefroshhdy/dental-pos-harmony`, region fra1, Node 22 |
 | URL | https://honest-os-staging.vercel.app (open; the app's own login applies). Preview deployments stay behind Vercel Authentication |
 | Deployed branch | `ccr-cd8ec6c2-y28xig` (Vercel serves it as production for this project) |
@@ -32,7 +32,8 @@
 3. **Owner login:** Supabase → Authentication → Users → **Add user** (your email). Then, in the SQL editor: `select core.bootstrap_owner('<your email>', '<Your Name>');`
 4. **Optional cleanup, later:** `drop extension if exists http;` in the SQL editor. The `http` extension is used only to load migrations into staging from pinned GitHub commits; keep it while that is how staging is updated, and drop it once you switch to `supabase db push` (§2 step 4).
 5. **Vercel → honest-os-staging → Settings → Environments → Production → Branch Tracking:** set the branch to `ccr-cd8ec6c2-y28xig`, so each push goes live. Until then pushes create previews, and production stays on the last manual deploy (commit `e669a0d`, 2026-10-31).
-6. **Wave 2 (2026-10-30):** in Supabase → Authentication, set the email OTP length (8) and expiry (600), add `{{ .Token }}` to the Magic Link template, set token verifications to 30 and enable TOTP (all in §2 step 3). Then follow the MFA rollout in §2a. The Android pilot APK steps are in §2b.
+6. **Leaked-password protection:** Supabase → Authentication → Policies (or Providers → Email) → turn on "Prevent use of leaked passwords" (advisor `auth_leaked_password_protection`).
+7. **Wave 2 (2026-10-30):** in Supabase → Authentication, set the email OTP length (8) and expiry (600), add `{{ .Token }}` to the Magic Link template, set token verifications to 30 and enable TOTP (all in §2 step 3). Then follow the MFA rollout in §2a. The Android pilot APK steps are in §2b.
 
 ## 0. Before you start
 - [ ] D-03: until the PDPL legal review clears it, load **synthetic data only** into any project, including production.
