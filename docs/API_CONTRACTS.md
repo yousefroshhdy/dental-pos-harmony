@@ -281,6 +281,16 @@ Views (all `security_invoker`):
 
 **New error codes:** `ALREADY_PINNED`, `LOCATION_INACCURATE`. **New outbox events:** `customer.location_proposed` `{proposal_id, customer_id, visit_id, employee_id, accuracy_m}` and `customer.location_proposal_decided` `{proposal_id, customer_id, visit_id, employee_id, decision}` (no coordinates, rule 1 of §5).
 
+### 1d. Phase P step 2b: Today and CRM redesign (migration `20261126000200`; suite 61)
+
+No new command. One read view (`security_invoker`, select for `authenticated` only):
+- `v_customer_list`: one row per live customer (`archived_at is null`), built on `v_customers` so the same customer RLS and balance masking apply. Columns: the list columns of `v_customers` (`id, customer_no, kind, display_name, doctor_name, clinic_name, specialty_code, lifecycle_stage, source, phone_primary, phone_secondary, city, governorate_code, territory_*, primary_rep_*, latitude, longitude, location_verified, balance, created_at, updated_at`) plus `phone_missing` and `location_missing` (same rules as `v_customer_data_gaps`) and `is_overdue`, `overdue_amount`, `max_days_overdue` (same rule as `v_customer_map`; NULL when the balance is masked, so a masked row never matches an "overdue" filter). The customers list filters on these with search, stage, territory, specialty and rep, and pages and counts on the server (`?q=&stage=&territory=&specialty=&rep=&overdue=1&phone=missing&location=missing&sort=-balance&page=2`; sortable: `display_name`, `customer_no`, `created_at`, `balance`).
+
+Screens, existing commands:
+- Customer create form: the phone is optional; `create_customer` then answers `warnings: [{code: 'PHONE_MISSING'}]` and the customer page opens with `?created=1&warn=phone_missing` and an "add phone" action.
+- "Add phone" (customer page, unplanned check-in list, open visit page): `update_customer(p_customer_id, p_version, {"phone_primary": …})`, permission `crm.customer.update` in scope. A saved phone cannot be removed (`VALIDATION`, shown as `PHONE_REQUIRED` on the edit form); a phone already on another customer is `DUPLICATE_CUSTOMER`; a stale version is `CONFLICT`.
+- Customer page tabs read `v_visits` (`field.visit.read`), `v_orders` (`sales.order.read`) and `v_invoices` (`finance.invoice.read`) filtered by `customer_id`, latest 20 each; RLS decides the rows.
+
 ## 2. Commands (MVP)
 
 | Command | Permission | Input (beyond ids) | Output | Notable errors |

@@ -2,11 +2,14 @@ import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
-import { customerSearchFilter, pageRange, PAGE_SIZE } from "./logic";
+import { customerListFilters, customerListOrder, customerSearchFilter, pageRange, PAGE_SIZE } from "./logic";
 import type { CustomerListParams } from "./schemas";
 import type {
+  CustomerInvoiceRow,
   CustomerListRow,
+  CustomerOrderRow,
   CustomerRow,
+  CustomerVisitRow,
   EmployeeOption,
   GovernorateRow,
   OpportunityRow,
@@ -46,7 +49,11 @@ async function rows<T>(name: string, query: Query, empty: T): Promise<Result<T>>
 
 const LIST_COLUMNS =
   "id, customer_no, display_name, doctor_name, lifecycle_stage, specialty_code, phone_primary, city, governorate_code, " +
-  "territory_name_en, territory_name_ar, primary_rep_name_en, primary_rep_name_ar, location_verified, latitude";
+  "territory_name_en, territory_name_ar, primary_rep_employee_id, primary_rep_name_en, primary_rep_name_ar, " +
+  "location_verified, latitude, balance, phone_missing, location_missing, is_overdue";
+
+/** Rows per tab on the customer page (the full lists have their own screens). */
+export const CUSTOMER_TAB_LIMIT = 20;
 
 const DETAIL_COLUMNS =
   "id, customer_no, kind, doctor_name, clinic_name, display_name, specialty_code, lifecycle_stage, source, phone_primary, " +
@@ -67,23 +74,79 @@ export interface CustomerPage {
   pageSize: number;
 }
 
-/** Active (not archived) customers matching the filters, one page at a time. */
-export async function listCustomers(params: CustomerListParams): Promise<Result<CustomerPage>> {
+/**
+ * Live customers matching the filters, one page at a time (api.v_customer_list: only live
+ * customers, with the gap and overdue flags). `sorting` comes from the DataTable URL state.
+ */
+export async function listCustomers(
+  params: CustomerListParams,
+  sorting: readonly { id: string; desc: boolean }[] = [],
+): Promise<Result<CustomerPage>> {
   const db = await createClient();
   const { from, to } = pageRange(params.page);
-  let query = db.from("v_customers").select(LIST_COLUMNS, { count: "exact" }).is("archived_at", null);
-  const search = customerSearchFilter(params.q);
-  if (search) query = query.or(search);
-  if (params.stage) query = query.eq("lifecycle_stage", params.stage);
-  if (params.territory) query = query.eq("territory_id", params.territory);
-  if (params.specialty) query = query.eq("specialty_code", params.specialty);
-  const result = await run<CustomerListRow[]>(
-    "v_customers",
-    query.order("display_name", { ascending: true }).order("id", { ascending: true }).range(from, to),
-    [],
-  );
+  let query = db.from("v_customer_list").select(LIST_COLUMNS, { count: "exact" });
+  for (const filter of customerListFilters(params)) {
+    query = filter.op === "or" ? query.or(filter.value) : query.eq(filter.column, filter.value);
+  }
+  for (const order of customerListOrder(sorting)) {
+    query = query.order(order.column, { ascending: order.ascending, nullsFirst: false });
+  }
+  const result = await run<CustomerListRow[]>("v_customer_list", query.range(from, to), []);
   if (!result.ok) return result;
   return ok({ rows: result.data.rows, total: result.data.count ?? result.data.rows.length, page: params.page, pageSize: PAGE_SIZE });
+}
+
+/** Overdue flag of one live customer (api.v_customer_list; NULL = masked, no row = archived/hidden). */
+export async function getCustomerOverdue(customerId: string): Promise<Result<{ is_overdue: boolean | null; overdue_amount: number | string | null } | null>> {
+  const db = await createClient();
+  return rows("v_customer_list", db.from("v_customer_list").select("is_overdue, overdue_amount").eq("id", customerId).maybeSingle(), null);
+}
+
+/** The customer's latest visits (api.v_visits; RLS: a rep sees their own visits). */
+export async function listCustomerVisits(customerId: string): Promise<Result<CustomerVisitRow[]>> {
+  const db = await createClient();
+  return rows<CustomerVisitRow[]>(
+    "v_visits",
+    db
+      .from("v_visits")
+      .select("id, employee_name_en, employee_name_ar, planned_for, status, check_in_at, verification_status, outcome")
+      .eq("customer_id", customerId)
+      .order("check_in_at", { ascending: false, nullsFirst: true })
+      .order("planned_for", { ascending: false, nullsFirst: false })
+      .limit(CUSTOMER_TAB_LIMIT),
+    [],
+  );
+}
+
+/** The customer's latest orders (api.v_orders; RLS: reps their own orders, managers their scope). */
+export async function listCustomerOrders(customerId: string): Promise<Result<CustomerOrderRow[]>> {
+  const db = await createClient();
+  return rows<CustomerOrderRow[]>(
+    "v_orders",
+    db
+      .from("v_orders")
+      .select("id, order_no, status, total, created_at, submitted_at")
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false })
+      .limit(CUSTOMER_TAB_LIMIT),
+    [],
+  );
+}
+
+/** The customer's latest invoices (api.v_invoices). */
+export async function listCustomerInvoices(customerId: string): Promise<Result<CustomerInvoiceRow[]>> {
+  const db = await createClient();
+  return rows<CustomerInvoiceRow[]>(
+    "v_invoices",
+    db
+      .from("v_invoices")
+      .select("id, invoice_no, status, issue_date, due_date, total, open_amount, is_overdue")
+      .eq("customer_id", customerId)
+      .order("issue_date", { ascending: false })
+      .order("invoice_no", { ascending: false })
+      .limit(CUSTOMER_TAB_LIMIT),
+    [],
+  );
 }
 
 export async function getCustomer(customerId: string): Promise<Result<CustomerRow | null>> {
@@ -94,10 +157,10 @@ export async function getCustomer(customerId: string): Promise<Result<CustomerRo
 /** Customers to pick from when starting an opportunity (search by name, number or phone). */
 export async function searchCustomers(term: string | undefined, limit = 20): Promise<Result<CustomerListRow[]>> {
   const db = await createClient();
-  let query = db.from("v_customers").select(LIST_COLUMNS).is("archived_at", null);
+  let query = db.from("v_customer_list").select(LIST_COLUMNS);
   const search = customerSearchFilter(term);
   if (search) query = query.or(search);
-  return rows<CustomerListRow[]>("v_customers", query.order("display_name").limit(limit), []);
+  return rows<CustomerListRow[]>("v_customer_list", query.order("display_name").limit(limit), []);
 }
 
 export async function listTimeline(customerId: string, limit = 50): Promise<Result<TimelineRow[]>> {

@@ -46,7 +46,9 @@ const customerFields = {
   display_name: z.string().max(200).optional(),
   kind: z.enum(CUSTOMER_KINDS).default("clinic"),
   specialty_code: code.optional(),
-  phone_primary: e164,
+  // Optional since Phase P: a customer may be created without a phone ("phone missing",
+  // completed on the next visit). A phone that is given must be a valid Egyptian number.
+  phone_primary: e164.optional(),
   phone_secondary: e164.optional(),
   email: z.email().max(254).optional(),
   address_line: z.string().max(300).optional(),
@@ -89,6 +91,13 @@ export const updateCustomerSchema = z
   })
   .refine(needsAName, nameIssue);
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
+
+/** Quick "add phone" on the customer page and at check-in (api.update_customer, phone only). */
+export const addPhoneSchema = z.object({
+  customer_id: id,
+  version: z.coerce.number().int().positive(),
+  phone_primary: e164,
+});
 
 export const logActivitySchema = z.object({
   customer_id: id,
@@ -157,6 +166,13 @@ export const customerListParamsSchema = z.object({
   stage: optionalParam(z.enum(LIFECYCLE_STAGES)),
   territory: optionalParam(id),
   specialty: optionalParam(code),
+  /** Primary rep (employee id). */
+  rep: optionalParam(id),
+  /** Overdue receivables only (api.v_customer_list.is_overdue; masked rows never match). */
+  overdue: optionalParam(z.literal("1")),
+  /** Data gaps (api.v_customer_data_gaps rules). */
+  phone: optionalParam(z.literal("missing")),
+  location: optionalParam(z.literal("missing")),
   page: z.coerce.number().int().min(1).max(10_000).catch(1).default(1),
 });
 export type CustomerListParams = z.infer<typeof customerListParamsSchema>;

@@ -119,6 +119,10 @@ export interface CustomerPick {
   display_name: string;
   city: string | null;
   location_verified: boolean | null;
+  /** NULL = "phone missing": the rep can add it at check-in (crm.customer.update). */
+  phone_primary: string | null;
+  /** Row version for api.update_customer. */
+  version: number;
 }
 
 /** api.visit_check_in result. */

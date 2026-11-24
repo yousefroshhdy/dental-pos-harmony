@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { callCommand } from "@/lib/command";
-import { customerChanges, duplicateOutcome, locationFixProblem, toActionFailure } from "./logic";
+import { customerChanges, duplicateOutcome, locationFixProblem, phoneRemoved, toActionFailure } from "./logic";
 import { getCustomer } from "./queries";
 import {
+  addPhoneSchema,
   createCustomerSchema,
   createOpportunitySchema,
   formToObject,
@@ -38,7 +39,11 @@ const PAGES = {
   customers: "/[locale]/customers",
   customer: "/[locale]/customers/[id]",
   opportunities: "/[locale]/opportunities",
+  visit: "/[locale]/visits/[id]",
+  newVisit: "/[locale]/visits/new",
 } as const;
+
+const hasWarning = (result: CreateCustomerResult, code: string) => (result.warnings ?? []).some((w) => w.code === code);
 
 function refresh(...pages: (keyof typeof PAGES)[]) {
   for (const page of new Set(pages)) revalidatePath(PAGES[page], "page");
@@ -91,7 +96,7 @@ export async function createCustomer(_prev: CreateCustomerState, form: FormData)
     const check = await callCommand<DuplicateCheck>("find_duplicate_customers", {
       p_doctor_name: input.doctor_name ?? null,
       p_clinic_name: input.clinic_name ?? null,
-      p_phone_primary: input.phone_primary,
+      p_phone_primary: input.phone_primary ?? null,
       p_governorate_code: input.governorate_code,
       p_display_name: input.display_name ?? null,
     });
@@ -120,7 +125,8 @@ export async function createCustomer(_prev: CreateCustomerState, form: FormData)
     p_doctor_name: input.doctor_name ?? null,
     p_clinic_name: input.clinic_name ?? null,
     p_display_name: input.display_name ?? null,
-    p_phone_primary: input.phone_primary,
+    // Optional since Phase P: the command then answers with a PHONE_MISSING warning.
+    p_phone_primary: input.phone_primary ?? null,
     p_phone_secondary: input.phone_secondary ?? null,
     p_email: input.email ?? null,
     p_kind: input.kind,
@@ -136,7 +142,9 @@ export async function createCustomer(_prev: CreateCustomerState, form: FormData)
   if (!created.ok) return { ...toActionFailure(created.error), values: echo(raw) };
 
   refresh("customers");
-  redirect(`/${input.locale}/customers/${created.data.customer_id}?created=1`);
+  // The customer page repeats the warning with an "add phone" action next to it.
+  const phoneMissing = hasWarning(created.data, "PHONE_MISSING");
+  redirect(`/${input.locale}/customers/${created.data.customer_id}?created=1${phoneMissing ? "&warn=phone_missing" : ""}`);
 }
 
 export async function updateCustomer(_prev: CustomerFormState, form: FormData): Promise<CustomerFormState> {
@@ -150,6 +158,10 @@ export async function updateCustomer(_prev: CustomerFormState, form: FormData): 
   const current = await getCustomer(input.customer_id);
   if (!current.ok) return { ...toActionFailure(current.error), values: echo(raw) };
   if (!current.data) return { ok: false, messageKey: "NOT_FOUND", values: echo(raw) };
+  // A saved phone can be corrected but not removed (the command refuses it too).
+  if (phoneRemoved(current.data.phone_primary, input.phone_primary)) {
+    return { ok: false, messageKey: "VALIDATION", crmCode: "PHONE_REQUIRED", invalidFields: ["phone_primary"], values: echo(raw) };
+  }
 
   const changes = customerChanges(current.data, input);
   if (Object.keys(changes).length > 0) {
@@ -162,6 +174,28 @@ export async function updateCustomer(_prev: CustomerFormState, form: FormData): 
     refresh("customers", "customer", "opportunities");
   }
   redirect(`/${input.locale}/customers/${input.customer_id}?saved=1`);
+}
+
+/**
+ * Quick "add phone" for a customer whose phone is missing (customer page, check-in screens).
+ * Only phone_primary is sent; the command checks scope, the version, the format and duplicates.
+ */
+export async function addCustomerPhone(_prev: FormResultState, form: FormData): Promise<FormResultState> {
+  const raw = formToObject(form);
+  const parsed = addPhoneSchema.safeParse(raw);
+  if (!parsed.success) return invalid(invalidFieldsOf(parsed.error), { phone_primary: raw.phone_primary ?? "" });
+  const { customer_id, version, phone_primary } = parsed.data;
+  return withValues(
+    { phone_primary: raw.phone_primary ?? "" },
+    await command(
+      "update_customer",
+      { p_customer_id: customer_id, p_version: version, p_changes: { phone_primary } },
+      "customers",
+      "customer",
+      "visit",
+      "newVisit",
+    ),
+  );
 }
 
 export async function logActivity(_prev: FormResultState, form: FormData): Promise<FormResultState> {

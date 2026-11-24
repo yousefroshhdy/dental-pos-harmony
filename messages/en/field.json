@@ -189,7 +189,18 @@
     "overdue": "Overdue",
     "due": "Due {when}",
     "allTasks": "All tasks",
-    "privacy": "Location & privacy"
+    "privacy": "Location & privacy",
+    "summary": "{planned, plural, =0 {No visits planned} one {# visit planned} other {# visits planned}} · {due, plural, =0 {nothing due} one {# task due} other {# tasks due}}",
+    "overdueCount": "{count, plural, one {# overdue} other {# overdue}}",
+    "quick": "Quick actions",
+    "checkIn": "Check in",
+    "newOrder": "New order",
+    "plan": "Today's plan",
+    "leadsTitle": "Leads near me",
+    "leadsBody": "Dental clinics around your base that are not customers yet, nearest first.",
+    "leadsOpen": "Open leads",
+    "errorTitle": "Your day couldn't load",
+    "allClearBody": "Check in at a clinic you visit, or look at the leads near you."
   },
   "visits": {
     "title": "Visits",
