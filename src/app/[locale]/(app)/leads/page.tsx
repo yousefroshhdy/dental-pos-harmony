@@ -10,11 +10,13 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import { toLatLng } from "@/lib/maps/geo";
 import { localizedName } from "@/modules/crm/logic";
 import { chipClass, Empty, PageBody } from "@/modules/field/components/layout-bits";
 import { GoogleAttribution } from "@/modules/leads/components/google-attribution";
 import { LeadPlanButton } from "@/modules/leads/components/lead-forms";
+import { NotConfiguredNotice } from "@/modules/leads/components/not-configured-notice";
 import { LeadsMap, type LeadPin } from "@/modules/leads/components/leads-map";
 import {
   collectAttributions,
@@ -66,6 +68,7 @@ export default async function LeadsPage({ params, searchParams }: Props) {
 
   const [page, bases] = await Promise.all([listLeads(state, today), listBaseLocations()]);
   const configured = placesConfigured();
+  const setupHint = seesSetupDetails(ctx);
   const details: DetailsState = page.ok ? await loadLeadDetails(placeIdsNeedingDetails(page.data.rows), lang) : { status: "error" };
   const detailMap = details.status === "ok" || details.status === "budget_reached" ? details.details : new Map();
   const myBase = bases.ok ? bases.data.find((b) => b.employee_id === ctx.employee?.id) : undefined;
@@ -90,7 +93,7 @@ export default async function LeadsPage({ params, searchParams }: Props) {
         }
       />
 
-      {!configured ? <Alert tone="warning">{t("list.notConfigured")}</Alert> : null}
+      {!configured ? <NotConfiguredNotice setupHint={setupHint} /> : null}
       {details.status === "budget_reached" ? <Alert tone="info">{t("list.budgetReached")}</Alert> : null}
       {baseMissing ? <Alert tone="info">{t("list.noBase")}</Alert> : null}
 
@@ -145,6 +148,7 @@ export default async function LeadsPage({ params, searchParams }: Props) {
           {state.view === "map" ? (
             <LeadsMap
               apiKey={mapsBrowserKey()}
+              setupHint={setupHint}
               locale={lang}
               base={myBase ? toLatLng(myBase.base_lat, myBase.base_lng) : null}
               pins={page.data.rows.flatMap((row): LeadPin[] => {

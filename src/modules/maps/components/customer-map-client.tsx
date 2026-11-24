@@ -29,6 +29,7 @@ const GEO_ERROR = { 1: "denied", 2: "unavailable", 3: "timeout" } as const;
  */
 export function CustomerMapClient({
   apiKey,
+  setupHint,
   locale,
   customerId,
   name,
@@ -37,6 +38,7 @@ export function CustomerMapClient({
   proposals,
 }: {
   apiKey: string | null;
+  setupHint?: boolean;
   locale: "ar" | "en";
   customerId: string;
   name: string;
@@ -98,6 +100,7 @@ export function CustomerMapClient({
     <div className="space-y-3">
       <MapView
         apiKey={apiKey}
+        setupHint={setupHint}
         locale={locale}
         label={t("mapLabel", { name })}
         markers={markers}

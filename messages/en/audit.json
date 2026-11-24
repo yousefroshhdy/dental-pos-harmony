@@ -57,7 +57,7 @@
     "by": "by {name}",
     "system": "by the system",
     "record": "Record:",
-    "noRecordId": "no id (this table has a composite key)",
+    "noRecordId": "no id (this record is identified by several fields)",
     "openRecord": "Open the record",
     "history": "Record history",
     "changes": "{count, plural, =1 {1 field} other {# fields}}",
@@ -94,7 +94,7 @@
     "PERMISSION_DENIED": "Only the owner can read old and new values in the audit log.",
     "VALIDATION": "Some filters are not valid. Check them and search again.",
     "NOT_FOUND": "Not found.",
-    "UNAVAILABLE": "The server could not be reached. Try again.",
+    "UNAVAILABLE": "Could not connect. Try again.",
     "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again.",
     "UNKNOWN": "Something went wrong. Reference: {requestId}"
   },

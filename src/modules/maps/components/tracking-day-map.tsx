@@ -1,5 +1,7 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Alert } from "@/components/ui/primitives";
+import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import type { TrackingDay } from "@/modules/tracking/types";
 import { buildDayRoute } from "../logic";
 import { getVisitFixes, mapsBrowserKey } from "../queries";
@@ -22,6 +24,7 @@ export async function TrackingDayMap({ day, locale }: { day: TrackingDay; locale
   const fixes = await getVisitFixes(day.employee_id, day.day);
   const route = buildDayRoute(day, fixes.ok ? fixes.data : []);
   const lang = locale === "en" ? "en" : "ar";
+  const setupHint = seesSetupDetails(await getUserContext());
   const time = (iso: string | null) => (iso ? format.dateTime(new Date(iso), CAIRO_TIME) : "…");
 
   return (
@@ -32,7 +35,7 @@ export async function TrackingDayMap({ day, locale }: { day: TrackingDay; locale
         <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">{t("empty")}</p>
       ) : (
         <>
-          <DayRouteMap apiKey={mapsBrowserKey()} locale={lang} route={route} />
+          <DayRouteMap apiKey={mapsBrowserKey()} setupHint={setupHint} locale={lang} route={route} />
           {route.marks.length > 0 ? (
             <ol className="grid gap-1 text-sm sm:grid-cols-2" aria-label={t("legend")}>
               {route.marks.map((m) => (

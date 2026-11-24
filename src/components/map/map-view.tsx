@@ -13,8 +13,10 @@ import { MAP_TONES, type MapInfo, type MapMarker, type MapPolyline } from "./typ
 export type { MapMarker, MapPolyline, MapInfo } from "./types";
 
 export interface MapViewProps {
-  /** NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (from the server). Null → "Map key not configured", no network. */
+  /** NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (from the server). Null → "The map is not available yet", no network. */
   apiKey: string | null;
+  /** Also show the technical setup line (env var, Google Cloud check): owner/admin only (`seesSetupDetails`). */
+  setupHint?: boolean;
   locale: "ar" | "en";
   /** Accessible name of the map region. Pages also list the same items as text. */
   label: string;
@@ -45,14 +47,14 @@ type Libs = {
 /**
  * The one shared Google map (Phase P step 3). Loads the Maps JS API lazily in the browser
  * through @googlemaps/js-api-loader (language ar|en, region EG), and draws markers (with
- * simple grid clustering), polylines and info windows. Without a key it renders a clear
- * "Map key not configured" box and never imports the loader.
+ * simple grid clustering), polylines and info windows. Without a key it renders a plain
+ * "The map is not available yet" box and never imports the loader.
  *
  * RTL: the map canvas is LTR (map gestures and controls assume it); info windows follow the
  * page direction. Info window content is built with textContent, so no data is ever HTML.
  */
 export function MapView(props: MapViewProps) {
-  const { apiKey, locale, label, markers = NO_MARKERS, polylines = NO_LINES, cluster = false, center, zoom, onMapClick, onMarkerDragEnd, className } = props;
+  const { apiKey, setupHint = false, locale, label, markers = NO_MARKERS, polylines = NO_LINES, cluster = false, center, zoom, onMapClick, onMarkerDragEnd, className } = props;
   const t = useTranslations("maps.map");
   const keyState = useMemo(() => mapsKeyState(apiKey), [apiKey]);
   const ready = shouldLoadMaps(keyState);
@@ -206,7 +208,9 @@ export function MapView(props: MapViewProps) {
     }
   }, [status, markers, polylines, cluster, zoomLevel, fitSignature, locale, center, zoom, t]);
 
-  if (!ready) return <MapStateBox className={className} title={t("noKeyTitle")} body={t("noKeyBody")} tone="info" />;
+  if (!ready) {
+    return <MapStateBox className={className} title={t("noKeyTitle")} body={t("noKeyBody")} detail={setupHint ? t("noKeySetupHint") : undefined} tone="info" />;
+  }
 
   return (
     <div className={cn("relative overflow-hidden rounded-lg border bg-muted", className ?? "h-[60vh] min-h-72 w-full")}>
@@ -221,6 +225,7 @@ export function MapView(props: MapViewProps) {
           <div className="max-w-sm space-y-1 text-center">
             <p className="font-medium">{status === "rejected" ? t("rejectedTitle") : t("errorTitle")}</p>
             <p className="text-sm text-muted-foreground">{status === "rejected" ? t("rejectedBody") : t("errorBody")}</p>
+            {status === "rejected" && setupHint ? <p className="text-xs text-muted-foreground">{t("rejectedSetupHint")}</p> : null}
           </div>
         </div>
       ) : null}

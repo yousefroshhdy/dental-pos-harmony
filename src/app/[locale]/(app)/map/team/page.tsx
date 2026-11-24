@@ -8,6 +8,7 @@ import { Alert, Badge } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import { localizedName } from "@/modules/crm/logic";
 import { Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
 import { MapTabs } from "@/modules/maps/components/map-tabs";
@@ -56,7 +57,7 @@ export default async function TeamMapPage({ params }: Props) {
         <EmptyState icon={<MapPinIcon aria-hidden="true" />} title={t("empty")} />
       ) : (
         <>
-          <TeamMap apiKey={mapsBrowserKey()} locale={lang} points={teamPoints(result.data)} day={day} />
+          <TeamMap apiKey={mapsBrowserKey()} setupHint={seesSetupDetails(ctx)} locale={lang} points={teamPoints(result.data)} day={day} />
           <ItemList>
             {result.data.map((r) => {
               const minutes = minutesSince(r.captured_at, now);

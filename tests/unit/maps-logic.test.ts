@@ -22,7 +22,7 @@ import type { DayGap, DayPoint, DayShift, DayStop, DayVisit } from "@/modules/tr
 const KEY = "AIzaSyTEST0000000000000000000000000000";
 const ID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
-describe("maps key (the 'Map key not configured' state)", () => {
+describe("maps key (the 'map not available yet' state)", () => {
   it.each([undefined, null, "", "   ", "not a key", "short", "with spaces in it 1234567890", "x".repeat(101)])("treats %j as missing", (raw) => {
     expect(normalizeMapsKey(raw)).toBeNull();
     expect(mapsKeyConfigured(raw)).toBe(false);

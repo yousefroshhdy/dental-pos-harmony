@@ -10,7 +10,7 @@ import { customerTone, type PinnedCustomer } from "../logic";
 const CAIRO_DATE = { dateStyle: "medium", timeZone: "Africa/Cairo", numberingSystem: "latn" } as const;
 
 /** The customers map: one pin per clinic, coloured by overdue AR and stage, clustered when zoomed out. */
-export function CustomersMap({ apiKey, locale, rows }: { apiKey: string | null; locale: "ar" | "en"; rows: PinnedCustomer[] }) {
+export function CustomersMap({ apiKey, setupHint, locale, rows }: { apiKey: string | null; setupHint?: boolean; locale: "ar" | "en"; rows: PinnedCustomer[] }) {
   const t = useTranslations("maps.customers");
   const tStage = useTranslations("crm.stage");
   const format = useFormatter();
@@ -47,5 +47,5 @@ export function CustomersMap({ apiKey, locale, rows }: { apiKey: string | null; 
     [rows, locale, t, tStage, format],
   );
 
-  return <MapView apiKey={apiKey} locale={locale} label={t("mapLabel")} markers={markers} cluster />;
+  return <MapView apiKey={apiKey} setupHint={setupHint} locale={locale} label={t("mapLabel")} markers={markers} cluster />;
 }

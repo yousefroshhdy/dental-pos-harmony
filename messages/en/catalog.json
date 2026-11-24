@@ -19,7 +19,7 @@
     "INVALID_STATE": "Not possible in the current state (for example, the item is discontinued, already ended, or already in use).",
     "SKU_NOT_FOUND": "No variant has that SKU.",
     "CUSTOMER_NOT_FOUND": "No customer with that number is visible to you.",
-    "ATTRIBUTES_INVALID": "Write one attribute per line as key=value, with lower-case keys (for example diameter_mm=3.5)."
+    "ATTRIBUTES_INVALID": "Write one attribute per line as name=value, with lower-case names (for example diameter_mm=3.5)."
   },
   "products": {
     "title": "Products",
@@ -108,7 +108,7 @@
     "reorderPoint": "Reorder point",
     "reorderPointHint": "Low-stock alert level, in units.",
     "attributes": "Attributes",
-    "attributesHint": "One per line, as key=value (for example diameter_mm=3.5).",
+    "attributesHint": "One per line, as name=value (for example diameter_mm=3.5).",
     "add": "Add variant",
     "save": "Save variant",
     "statusAction": {
@@ -119,7 +119,7 @@
   },
   "priceList": {
     "listTitle": "Price lists",
-    "listIntro": "Prices in EGP, before VAT. Orders are priced on the server when they are saved and submitted.",
+    "listIntro": "Prices in EGP, before VAT. Orders are priced automatically when they are saved and submitted.",
     "newTitle": "New price list",
     "editTitle": "Price list",
     "details": "Details",

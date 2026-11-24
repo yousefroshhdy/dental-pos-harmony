@@ -4,9 +4,11 @@
  * Pure functions, no browser or Next imports: used by pages, the map component, the proxy's
  * CSP switch and unit tests.
  *
- * Without a key every map shows a clear "Map key not configured" state and makes no network
- * call (the loader is never imported).
+ * Without a key every map shows a plain "The map is not available yet" state and makes no
+ * network call (the loader is never imported).
  */
+
+import { can, type UserContext } from "@/lib/authz/can";
 
 /** Region bias for the Maps JS API and Places (Egypt). */
 export const MAPS_REGION = "EG";
@@ -52,4 +54,14 @@ export function mapsLanguage(locale: string | null | undefined): "ar" | "en" {
 /** Options for `setOptions()` of @googlemaps/js-api-loader. */
 export function loaderOptions(key: string, locale: string | null | undefined) {
   return { key, v: "weekly", language: mapsLanguage(locale), region: MAPS_REGION } as const;
+}
+
+/**
+ * Who also reads the technical setup detail (env var names, which Google API to enable) under the
+ * plain "not available yet" notices of maps and leads: the owner and holders of
+ * admin.settings.manage. Everyone else reads business language only (docs/DECISIONS.md Part C).
+ * A display choice, not security: the keys are never sent to anyone either way.
+ */
+export function seesSetupDetails(ctx: UserContext): boolean {
+  return can(ctx, "admin.settings.manage");
 }

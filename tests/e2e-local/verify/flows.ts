@@ -59,7 +59,7 @@ export async function fillBuilder(page: Page, input: BuilderInput): Promise<void
   }
 }
 
-/** "Calculate prices on the server": returns the preview card. */
+/** "Update prices": returns the preview card. */
 export async function previewPrices(page: Page): Promise<Locator> {
   await button(page, ar("orders.builder.preview")).click();
   const card = page.locator("[aria-live=polite]").filter({ hasText: ar("orders.preview.title") });

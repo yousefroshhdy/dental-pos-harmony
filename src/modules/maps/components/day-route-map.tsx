@@ -8,7 +8,7 @@ import type { DayRoute } from "../logic";
 const CAIRO_TIME = { timeStyle: "short", timeZone: "Africa/Cairo", numberingSystem: "latn" } as const;
 
 /** The rep day map: route segments, dashed gap hops, numbered stops and visit check-ins. */
-export function DayRouteMap({ apiKey, locale, route }: { apiKey: string | null; locale: "ar" | "en"; route: DayRoute }) {
+export function DayRouteMap({ apiKey, setupHint, locale, route }: { apiKey: string | null; setupHint?: boolean; locale: "ar" | "en"; route: DayRoute }) {
   const t = useTranslations("maps.day");
   const format = useFormatter();
   const time = (iso: string | null) => (iso ? format.dateTime(new Date(iso), CAIRO_TIME) : "…");
@@ -63,5 +63,5 @@ export function DayRouteMap({ apiKey, locale, route }: { apiKey: string | null; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route, t, format]);
 
-  return <MapView apiKey={apiKey} locale={locale} label={t("mapLabel")} markers={markers} polylines={polylines} className="h-[50vh] min-h-72 w-full" />;
+  return <MapView apiKey={apiKey} setupHint={setupHint} locale={locale} label={t("mapLabel")} markers={markers} polylines={polylines} className="h-[50vh] min-h-72 w-full" />;
 }

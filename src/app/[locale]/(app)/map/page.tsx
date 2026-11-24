@@ -7,6 +7,7 @@ import { Alert, Badge, Card, Label, Select } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import { listAssignableEmployees, listTerritories } from "@/modules/crm/queries";
 import { localizedName } from "@/modules/crm/logic";
 import { LIFECYCLE_STAGES } from "@/modules/crm/types";
@@ -123,6 +124,7 @@ export default async function CustomersMapPage({ params, searchParams }: Props) 
         <CustomersSection
           locale={lang}
           apiKey={apiKey}
+          setupHint={seesSetupDetails(ctx)}
           rows={data.data.pinned}
           unpinned={data.data.unpinned}
           truncated={data.data.truncated}
@@ -136,6 +138,7 @@ export default async function CustomersMapPage({ params, searchParams }: Props) 
 async function CustomersSection({
   locale,
   apiKey,
+  setupHint,
   rows,
   unpinned,
   truncated,
@@ -143,6 +146,7 @@ async function CustomersSection({
 }: {
   locale: "ar" | "en";
   apiKey: string | null;
+  setupHint: boolean;
   rows: Parameters<typeof pinnedCustomers>[0];
   unpinned: number;
   truncated: boolean;
@@ -162,7 +166,7 @@ async function CustomersSection({
         <Empty>{filtered ? t("emptyFiltered") : t("empty")}</Empty>
       ) : (
         <>
-          <CustomersMap apiKey={apiKey} locale={locale} rows={pins} />
+          <CustomersMap apiKey={apiKey} setupHint={setupHint} locale={locale} rows={pins} />
           <Legend />
         </>
       )}

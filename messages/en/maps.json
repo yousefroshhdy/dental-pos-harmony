@@ -11,13 +11,15 @@
     "proposals": "Pin proposals"
   },
   "map": {
-    "noKeyTitle": "Map key not configured",
-    "noKeyBody": "The Google Maps browser key (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) is not set, so no map is loaded. The lists on this page still work.",
+    "noKeyTitle": "The map is not available yet",
+    "noKeyBody": "Ask the owner to finish the Google Maps setup. The lists on this page still work.",
+    "noKeySetupHint": "Setup detail (owner and admins only): the Google Maps browser key NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set, so no map is loaded.",
     "loading": "Loading the map…",
     "errorTitle": "The map could not load",
     "errorBody": "Check the connection and reload the page. The lists on this page still work.",
-    "rejectedTitle": "Google rejected the map key",
-    "rejectedBody": "The key may not allow this website, or the Maps JavaScript API is not enabled. Ask the owner to check the key in Google Cloud.",
+    "rejectedTitle": "Google did not allow the map",
+    "rejectedBody": "Ask the owner to check the Google Maps setup. The lists on this page still work.",
+    "rejectedSetupHint": "Setup detail (owner and admins only): in Google Cloud, check that the browser key NEXT_PUBLIC_GOOGLE_MAPS_API_KEY allows this website and that the Maps JavaScript API is enabled.",
     "cluster": "{count} customers here. Zoom in to see them.",
     "searchAddress": "Search for an address",
     "searchFailed": "The address search is not available right now. Drop the pin on the map instead."
@@ -141,7 +143,7 @@
     },
     "saved": "The clinic location is saved and verified.",
     "editHint": "Search for the address, or tap the map to drop the pin. Drag the pin to adjust it.",
-    "editNoKey": "The map key is not configured, so the pin cannot be placed on a map. While at the clinic, use \"Use my current location\" in the clinic location card.",
+    "editNoKey": "The map is not available yet, so the pin cannot be placed on a map. While at the clinic, use \"Use my current location\" in the clinic location card.",
     "outsideEgypt": "The pin must be inside Egypt.",
     "saveMove": "Save the new location",
     "save": "Save the location",

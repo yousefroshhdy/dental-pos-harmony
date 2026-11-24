@@ -11,10 +11,12 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import { localizedName } from "@/modules/crm/logic";
 import { listGovernorates, listSpecialties } from "@/modules/crm/queries";
 import { PageBody } from "@/modules/field/components/layout-bits";
 import { GoogleAttribution } from "@/modules/leads/components/google-attribution";
+import { NotConfiguredNotice } from "@/modules/leads/components/not-configured-notice";
 import { ConvertLeadForm, LeadNotesForm, LeadPlanButton, LeadStatusButtons, ReassignLeadForm } from "@/modules/leads/components/lead-forms";
 import { collectAttributions, distanceParts, isOpen, leadTitle, nextManualStatuses, statusTone } from "@/modules/leads/logic";
 import { getLead, listBaseLocations, loadLeadDetails } from "@/modules/leads/queries";
@@ -72,7 +74,7 @@ export default async function LeadPage({ params }: Props) {
         description={d?.address ?? undefined}
       />
 
-      {details?.status === "not_configured" ? <Alert tone="warning">{t("list.notConfigured")}</Alert> : null}
+      {details?.status === "not_configured" ? <NotConfiguredNotice setupHint={seesSetupDetails(ctx)} /> : null}
       {details?.status === "budget_reached" ? <Alert tone="info">{t("list.budgetReached")}</Alert> : null}
 
       <Card>

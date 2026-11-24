@@ -28,7 +28,7 @@ Definitions are in `docs/TESTING.md` §4.
 
 | Step | Item | Status | Evidence |
 |------|------|--------|----------|
-| 3 Google Maps | Shared map component (`src/components/map/`): official loader, lazy, ar/en, region EG, markers, grid clusters, polylines, info windows, "Map key not configured" state with no network | Implemented, Tested (unit) | `tests/unit/maps-no-key.test.ts`, `maps-logic.test.ts` |
+| 3 Google Maps | Shared map component (`src/components/map/`): official loader, lazy, ar/en, region EG, markers, grid clusters, polylines, info windows, "The map is not available yet" state with no network | Implemented, Tested (unit) | `tests/unit/maps-no-key.test.ts`, `maps-logic.test.ts` |
 | 3 Google Maps | CSP: Google Maps sources behind `googleMaps: true`, script-src unchanged (nonce + strict-dynamic); meta copy from the same builder | Implemented, Tested (unit) | `tests/unit/security-headers-maps.test.ts`, meta parity case. Needs the one-line proxy switch (lead) |
 | 3 Google Maps | Customers map `/map` with rep, territory, stage, overdue AR and last-visit filters (`api.v_customer_map`) | Implemented, Tested (DB scope) | suite 57 |
 | 3 Google Maps | Customer detail map card: pin, opt-in distance, directions link; office users set the location by Places Autocomplete or a dropped pin (`api.set_customer_location`) | Implemented | e2e not run |
@@ -152,6 +152,7 @@ Definitions are in `docs/TESTING.md` §4.
 | 8 | Preview mode (read-only, real data): `pnpm verify:preview` with `VERIFY_BASE_URL`, `VERIFY_EMAIL`, `VERIFY_PASSWORD`, `VERIFY_ROLE`; 38 read-only lines; writing and demo-data lines skipped; no screenshot, trace, video or page snapshot kept | Implemented; mechanics exercised against the local stack (all roles); not run on a preview (no test account yet) | `docs/VERIFICATION.md`, `docs/TESTING.md` §8 |
 | 8 | Screenshots refreshed: 87 screens (new: `/admin/setup/legacy-import` with the synthetic workbook checked) × ar/en × 390/1440 = 348 | Tested (local) | `tests/e2e-local/screens.ts` |
 | 8 | Gap: no UI to create a quarantine warehouse (returns cannot be received on staging until one exists) | Planned (needs a decision) | `src/modules/admin/setup-actions.ts` creates `main` only |
+| review | Plain language on field and finance screens (review of `d4f3077`, item 3): no "server", API, key, env var names, status codes or SQL words in strings reps, managers, finance and inventory read ("Update prices" / «تحديث الأسعار», "Prices are worked out when you save", "Clinic names are not available yet. Ask the owner to finish the Google Maps setup."); the env var name and the Google Cloud check show only to the owner and `admin.settings.manage` holders (`seesSetupDetails`) on the map and leads notices | Implemented, Tested (unit) | unit `user-facing-wording` (scans every `messages/{ar,en}` string; allow-list of owner/admin keys with reasons), `maps-no-key` |
 
 ## 2. MVP scope (prioritised)
 
