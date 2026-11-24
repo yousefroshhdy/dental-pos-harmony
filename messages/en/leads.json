@@ -160,9 +160,10 @@
       "new": "Not visited",
       "visitedPct": "Visited",
       "convertedPct": "Converted",
+      "customers": "Became customers",
       "plannedToday": "Planned today",
       "lastRun": "Last search",
-      "definitions": "Visited = visited, prospect or customer. Converted = became a CRM record (prospect or customer)."
+      "definitions": "Visited = visited, prospect or customer. Converted = became a CRM record (prospect or customer). Became customers = the clinic's customer record became active (usually with its first order)."
     },
     "reps": {
       "title": "Search around each rep",

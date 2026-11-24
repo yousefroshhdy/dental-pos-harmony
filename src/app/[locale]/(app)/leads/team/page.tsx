@@ -117,6 +117,7 @@ export default async function LeadsTeamPage({ params }: Props) {
                     <Th>{t("team.stats.new")}</Th>
                     <Th>{t("team.stats.visitedPct")}</Th>
                     <Th>{t("team.stats.convertedPct")}</Th>
+                    <Th>{t("team.stats.customers")}</Th>
                     <Th>{t("team.stats.plannedToday")}</Th>
                     <Th>{t("team.stats.lastRun")}</Th>
                   </tr>
@@ -133,6 +134,7 @@ export default async function LeadsTeamPage({ params }: Props) {
                       <Td>{s.new_count}</Td>
                       <Td>{percent(s.visited_pct)}</Td>
                       <Td>{percent(s.converted_pct)}</Td>
+                      <Td>{s.customer_count}</Td>
                       <Td>{s.planned_today}</Td>
                       <Td>{s.last_run_status ? t(`runStatus.${s.last_run_status}`) : "—"}</Td>
                     </tr>
