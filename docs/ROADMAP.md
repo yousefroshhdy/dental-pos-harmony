@@ -90,6 +90,19 @@ Definitions are in `docs/TESTING.md` §4.
 | Audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, planner rule, fast coverage | Tested | suite 53, unit `planning-audit4` |
 | **Staging deploy of wave 2 and audit 4** | **Database done; owner steps pending** | All 66 migrations are on staging and all 52 suites pass there (2026-10-31). Still needed before anything is Verified: the runbook owner steps (§2 secrets, exposed schemas, OTP, template, rate limit, TOTP, owner login) and a human click-through |
 
+### Phase P — Make it usable (wave A, 2026-11-24)
+
+Owner build prompt steps 1–7, six agents in parallel. Rows are per step; nothing here is Verified.
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Step 2a UI foundation: shadcn/ui components (`src/components/ui`), DataTable (@tanstack/react-table v9, client and server pagination, phone cards), date picker (Cairo calendar, Western digits), form field with inline validation messages, toasts | Implemented, Tested (unit) | unit `ui-components`, `ui-helpers` |
+| Step 2a type and theme: IBM Plex Sans Arabic / IBM Plex Sans (self-hosted), Bebas Neue for Latin display only, deep-teal brand tokens, light/dark (next-themes, nonce-carrying script) | Implemented, Tested (build; nonce checked on the built login page) | `src/app/globals.css`, `src/app/[locale]/layout.tsx` |
+| Step 2a app shell: department nav groups with permission filtering, collapsible desktop sidebar, phone menu drawer, field bottom bar (Today · Map · Leads · Visits · Orders), account menu with theme and language | Implemented, Tested (unit) | `src/lib/nav.ts`, `src/components/app-shell`, unit `nav-groups`, `nav-bottom-bar` |
+| Step 2a context-load error screen ("couldn't load your account", distinct from "account not active") | Implemented, Tested (unit) | `src/lib/authz/context.ts`, unit `ui-context-error` |
+| Step 2a role homes on `/[locale]` (owner > finance > manager > rep), existing `api.*` reads only | Implemented, Tested (unit: role choice, figures) | `src/modules/home`, unit `ui-home-role` |
+| Step 2b per-screen redesign (Today, Customers, Customer detail, Orders, then the rest) and screenshots | Planned (next wave) | — |
+
 ## 2. MVP scope (prioritised)
 
 **MVP goal:** reps and managers run daily field sales in Honest OS, and every order, stock movement and collection is recorded and controlled. **MVP = Phases 2 + 3 + the "AR core" of Phase 4 + basic dashboards from Phase 5.**

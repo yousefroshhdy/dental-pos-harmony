@@ -1,55 +1,187 @@
 @import "tailwindcss";
 
-/* Honest OS design tokens. Light by default, dark via prefers-color-scheme.
-   Logical properties only (RTL-safe); see eslint rule in eslint.config.mjs. */
+/*
+ * Honest OS design tokens (ADR-002, Phase P step 2).
+ *
+ * - Light by default; dark when next-themes puts `class="dark"` on <html>
+ *   (class strategy, system preference by default).
+ * - Brand: a deep teal primary with a warm copper "highlight" accent. `accent`
+ *   keeps its shadcn meaning (a quiet hover/selected surface), so the warm brand
+ *   colour has its own token.
+ * - The sidebar has its own deep surface in both themes.
+ * - Logical properties only (RTL-safe); see the eslint rule in eslint.config.mjs.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: oklch(0.985 0.003 247);
-  --foreground: oklch(0.21 0.03 264);
+  --background: oklch(0.985 0.004 200);
+  --foreground: oklch(0.22 0.025 230);
   --card: oklch(1 0 0);
-  --muted: oklch(0.955 0.006 247);
-  --muted-foreground: oklch(0.5 0.02 257);
-  --border: oklch(0.91 0.01 252);
-  --primary: oklch(0.45 0.13 240);
-  --primary-foreground: oklch(0.985 0 0);
+  --card-foreground: oklch(0.22 0.025 230);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.025 230);
+  --muted: oklch(0.955 0.008 200);
+  --muted-foreground: oklch(0.47 0.02 220);
+  --border: oklch(0.905 0.012 200);
+  --input: oklch(0.86 0.014 200);
+  --primary: oklch(0.44 0.085 195);
+  --primary-foreground: oklch(0.985 0.005 195);
+  --secondary: oklch(0.945 0.02 195);
+  --secondary-foreground: oklch(0.3 0.06 200);
+  --accent: oklch(0.95 0.012 200);
+  --accent-foreground: oklch(0.22 0.025 230);
+  --highlight: oklch(0.74 0.14 62);
+  --highlight-foreground: oklch(0.24 0.05 50);
   --destructive: oklch(0.55 0.2 27);
   --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.55 0.13 155);
-  --warning: oklch(0.7 0.15 75);
-  --ring: oklch(0.6 0.13 240);
+  --success: oklch(0.52 0.13 155);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.72 0.15 75);
+  --warning-foreground: oklch(0.25 0.05 60);
+  --ring: oklch(0.55 0.09 195);
+
+  --sidebar: oklch(0.26 0.045 212);
+  --sidebar-foreground: oklch(0.95 0.01 200);
+  --sidebar-muted: oklch(0.74 0.03 205);
+  --sidebar-accent: oklch(0.33 0.05 205);
+  --sidebar-border: oklch(0.33 0.04 210);
+  --sidebar-primary: oklch(0.78 0.13 65);
+
   --radius: 0.625rem;
+
+  /* Latin first, Arabic glyphs fall through to Plex Sans Arabic (unicode-range). */
+  --app-font: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, "Segoe UI", Tahoma, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.17 0.02 264);
-    --foreground: oklch(0.96 0.005 247);
-    --card: oklch(0.21 0.02 264);
-    --muted: oklch(0.26 0.02 264);
-    --muted-foreground: oklch(0.7 0.02 257);
-    --border: oklch(0.3 0.02 264);
-    --primary: oklch(0.68 0.13 240);
-    --primary-foreground: oklch(0.17 0.02 264);
-    --ring: oklch(0.68 0.13 240);
-  }
+/* Arabic pages: Plex Sans Arabic first so mixed text keeps one rhythm. */
+:root:lang(ar) {
+  --app-font: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, "Segoe UI", Tahoma, sans-serif;
+}
+
+.dark {
+  --background: oklch(0.17 0.02 225);
+  --foreground: oklch(0.96 0.006 200);
+  --card: oklch(0.21 0.022 225);
+  --card-foreground: oklch(0.96 0.006 200);
+  --popover: oklch(0.23 0.022 225);
+  --popover-foreground: oklch(0.96 0.006 200);
+  --muted: oklch(0.26 0.02 225);
+  --muted-foreground: oklch(0.73 0.02 210);
+  --border: oklch(0.31 0.02 225);
+  --input: oklch(0.36 0.02 225);
+  --primary: oklch(0.72 0.1 190);
+  --primary-foreground: oklch(0.18 0.03 220);
+  --secondary: oklch(0.28 0.03 200);
+  --secondary-foreground: oklch(0.92 0.02 195);
+  --accent: oklch(0.28 0.02 220);
+  --accent-foreground: oklch(0.96 0.006 200);
+  --highlight: oklch(0.78 0.13 65);
+  --highlight-foreground: oklch(0.2 0.04 50);
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.7 0.14 155);
+  --success-foreground: oklch(0.18 0.03 155);
+  --warning: oklch(0.8 0.14 80);
+  --warning-foreground: oklch(0.2 0.04 60);
+  --ring: oklch(0.72 0.1 190);
+
+  --sidebar: oklch(0.14 0.02 225);
+  --sidebar-foreground: oklch(0.94 0.008 200);
+  --sidebar-muted: oklch(0.7 0.02 210);
+  --sidebar-accent: oklch(0.22 0.025 215);
+  --sidebar-border: oklch(0.24 0.02 225);
+  --sidebar-primary: oklch(0.78 0.13 65);
+
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-ring: var(--ring);
-  --radius-lg: var(--radius);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
-  --font-sans: "Segoe UI", Tahoma, "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--app-font);
+  /* Latin display headings only (HONEST brand). Never on Arabic text: see the :lang rule below. */
+  --font-display: "Bebas Neue", "IBM Plex Sans", system-ui, sans-serif;
+}
+
+/* Entry animations for overlays (dialog, sheet, popover). Reduced motion turns them off below. */
+@theme {
+  --animate-overlay-in: overlay-in 150ms ease-out;
+  --animate-pop-in: pop-in 150ms ease-out;
+  --animate-slide-in-x-neg: slide-in-x-neg 200ms ease-out;
+  --animate-slide-in-x-pos: slide-in-x-pos 200ms ease-out;
+  --animate-slide-in-y-pos: slide-in-y-pos 200ms ease-out;
+  --animate-slide-in-y-neg: slide-in-y-neg 200ms ease-out;
+
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+  @keyframes slide-in-x-neg {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes slide-in-x-pos {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes slide-in-y-pos {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes slide-in-y-neg {
+    from {
+      transform: translateY(-100%);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot] {
+    animation-duration: 1ms !important;
+  }
 }
 
 html {
@@ -59,9 +191,25 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--app-font);
+  /* D-11: Western digits; tabular figures line up in tables and tiles. */
+  font-variant-numeric: lining-nums;
 }
 
 * {
   border-color: var(--border);
+}
+
+/*
+ * Bebas Neue has no Arabic glyphs and its forms don't suit Arabic headings. Any
+ * element whose language is Arabic (the page language, unless the element says
+ * lang="en") falls back to the body font even if it carries `font-display`.
+ * Unlayered, so it wins over the Tailwind utility.
+ */
+.font-display {
+  letter-spacing: 0.02em;
+}
+.font-display:lang(ar) {
+  font-family: var(--app-font);
+  letter-spacing: normal;
 }

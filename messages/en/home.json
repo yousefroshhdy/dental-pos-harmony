@@ -1,0 +1,96 @@
+{
+  "pageTitle": "Home",
+  "greeting": "Hello, {name}",
+  "greetingNoName": "Hello",
+  "subtitle": {
+    "owner": "The company today: sales, money owed, stock and the team.",
+    "finance": "Money in today, what customers owe, and what waits for you.",
+    "manager": "Your team today, the pipeline and what waits for your decision.",
+    "rep": "Your plan, your visits and your month so far.",
+    "general": "Your screens are in the menu. This is the access you hold."
+  },
+  "open": "Open",
+  "error": {
+    "title": "This couldn't be loaded",
+    "body": "Try again in a moment. Nothing is shown in its place so you never see a wrong number.",
+    "bodyWithRef": "Try again in a moment. If it keeps failing, give your administrator this reference: {requestId}"
+  },
+  "kpis": {
+    "openDashboard": "Full dashboard",
+    "myMonth": "My month",
+    "teamMonth": "Team this month",
+    "companyMonth": "Company this month",
+    "empty": "No figures yet",
+    "emptyHint": "Figures appear once visits, orders and payments are recorded.",
+    "ofTarget": "Target {target} · {pct}",
+    "now": "As of now",
+    "noTarget": "No target set"
+  },
+  "approvals": {
+    "title": "Waiting for your approval",
+    "empty": "Nothing is waiting for you."
+  },
+  "team": {
+    "title": "Team activity today",
+    "empty": "No team activity recorded today.",
+    "caption": "Visits and orders per team member today",
+    "member": "Team member",
+    "visits": "Visits",
+    "orders": "Orders",
+    "visitsValue": "{done} of {planned}"
+  },
+  "pipeline": {
+    "title": "Pipeline",
+    "empty": "No open opportunities.",
+    "stageValue": "{count} · {value}",
+    "stages": {
+      "new": "New",
+      "qualified": "Qualified",
+      "proposal": "Proposal",
+      "negotiation": "Negotiation"
+    }
+  },
+  "receipts": {
+    "title": "Receipts today",
+    "empty": "No payments received yet today.",
+    "count": "{count, plural, one {# payment} other {# payments}}",
+    "pending": "{count, plural, one {# awaiting verification} other {# awaiting verification}}"
+  },
+  "aging": {
+    "title": "Receivables aging",
+    "empty": "No open receivables.",
+    "overdue": "Overdue {amount}",
+    "customers": "{count, plural, one {# customer owes money} other {# customers owe money}}",
+    "buckets": {
+      "current_amount": "Not yet due",
+      "d1_30": "1–30 days",
+      "d31_60": "31–60 days",
+      "d61_90": "61–90 days",
+      "d90_plus": "Over 90 days"
+    }
+  },
+  "plan": {
+    "title": "Today's plan",
+    "empty": "No visits planned for today.",
+    "planDay": "Plan visits",
+    "inProgress": "In progress"
+  },
+  "visits": {
+    "title": "My visits today",
+    "empty": "No check-ins yet today.",
+    "noEmployee": "Your login is not linked to an employee, so there are no visits to show.",
+    "done": "Done",
+    "open": "Open"
+  },
+  "leads": {
+    "title": "Clinics near me",
+    "body": "New dental clinics around your area, sorted by distance.",
+    "open": "Show clinics near me"
+  },
+  "rep": {
+    "startDay": "Start my day"
+  },
+  "noRoles": "You have no roles yet. An administrator must assign one before you can use Honest OS.",
+  "yourAccess": "Your access",
+  "permissionCount": "{count, plural, =0 {No permissions} one {# permission} other {# permissions}}"
+}
