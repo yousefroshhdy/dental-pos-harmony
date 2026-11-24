@@ -2,8 +2,9 @@
 
 import { callCommand } from "@/lib/command";
 import type { AppError } from "@/lib/errors";
-import { ackNoticeSchema, endShiftSchema, recordPingsSchema, startShiftSchema } from "./schemas";
-import type { AckResult, DeviceResult, EndShiftResult, PingsResult, StartShiftResult, TrackingStatus } from "./types";
+import { webBuildId } from "./health";
+import { ackNoticeSchema, endShiftSchema, recordPingsSchema, reportDeviceStatusSchema, startShiftSchema } from "./schemas";
+import type { AckResult, DeviceResult, DeviceStatusResult, EndShiftResult, PingsResult, StartShiftResult, TrackingStatus } from "./types";
 
 /**
  * Tracking device commands (D-14). Each validates its payload and calls exactly
@@ -74,5 +75,21 @@ export async function recordLocationPings(payload: unknown): Promise<DeviceResul
 /** The caller's own tracking status, for the client collector to re-check the server. */
 export async function loadTrackingStatus(): Promise<DeviceResult<TrackingStatus>> {
   const result = await callCommand<TrackingStatus>("my_tracking_status");
+  return result.ok ? { ok: true, data: result.data } : failure(result.error);
+}
+
+/**
+ * The device's own status for the managers' health panel (api.report_device_status). Sent at
+ * shift start and every 5 minutes while collecting; never queued offline (a snapshot). The
+ * server adds `web_build`: the deployment that answered. Binding to the caller's own open
+ * shift, the key whitelist and the one-a-minute limit are enforced in Postgres.
+ */
+export async function reportDeviceStatus(payload: unknown): Promise<DeviceResult<DeviceStatusResult>> {
+  const parsed = reportDeviceStatusSchema.safeParse(payload);
+  if (!parsed.success) return invalid();
+  const result = await callCommand<DeviceStatusResult>("report_device_status", {
+    p_shift_id: parsed.data.shift_id,
+    p_payload: { ...parsed.data.status, web_build: webBuildId(process.env) },
+  });
   return result.ok ? { ok: true, data: result.data } : failure(result.error);
 }

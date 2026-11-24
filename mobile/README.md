@@ -104,21 +104,139 @@ installs the new one. It is **not** for the Play Store or the fleet.
    the pilot's `signingConfigs.debug`), uploads the signed APK/AAB, and deletes the keystore file.
 4. Bump `versionCode` / `versionName` in `android/app/build.gradle` for every release.
 
-## Install on company phones
+## Install the pilot app, step by step (IT and reps)
 
-- **MDM (recommended for the fleet):** upload the APK as a private app in the MDM
-  (e.g. Android Enterprise managed Google Play private app, or the MDM's own app catalogue).
-  Through MDM IT can also: pre-grant location and notifications, exempt Honest OS from battery
-  optimisation, and block uninstalling. The pilot uses the **pilot APK**
-  (`honest-os-android-pilot`, `app-release.apk`), **never the debug APK**; the fleet needs the
-  production-signed one (see above).
-- **One phone by cable:** enable Developer options › USB debugging, then
-  `adb install -r app-release.apk`. **Then turn USB debugging (and Developer options) off
-  again**: left on, anyone with the phone and a laptop can install or inspect apps.
-- **One phone without a computer:** copy the APK to the phone and open it; allow
-  "Install unknown apps" for the file manager when asked, then turn that permission off again.
+**Status of these steps: Planned.** They follow the app's manifest and the plugin's source; nobody
+has run them on a phone yet. The owner's test day (`docs/TESTING.md` §6) is the first run.
 
-## Permissions (and what the rep must allow)
+Before you start: **no real use before the D-03 legal review** (see the top of this file). Use the
+one pilot phone and a test account.
+
+### 1. Get a fresh pilot APK (IT, on a computer)
+
+1. Open the repository on GitHub › **Actions** › **Android** (left column).
+2. Open the latest run with a green tick on branch `ccr-cd8ec6c2-y28xig`.
+3. Under **Artifacts**, download **`honest-os-android-pilot`**. It is a ZIP; unzip it to get
+   **`app-release.apk`**. Never use `honest-os-android-debug` on a rep's phone.
+4. **Artifacts expire after 14 days.** If the run is older, or the artifact is gone: Actions ›
+   **Android** › **Run workflow** (top right) › branch `ccr-cd8ec6c2-y28xig` › **Run workflow**.
+   Wait about 10 minutes for the green tick, then download as above.
+5. Optional check: the run's log, step "Check the pilot APK", prints the APK's signing
+   certificate (SHA-256). Install only an APK downloaded from this repository's run.
+
+### 2. Remove the old app (on the phone)
+
+Each CI run signs the pilot with a new key, so a new APK cannot update an installed one
+("App not installed" / "package conflicts"). Remove the old one first:
+
+1. If the rep's working day is open: open Honest OS, wait until the shift card shows
+   **"All points sent"**, then tap **End my day**. Uninstalling deletes points still waiting on
+   the phone.
+2. Settings › **Apps** › **Honest OS** › **Uninstall** › OK.
+
+### 3. Install the new APK (on the phone)
+
+**Without a computer (usual):**
+
+1. Copy `app-release.apk` to the phone (USB file transfer, or a company channel). Do not
+   forward it through public chats.
+2. Open the **Files** app (Samsung: **My Files**), tap `app-release.apk`.
+3. Android says the phone is not allowed to install unknown apps from this source: tap
+   **Settings**, turn on **Allow from this source**, go back, tap **Install**.
+4. If Google Play Protect warns about an unknown app: **More details** › **Install anyway**
+   (the pilot is not on the Play Store).
+5. After installing: Settings › Apps › (the Files app) › **Install unknown apps** › turn
+   **Allow from this source** off again.
+
+**With a cable (IT):**
+
+1. On the phone: Settings › About phone › tap **Build number** 7 times (Developer options
+   appear), then Settings › System › Developer options › **USB debugging** on.
+2. On the computer: `adb install app-release.apk`.
+3. **Then turn USB debugging off, and Developer options off** (Settings › System › Developer
+   options › top switch off). Left on, anyone with the phone and a laptop can install or
+   inspect apps.
+
+### 4. Allow notifications (first start)
+
+Open **Honest OS**. On Android 13 and newer it asks **"Allow Honest OS to send you
+notifications?"** › **Allow**. The permanent notification "Honest OS is recording your location
+for your working day" is what keeps tracking running in the background. (If it was refused:
+Settings › Apps › Honest OS › Notifications › on.)
+
+### 5. Sign in
+
+Enter the rep's **work email**, then either the password or **"Email me a sign-in code"** and the
+numeric code from the email. Use the code, not the link in the same email: the link opens the
+phone's browser, not the app.
+
+### 6. Allow location (at the first "Start my day")
+
+On **Today**, tap **Start my day** (after reading and accepting the tracking notice the first
+time). Android asks for location:
+
+1. Choose **"While using the app"** (Settings wording: **"Allow only while using the app"**).
+2. Keep **"Precise"** / **"Use precise location"** on.
+3. Do **not** choose **"Only this time"** or **"Ask every time"**: tracking would stop when the app
+   is closed.
+
+**About "Allow all the time".** The owner's brief asked for it, but **the phone will not offer
+it**, and it is not needed. Checked in the app's manifest and the plugin's source
+(`@capacitor-community/background-geolocation` 1.3.1):
+
+- The app does **not** declare `ACCESS_BACKGROUND_LOCATION` (2026-10-30 audit; see
+  `android/app/src/main/AndroidManifest.xml`), and the plugin asks only for
+  `ACCESS_COARSE_LOCATION` + `ACCESS_FINE_LOCATION`. Android shows "Allow all the time" only to
+  apps that declare background location, so the choices are "Allow only while using the app",
+  "Ask every time" and "Don't allow".
+- Background recording works through a **foreground service of type `location`** with a
+  permanent notification (`FOREGROUND_SERVICE_LOCATION`). Android lets a foreground service that
+  was started while the app was on screen ("Start my day") keep using a "while using the app"
+  permission when the screen is off or another app is open.
+- What stops it: swiping Honest OS away from recent apps, the phone's battery saver killing the
+  app (step 7), or notifications being off. Then the day shows gaps, and the manager's health
+  panel shows "Needs attention" after 15 minutes.
+
+If location was refused: Settings › Apps › Honest OS › **Permissions** › **Location** › **Allow
+only while using the app**, "Use precise location" on. The shift card's **Open app settings**
+button opens that page.
+
+### 7. Turn battery optimisation off for Honest OS
+
+Android, and some brands much more than others, stop background apps to save battery.
+
+| Phone | Where |
+|---|---|
+| **All (Android 12+)** | Settings › Apps › Honest OS › **Battery** › **Unrestricted** (older: Battery optimisation › All apps › Honest OS › **Don't optimise**) |
+| **Samsung** (One UI) | the above, and Settings › Battery › **Background usage limits**: remove Honest OS from **Sleeping apps** and **Deep sleeping apps**, add it to **Never sleeping apps**; turn **Put unused apps to sleep** off |
+| **Xiaomi / Redmi / Poco** (MIUI, HyperOS) | Settings › Apps › Manage apps › Honest OS: **Autostart** on; **Battery saver** › **No restrictions**; in recent apps, long-press Honest OS › **lock** |
+| **Oppo / Realme / OnePlus** (ColorOS, realme UI) | Settings › Apps › App management › Honest OS › **Battery usage**: **Allow background activity** on, **Allow auto launch** on (older: **Don't optimise**); lock it in recent apps |
+| **Huawei / Honor** (EMUI, MagicOS) | Settings › Battery › **App launch** › Honest OS: switch **Manage automatically** off, then keep **Auto-launch**, **Secondary launch** and **Run in background** on; lock it in recent apps |
+| **MDM** | allow-list Honest OS from battery optimisation for every device at once |
+
+Menu names change between versions; <https://dontkillmyapp.com> has model-specific steps. Also
+check that the phone-wide **Battery saver / Power saving mode** is off during the working day.
+
+### 8. Check it works (rep and manager together)
+
+1. Rep: **Start my day**. The notification appears; the shift card says "On shift".
+2. Lock the phone for 15 minutes, then open the app: the shift card shows a recent "Last point".
+3. Manager: **Tracking** › **Tracking health now**: the rep's row shows "Day open", a last point a
+   few minutes old, "Android app", location "Allowed", and no "Needs attention" badge.
+
+### 9. After installing (IT)
+
+- **USB debugging and Developer options off** (step 3), **Install unknown apps** off again.
+- The phone keeps the notification permission, location "while using the app", and battery
+  "Unrestricted".
+
+### MDM (later, for the fleet)
+
+Upload the APK as a private app in the MDM (e.g. Android Enterprise managed Google Play). The
+MDM can pre-grant location and notifications, exempt Honest OS from battery optimisation, and
+block uninstalling. The fleet needs the production-signed APK (see Signing), not the pilot one.
+
+## Permissions (what the app declares)
 
 Declared in `android/app/src/main/AndroidManifest.xml`:
 
@@ -130,36 +248,25 @@ Declared in `android/app/src/main/AndroidManifest.xml`:
 | `POST_NOTIFICATIONS` | showing that notification (Android 13+); asked once when the app starts |
 
 `ACCESS_BACKGROUND_LOCATION` is **not** requested: the service is started while the app is in
-the foreground ("Start my day") and keeps running with its notification.
+the foreground ("Start my day") and keeps running with its notification. Adding it later would
+need a Play Store background-location declaration, and on Android 11 and newer "Allow all the
+time" would still be granted only in Settings, never in the first dialog. It is not needed for
+the pilot.
 
-On the phone, the rep allows:
+## What the app reports to the manager
 
-1. **Location: "Allow all the time" or "Allow only while using the app"**, with **"Use precise
-   location" on**. ("Only this time" stops after the app is closed.)
-2. **Notifications: allow.** The notification is what keeps tracking running.
-3. **Battery: "Unrestricted"** (see below).
+While the day is open, the app sends a small status report at "Start my day" and every 5
+minutes (`api.report_device_status`, at most once a minute per shift): which collector runs
+(Android app or browser), the location permission as the phone knows it (allowed, refused,
+location off, not asked, unknown), the app version, battery saver (not available yet: no web
+API reports it, so "Not reported"), and how many points are still waiting on the phone. No
+location, no phone model, no identifiers. Managers see it on **Tracking › Tracking health now**.
 
-The shift card in the app shows the same guidance, in Arabic and English, with a button that
-opens the app's Android settings.
-
-## Battery settings
-
-Android and especially some manufacturers stop background apps to save battery. Then the day
-shows gaps (flagged for the manager, never an automatic penalty).
-
-- **All phones:** Settings › Apps › Honest OS › Battery › **Unrestricted** (older versions:
-  turn off "Optimise battery usage").
-- **Samsung:** Settings › Battery › Background usage limits: remove Honest OS from "Sleeping
-  apps" and "Deep sleeping apps"; optionally add it to "Never sleeping apps".
-- **Xiaomi / Redmi / Poco (MIUI, HyperOS):** Settings › Apps › Honest OS: **Autostart on**,
-  Battery saver › **No restrictions**; lock the app in the recent-apps screen.
-- **Oppo / Realme / OnePlus (ColorOS), Vivo:** allow **Auto launch / Background activity**,
-  battery "Don't optimise"; lock the app in recent apps.
-- **MDM:** allow-list Honest OS from battery optimisation for all devices at once.
-- Tell reps **not to swipe Honest OS away** from recent apps during the day: on Android that
-  ends the app and its location service.
-
-See also <https://dontkillmyapp.com> for model-specific steps.
+**App version:** the pilot shell has no `@capacitor/app` plugin and its guarded bridge allows only
+the background-location plugin, so the app version shows as the **web build** (the deployment's
+commit). To show the APK's own version, add `@capacitor/app` and allow `App.getInfo` in
+`BridgePolicy` (a deliberate bridge change, with a test), or set `appendUserAgent` in
+`capacitor.config.ts`.
 
 ## Security
 

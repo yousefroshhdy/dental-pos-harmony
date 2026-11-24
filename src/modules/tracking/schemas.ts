@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEVICE_PERMISSIONS } from "./health";
 import { PING_SOURCES } from "./types";
 
 /**
@@ -56,3 +57,23 @@ export const dayParamsSchema = z.object({
   employeeId: id,
   date: z.iso.date(),
 });
+
+/**
+ * The device's own status (api.report_device_status). The same whitelist as the server, minus
+ * `web_build`, which the server action adds (the deployment that answered); nothing else passes.
+ */
+export const reportDeviceStatusSchema = z
+  .object({
+    shift_id: id,
+    status: z
+      .object({
+        source: z.enum(PING_SOURCES),
+        permission: z.enum(DEVICE_PERMISSIONS),
+        app_version: z.string().regex(/^[0-9A-Za-z._+-]{1,40}$/).nullable(),
+        battery_saver: z.boolean().nullable(),
+        pending_points: z.number().int().min(0).max(100_000).nullable(),
+      })
+      .strict(),
+  })
+  .strict();
+export type ReportDeviceStatusPayload = z.infer<typeof reportDeviceStatusSchema>;
