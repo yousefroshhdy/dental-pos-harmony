@@ -286,7 +286,7 @@ export function AgingTable({ rows, total, ledger, error }: { rows: AgingRow[]; t
   const customer = (r: AgingRow) => (
     <span className="block min-w-0">
       {ledger ? (
-        <Link href={`/finance/customers/${r.customer_id}/statement`} className="block truncate font-medium text-primary underline-offset-4 hover:underline">
+        <Link href={`/finance/customers/${r.customer_id}/statement`} className="tap-link max-w-full truncate font-medium text-primary underline-offset-4 hover:underline">
           {r.customer_name ?? "—"}
         </Link>
       ) : (

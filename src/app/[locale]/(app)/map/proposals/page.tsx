@@ -90,7 +90,7 @@ export default async function LocationProposalsPage({ params, searchParams }: Pr
                     <div className="min-w-0 space-y-1">
                       <p className="font-medium break-words">
                         {view === "pending" ? `${i + 1}. ` : ""}
-                        <Link href={`/customers/${r.customer_id}`} className="text-primary underline-offset-4 hover:underline">
+                        <Link href={`/customers/${r.customer_id}`} className="tap-link text-primary underline-offset-4 hover:underline">
                           {r.customer_name ?? r.customer_no}
                         </Link>
                       </p>

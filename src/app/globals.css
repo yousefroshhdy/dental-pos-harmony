@@ -13,6 +13,21 @@
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * A text link a finger must hit (list rows, cards, detail pages): at least
+ * 44 × 44 px on phones, its natural size from md up where a mouse is the norm.
+ */
+@utility tap-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
+  @media (width >= 48rem) {
+    min-block-size: 0;
+    min-inline-size: 0;
+  }
+}
+
 :root {
   --background: oklch(0.985 0.004 200);
   --foreground: oklch(0.22 0.025 230);

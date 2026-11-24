@@ -169,7 +169,7 @@ async function CustomersSection({
       {unpinned > 0 ? (
         <Alert tone="info">
           {t("unpinnedHint", { count: String(unpinned) })}{" "}
-          <Link href="/customers" className="font-medium underline-offset-4 hover:underline">
+          <Link href="/customers" className="tap-link font-medium underline-offset-4 hover:underline">
             {t("toCustomers")}
           </Link>
         </Alert>

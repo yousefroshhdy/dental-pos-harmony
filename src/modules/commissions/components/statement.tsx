@@ -55,7 +55,7 @@ export async function StatementLines({ lines, canOpenInvoices }: { lines: readon
                 <>
                   <p className="text-sm font-medium break-words">
                     {line.invoice_id && line.invoice_no && canOpenInvoices ? (
-                      <Link href={`/finance/invoices/${line.invoice_id}`} className="text-primary underline-offset-4 hover:underline">
+                      <Link href={`/finance/invoices/${line.invoice_id}`} className="tap-link text-primary underline-offset-4 hover:underline">
                         {line.invoice_no}
                       </Link>
                     ) : (

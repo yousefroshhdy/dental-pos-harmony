@@ -100,7 +100,7 @@ export default async function LegacyImportPage({ params }: { params: Params }) {
       {missingCatalog.length > 0 ? (
         <Alert tone="warning">
           {t("catalogMissing", { codes: missingCatalog.join(", ") })}{" "}
-          <Link href="/admin/setup#setup-imports" className="font-medium text-primary underline underline-offset-4">
+          <Link href="/admin/setup#setup-imports" className="tap-link font-medium text-primary underline underline-offset-4">
             {t("catalogLink")}
           </Link>
         </Alert>

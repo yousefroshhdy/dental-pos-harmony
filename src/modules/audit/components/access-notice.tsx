@@ -28,7 +28,7 @@ export async function AccessNotice({
       <p className="text-sm text-muted-foreground">
         {t("accessNotice")}{" "}
         {canSeeSecurityLog ? (
-          <Link href="/admin/security" prefetch={false} className="text-primary underline-offset-4 hover:underline">
+          <Link href="/admin/security" prefetch={false} className="tap-link text-primary underline-offset-4 hover:underline">
             {t("securityLink")}
           </Link>
         ) : null}

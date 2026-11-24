@@ -295,7 +295,7 @@ export default async function SetupPage({ params }: { params: Params }) {
                     {base?.base_lat != null && base.base_lng != null ? (
                       <p className="text-xs text-muted-foreground">
                         {base.base_address ? `${base.base_address} · ` : null}
-                        <a href={mapsLink(base.base_lat, base.base_lng)} target="_blank" rel="noreferrer" className="text-primary underline-offset-4 hover:underline" dir="ltr">
+                        <a href={mapsLink(base.base_lat, base.base_lng)} target="_blank" rel="noreferrer" className="tap-link text-primary underline-offset-4 hover:underline" dir="ltr">
                           {base.base_lat}, {base.base_lng}
                         </a>
                         {` · ${t(`people.sources.${base.base_location_source ?? "manual"}`)}`}

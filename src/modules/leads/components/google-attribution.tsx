@@ -26,7 +26,7 @@ export async function GoogleAttribution({ providers = [] }: { providers?: { prov
             <span key={p.provider}>
               {i > 0 ? ", " : null}
               {p.providerUri ? (
-                <a href={p.providerUri} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+                <a href={p.providerUri} target="_blank" rel="noopener noreferrer" className="tap-link underline underline-offset-4">
                   {p.provider}
                 </a>
               ) : (

@@ -298,11 +298,22 @@ including `/admin/setup/legacy-import` with the synthetic workbook checked, so t
 shows; a screen's `prepare` step runs before the shot) is captured full-page in
 ar and en at 390 × 844 and 1440 × 900 (`deviceScaleFactor` 1) as
 `NN-screen-persona-locale-width.png`. Checks per shot, listed in `index.md`: horizontal scroll at
-390 px, visible links/buttons in `<main>` under 44 px, text shaped like a message key, console
-errors, failed requests (cancelled prefetches ignored), `role=alert` texts, error-boundary text,
-404/500. Knobs: `SHOTS_DIR`, `SHOTS_ONLY`, `SHOTS_LOCALES`, `SHOTS_WIDTHS`, `PW_CHROMIUM_PATH`.
-Full-page phone shots show the fixed bottom bar where the first viewport ends. Never commit
-screenshots.
+390 px, visible links/buttons in `<main>` under 44 px at 390 px (under 24 px at 1440 px, the
+WCAG 2.2 AA minimum for pointer targets), a desktop sidebar shorter than the page, text shaped
+like a message key, console errors, failed requests (cancelled prefetches ignored), `role=alert`
+texts, error-boundary text, 404/500. Knobs: `SHOTS_DIR`, `SHOTS_ONLY`, `SHOTS_LOCALES`,
+`SHOTS_WIDTHS`, `PW_CHROMIUM_PATH`. Full-page phone shots show the fixed bottom bar where the
+first viewport ends. Never commit screenshots.
+
+**Tap targets (review on `d4f3077`).** At 390 px every flagged target is fixed: 0 left on 174
+phone shots. The home cards' "Open" (فتح) link, filter chips and sortable table headers are at
+least 44 × 44 px; text links in rows, cards and detail pages (lead names, invoice, order, payment
+and statement links, map and setup links) use the `tap-link` utility (`src/app/globals.css`):
+44 × 44 px below `md`, natural size from `md` up. At 1440 px the run still lists text links in
+table cells and sentences that are 18–21 px tall (192 on 174 desktop shots). They are acceptable:
+a mouse is the pointer there, each link sits alone in a table row of at least 44 px or inside a
+sentence, so WCAG 2.5.8's spacing and inline exceptions apply, and the same lists render as
+full-width cards on phones. Sortable headers are 44 px at every width.
 
 **What is real and what is mocked**
 

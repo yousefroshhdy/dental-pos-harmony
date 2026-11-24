@@ -98,7 +98,7 @@ export default async function CommissionAdjustmentsPage({ params }: { params: Pr
                     {r.status === "pending" ? (
                       <>
                         {" · "}
-                        <Link href={`/approvals/${r.request_id}`} className="text-primary underline-offset-4 hover:underline">
+                        <Link href={`/approvals/${r.request_id}`} className="tap-link text-primary underline-offset-4 hover:underline">
                           {t("adjust.openApproval")}
                         </Link>
                       </>

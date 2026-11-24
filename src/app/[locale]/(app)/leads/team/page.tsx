@@ -122,7 +122,7 @@ export default async function LeadsTeamPage({ params }: Props) {
                   {stats.data.map((s) => (
                     <tr key={s.employee_id}>
                       <Td>
-                        <Link href={`/leads?rep=${s.employee_id}&filter=all`} className="text-primary underline-offset-4 hover:underline">
+                        <Link href={`/leads?rep=${s.employee_id}&filter=all`} className="tap-link text-primary underline-offset-4 hover:underline">
                           {name(s.employee_name_en, s.employee_name_ar)}
                         </Link>
                       </Td>
@@ -153,7 +153,7 @@ export default async function LeadsTeamPage({ params }: Props) {
             ) : bases.data.filter((b) => b.base_lat !== null).length === 0 ? (
               <Empty>
                 {t("team.reps.empty")}{" "}
-                <Link href="/admin/setup" className="text-primary underline-offset-4 hover:underline">
+                <Link href="/admin/setup" className="tap-link text-primary underline-offset-4 hover:underline">
                   {t("team.reps.toSetup")}
                 </Link>
               </Empty>

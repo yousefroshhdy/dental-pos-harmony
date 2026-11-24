@@ -152,6 +152,9 @@ Definitions are in `docs/TESTING.md` §4.
 | 8 | Preview mode (read-only, real data): `pnpm verify:preview` with `VERIFY_BASE_URL`, `VERIFY_EMAIL`, `VERIFY_PASSWORD`, `VERIFY_ROLE`; 38 read-only lines; writing and demo-data lines skipped; no screenshot, trace, video or page snapshot kept | Implemented; mechanics exercised against the local stack (all roles); not run on a preview (no test account yet) | `docs/VERIFICATION.md`, `docs/TESTING.md` §8 |
 | 8 | Screenshots refreshed: 87 screens (new: `/admin/setup/legacy-import` with the synthetic workbook checked) × ar/en × 390/1440 = 348 | Tested (local) | `tests/e2e-local/screens.ts` |
 | 8 | Gap: no UI to create a quarantine warehouse (returns cannot be received on staging until one exists) | Planned (needs a decision) | `src/modules/admin/setup-actions.ts` creates `main` only |
+| 2b | Review on `d4f3077`, approval type names: every seeded workflow code (12, including `finance.write_off`) has an Arabic and English label; the home approvals card and the dashboard "waiting for you" list now use them too (fallback: the stored English name) | Implemented, Tested (unit `workflow-type-labels`: codes read from the migrations; red before the fix) | — |
+| 2b | Review on `d4f3077`, desktop sidebar: the dark column spans the full page height; its content sticks to the viewport and the menu scrolls on its own | Implemented, Tested (local screenshots: new "sidebar shorter than the page" check, 0 of 174 desktop shots) | — |
+| 2b | Review on `d4f3077`, tap targets: 0 under 44 px at 390 px (was 55); home "Open" links, filter chips and sortable headers 44 px; text links use `tap-link` (44 px below `md`). Desktop text links under 24 px in table cells and sentences accepted (`docs/TESTING.md` §7) | Implemented, Tested (local screenshots 348/348, verification 77/77) | replaces the earlier "small text links need a design decision" note |
 
 ## 2. MVP scope (prioritised)
 

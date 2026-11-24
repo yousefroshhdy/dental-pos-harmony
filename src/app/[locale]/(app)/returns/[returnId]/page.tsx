@@ -110,7 +110,7 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
         <Field
           label={t("detail.order")}
           value={
-            <Link href={`/orders/${r.order_id}`} className="text-primary underline-offset-4 hover:underline" dir="ltr">
+            <Link href={`/orders/${r.order_id}`} className="tap-link text-primary underline-offset-4 hover:underline" dir="ltr">
               {r.order_no ?? t("detail.openOrder")}
             </Link>
           }
@@ -123,7 +123,7 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
           label={t("detail.approval")}
           value={
             r.approval_request_id ? (
-              <Link href={`/approvals/${r.approval_request_id}`} className="text-primary underline-offset-4 hover:underline">
+              <Link href={`/approvals/${r.approval_request_id}`} className="tap-link text-primary underline-offset-4 hover:underline">
                 {r.approval_status ? t(`approvalStatus.${r.approval_status}`) : t("detail.openApproval")}
               </Link>
             ) : (

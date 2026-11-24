@@ -280,7 +280,7 @@ export function DataTable<TData extends RowData>({
                             <button
                               type="button"
                               onClick={header.column.getToggleSortingHandler()}
-                              className="-mx-2 inline-flex min-h-9 items-center gap-1 rounded px-2 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                              className="-mx-2 inline-flex min-h-11 min-w-11 items-center gap-1 rounded px-2 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
                             >
                               {col?.header}
                               {sorted === "asc" ? (

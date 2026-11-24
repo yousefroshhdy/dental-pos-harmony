@@ -179,7 +179,7 @@ export default async function LeadsPage({ params, searchParams }: Props) {
                     <div className="min-w-0 space-y-1">
                       <p className="font-medium">
                         <span className="text-muted-foreground">{(page.data.page - 1) * LEADS_PAGE_SIZE + i + 1}. </span>
-                        <Link href={`/leads/${row.id}`} className="text-primary underline-offset-4 hover:underline">
+                        <Link href={`/leads/${row.id}`} className="tap-link text-primary underline-offset-4 hover:underline">
                           {title ?? t("list.unnamed")}
                         </Link>
                       </p>

@@ -128,7 +128,7 @@ export default async function StatementPage({
                   <Td className="whitespace-nowrap">{format.dateTime(new Date(r.posted_at), CAIRO_DATE_TIME)}</Td>
                   <Td>
                     {href && r.document_no ? (
-                      <Link href={href} className="text-primary underline-offset-4 hover:underline" dir="ltr">
+                      <Link href={href} className="tap-link text-primary underline-offset-4 hover:underline" dir="ltr">
                         {r.document_no}
                       </Link>
                     ) : (

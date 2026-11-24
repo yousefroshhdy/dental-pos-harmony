@@ -138,7 +138,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: { para
           label={t("invoice.order")}
           value={
             inv.order_id ? (
-              <Link href={`/orders/${inv.order_id}`} className="text-primary underline-offset-4 hover:underline" dir="ltr">
+              <Link href={`/orders/${inv.order_id}`} className="tap-link text-primary underline-offset-4 hover:underline" dir="ltr">
                 {inv.order_no ?? t("invoice.openOrder")}
               </Link>
             ) : (
@@ -152,7 +152,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: { para
           <Field
             label={t("invoice.customer")}
             value={
-              <Link href={`/finance/customers/${inv.customer_id}/statement`} className="text-primary underline-offset-4 hover:underline">
+              <Link href={`/finance/customers/${inv.customer_id}/statement`} className="tap-link text-primary underline-offset-4 hover:underline">
                 {t("invoice.statement")}
               </Link>
             }

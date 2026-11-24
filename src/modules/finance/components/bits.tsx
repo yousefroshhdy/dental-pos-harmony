@@ -32,7 +32,7 @@ export function FilterLinks({ label, items }: { label: string; items: { key: str
           key={i.key}
           href={i.href}
           aria-current={i.current ? "page" : undefined}
-          className={cn(buttonVariants({ variant: i.current ? "default" : "outline", size: "sm" }), "min-h-11")}
+          className={cn(buttonVariants({ variant: i.current ? "default" : "outline", size: "sm" }), "min-h-11 min-w-11")}
         >
           {i.text}
         </Link>
