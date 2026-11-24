@@ -28,3 +28,6 @@ supabase/.temp/
 # misc
 .DS_Store
 *.log
+
+# owner data (real records; never commit, see DECISIONS Part C)
+/private/
