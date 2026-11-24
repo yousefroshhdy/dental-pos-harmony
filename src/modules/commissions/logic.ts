@@ -1,5 +1,19 @@
 import type { AppError } from "@/lib/errors";
-import type { DbNumber, LineKind, PeriodRow, PeriodStatus, RequestStatus, StatementLine, SummaryRow } from "./types";
+import type {
+  DbNumber,
+  LineKind,
+  PeriodRow,
+  PeriodStatus,
+  PlanStatus,
+  RateTarget,
+  RequestStatus,
+  RuleRow,
+  RuleState,
+  StatementLine,
+  StatementTotalsRow,
+  SummaryRow,
+  UnratedRow,
+} from "./types";
 
 /**
  * Pure helpers for the commission screens. Every amount comes from Postgres; these
@@ -191,6 +205,125 @@ export function kindMatchesSign(kind: "bonus" | "clawback" | "correction", amoun
 }
 
 // ---------------------------------------------------------------------------
+// Rate editor
+// ---------------------------------------------------------------------------
+const DAY_KEY = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** A real calendar day as YYYY-MM-DD (2000–2100). */
+export function isDayKey(value: string): boolean {
+  const m = DAY_KEY.exec(value);
+  if (!m || Number(m[1]) < 2000 || Number(m[1]) > 2100) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.getUTCDate() === Number(m[3]);
+}
+
+/** Rate input → a percentage 0–100 with at most 2 decimals; else null. Accepts Arabic-Indic digits and a trailing %. */
+export function parseRatePct(raw: string): number | null {
+  const ascii = raw
+    .trim()
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/[٫]/g, ".")
+    .replace(/[%٪\s]/g, "");
+  if (!/^\d{1,3}(\.\d{1,2})?$/.test(ascii)) return null;
+  const n = Number(ascii);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
+}
+
+export function planStatusTone(status: PlanStatus): "neutral" | "success" | "warning" {
+  if (status === "active") return "success";
+  if (status === "draft") return "warning";
+  return "neutral";
+}
+
+export function ruleStateTone(state: RuleState): "success" | "info" | "neutral" | "danger" {
+  if (state === "current") return "success";
+  if (state === "scheduled") return "info";
+  if (state === "void") return "danger";
+  return "neutral";
+}
+
+/** Rates can be changed on drafts and active plans; a retired plan is history. */
+export function canEditPlan(status: PlanStatus): boolean {
+  return status !== "retired";
+}
+
+const TARGET_ORDER: Record<RateTarget, number> = { variant: 0, category: 1, brand: 2, default: 3 };
+
+/**
+ * Rates that apply today or later (current and scheduled), most specific target first
+ * (product > category > brand > plan default, as the engine resolves them), then by code
+ * and start. Ended and void rows are history and are listed apart.
+ */
+export function liveRules(rules: readonly RuleRow[]): RuleRow[] {
+  return rules
+    .filter((r) => r.state === "current" || r.state === "scheduled")
+    .sort(
+      (a, b) =>
+        TARGET_ORDER[a.target_type] - TARGET_ORDER[b.target_type] ||
+        (a.target_code ?? "").localeCompare(b.target_code ?? "") ||
+        (a.effective_from ?? "").localeCompare(b.effective_from ?? ""),
+    );
+}
+
+/** History rows (ended and void), newest start first. */
+export function historyRules(rules: readonly RuleRow[]): RuleRow[] {
+  return rules
+    .filter((r) => r.state === "ended" || r.state === "void")
+    .sort((a, b) => (b.effective_from ?? "").localeCompare(a.effective_from ?? "") || b.created_at.localeCompare(a.created_at));
+}
+
+export interface UnratedGroup {
+  brandId: string;
+  brandCode: string;
+  brandName: string;
+  items: UnratedRow[];
+}
+
+/** The "no rate" list grouped by brand (the owner usually sets a brand rate first). */
+export function groupUnrated(rows: readonly UnratedRow[]): UnratedGroup[] {
+  const groups = new Map<string, UnratedGroup>();
+  for (const row of rows) {
+    const g = groups.get(row.brand_code) ?? { brandId: row.brand_id, brandCode: row.brand_code, brandName: row.brand_name, items: [] };
+    g.items.push(row);
+    groups.set(row.brand_code, g);
+  }
+  return [...groups.values()].sort((a, b) => a.brandCode.localeCompare(b.brandCode));
+}
+
+// ---------------------------------------------------------------------------
+// Rep statement
+// ---------------------------------------------------------------------------
+export type FunnelKey = "collected" | "vat" | "commissionable" | "unrated" | "commission" | "clawbacks" | "adjustments" | "net";
+
+export interface FunnelStep {
+  key: FunnelKey;
+  value: number;
+  /** A sub-line (shown indented): the VAT taken out, the part without a rate. */
+  detail: boolean;
+}
+
+/**
+ * The statement's steps in reading order: collected cash → VAT out → commissionable →
+ * (of which without a rate) → commission → clawbacks → adjustments → net. Every figure comes
+ * from api.v_commission_statement_totals; only the order and the sign of the VAT line are
+ * decided here. No row → all zeros.
+ */
+export function statementFunnel(row: StatementTotalsRow | null): FunnelStep[] {
+  const n = (v: DbNumber | undefined) => toNumber(v) ?? 0;
+  return [
+    { key: "collected", value: n(row?.collected_gross), detail: false },
+    { key: "vat", value: 0 - n(row?.vat_amount), detail: true },
+    { key: "commissionable", value: n(row?.commissionable), detail: false },
+    { key: "unrated", value: n(row?.unrated_base), detail: true },
+    { key: "commission", value: n(row?.commission), detail: false },
+    { key: "clawbacks", value: n(row?.clawbacks), detail: false },
+    { key: "adjustments", value: n(row?.adjustments), detail: false },
+    { key: "net", value: n(row?.net), detail: false },
+  ];
+}
+
+// ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
 export const COMMISSION_ERROR_CODES = [
@@ -207,6 +340,9 @@ export const COMMISSION_ERROR_CODES = [
   "CONFLICT",
   "UNAVAILABLE",
   "MFA_REQUIRED",
+  "DUPLICATE",
+  "COMMISSION_RULE_IMMUTABLE",
+  "COMMISSION_PLAN_IMMUTABLE",
   "UNKNOWN",
 ] as const;
 export type CommissionErrorCode = (typeof COMMISSION_ERROR_CODES)[number];

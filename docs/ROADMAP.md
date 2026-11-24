@@ -99,6 +99,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Step 5: tracking health panel (shift open/closed and since when, last point and age, collector, permission, app version or web build, battery saver, points waiting, "Needs attention" after 15 minutes) | Tested (DB + unit); not Verified | suite 59; unit `tracking-health`, `native-device-info`; `/tracking` |
 | Step 5: one-phone test-day script | Planned (each step Verified only after the owner runs it) | `docs/TESTING.md` §6.1 |
 | Step 5: visits flow checked in code (start shift → check-in → check-out → outcome) | Implemented; no blocking bug found in the tracking/field modules beyond the permission guidance | report of Phase P step 5 |
+| Step 7 commissions switched on: owner-only MFA rate editor (`/commissions/plans`), STD-2026 configured with decision D (brand rates; grafts/membranes unset and on the "no rate" list), activation with rep assignment from the editor, printable rep statement (collected cash → commissionable → commission → clawbacks → net) | Tested (DB + unit); STD-2026 stays a draft until the owner activates it in the editor; not Verified | suite 58, suites 37/46 unchanged, unit `commissions-editor`, `commissions-messages` |
 
 ## 2. MVP scope (prioritised)
 

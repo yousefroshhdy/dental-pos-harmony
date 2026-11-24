@@ -150,7 +150,7 @@ The rep restrictions requested in the brief map as follows:
 |------------------|-----------|
 | View other reps' private data | `own` scope on CRM, visits, orders, KPIs and commissions (RLS) |
 | Access purchase costs | No `catalog.cost.read`; costs live in a separate table (tested) |
-| Change commission rates | No `perf.commission_plan.manage` |
+| Change commission rates | No `perf.commission_plan.manage` (owners only; MFA; every rate command refuses everyone else, suite 58) |
 | Approve unauthorised discounts | `sales.discount.apply` limit 3% and no `wf.approval.decide.*`. Higher discounts go to approval automatically (tested). |
 | Modify inventory balances | No write grant on balances; no `inventory.adjustment.post` (tested) |
 | Access company-wide financial reports | No `finance.page.aging`, `exec.page.overview`, or `all` scope on finance permissions |
@@ -188,13 +188,13 @@ The rep restrictions requested in the brief map as follows:
 - `api.my_mfa_status()` returns `{enforced, aal, required_permissions}` for the caller; `api.v_permissions.requires_mfa` exposes the flag.
 - Service-role jobs (the commission cron, the escalation job) never pass through `authz.require` and are unaffected.
 
-**Gated set** (23 codes; suites 39 and 48 pin it exactly):
+**Gated set** (24 codes; suites 39 and 48 pin it exactly):
 
 | Area | Codes |
 |------|-------|
 | Access administration | `admin.role.assign`, `admin.role.manage`, `admin.override.manage`, `admin.user.suspend` |
 | Configuration | `admin.settings.manage`, `admin.workflow.manage`, `admin.import.run` |
-| Money | `finance.payment.reverse` (reversal, bounce, allocation reversal), `finance.credit_limit.change` (no command yet), `catalog.price.manage`, `wf.decide.write_off`, `sales.return.credit`, `perf.commission.calculate` |
+| Money | `finance.payment.reverse` (reversal, bounce, allocation reversal), `finance.credit_limit.change` (no command yet), `catalog.price.manage`, `wf.decide.write_off`, `sales.return.credit`, `perf.commission.calculate`, `perf.commission_plan.manage` (the rate editor, `20261125000400`) |
 | Stock | `inventory.quarantine.release` |
 | Data | `audit.row_image.unmask`; every export permission: `crm.customer.export`, `sales.order.export`, `finance.invoice.export`, `finance.payment.export`, `finance.aging.export`, `field.visit.export`, `inventory.stock.export`, `field.tracking.export` (`20261104001100`) |
 

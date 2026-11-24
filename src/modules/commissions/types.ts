@@ -100,7 +100,115 @@ export interface EmployeeOption {
   label: string;
 }
 
+// ---------------------------------------------------------------------------
+// Rate editor and rep statement (supabase/migrations/20261125000400_commissions_on.sql)
+// ---------------------------------------------------------------------------
+export const PLAN_STATUSES = ["draft", "active", "retired"] as const;
+export type PlanStatus = (typeof PLAN_STATUSES)[number];
+
+/** Targets in the engine's specificity order (most specific first). */
+export const RATE_TARGETS = ["variant", "category", "brand", "default"] as const;
+export type RateTarget = (typeof RATE_TARGETS)[number];
+
+export const RULE_STATES = ["current", "scheduled", "ended", "void"] as const;
+export type RuleState = (typeof RULE_STATES)[number];
+
+/** api.v_commission_plans */
+export interface PlanRow {
+  id: string;
+  code: string;
+  name: string;
+  basis: "collected" | "invoiced";
+  status: PlanStatus;
+  effective_from: string;
+  effective_to: string | null;
+  is_default: boolean;
+  activated_at: string | null;
+  retired_at: string | null;
+  retire_reason: string | null;
+  created_at: string;
+  current_rate_count: number;
+  assigned_count: number;
+}
+
+/** api.v_commission_plan_rules */
+export interface RuleRow {
+  id: string;
+  plan_id: string;
+  plan_code: string;
+  target_type: RateTarget;
+  target_id: string | null;
+  target_code: string | null;
+  target_name_en: string | null;
+  target_name_ar: string | null;
+  rate_pct: DbNumber;
+  priority: number;
+  effective_from: string | null;
+  effective_to: string | null;
+  voided_at: string | null;
+  note: string | null;
+  created_at: string;
+  state: RuleState;
+}
+
+/** api.commission_unrated(plan, day) */
+export interface UnratedRow {
+  variant_id: string;
+  sku: string;
+  variant_name_en: string;
+  product_id: string;
+  product_code: string;
+  product_name_en: string;
+  product_name_ar: string | null;
+  brand_id: string;
+  brand_code: string;
+  brand_name: string;
+  category_id: string;
+  category_code: string;
+  category_name_en: string;
+  category_name_ar: string;
+}
+
+/** api.v_commission_statement_totals */
+export interface StatementTotalsRow {
+  period_id: string;
+  period_start: string;
+  period_end: string;
+  period_status: PeriodStatus;
+  employee_id: string;
+  employee_no: string | null;
+  employee_name_en: string | null;
+  employee_name_ar: string | null;
+  collected_gross: DbNumber;
+  vat_amount: DbNumber;
+  commissionable: DbNumber;
+  unrated_base: DbNumber;
+  commission: DbNumber;
+  clawbacks: DbNumber;
+  clawback_base: DbNumber;
+  adjustments: DbNumber;
+  net: DbNumber;
+  entry_count: number;
+}
+
+/** A rate target the editor can pick (brand, category or product). */
+export interface TargetOption {
+  id: string;
+  label: string;
+}
+
+export type CommissionActionMessageKey =
+  | "recalculated"
+  | "closed"
+  | "pending"
+  | "posted"
+  | "planCreated"
+  | "rateSet"
+  | "rateCleared"
+  | "planActivated"
+  | "planDeactivated";
+
 export type CommissionActionResult =
-  | { ok: true; message: "recalculated" | "closed" | "pending" | "posted" }
-  | { ok: false; errorCode: CommissionErrorCode; requestId?: string };
+  | { ok: true; message: CommissionActionMessageKey; planId?: string }
+  | { ok: false; errorCode: CommissionErrorCode; requestId?: string; mfaRequired?: boolean };
 export type CommissionActionState = CommissionActionResult | null;

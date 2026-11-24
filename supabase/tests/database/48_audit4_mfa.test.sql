@@ -101,8 +101,8 @@ select is((select array_agg(code order by code) from authz.permissions where req
                 'crm.customer.export','field.tracking.export','field.visit.export','finance.aging.export',
                 'finance.credit_limit.change','finance.invoice.export','finance.payment.export','finance.payment.reverse',
                 'inventory.quarantine.release','inventory.stock.export',
-                'perf.commission.calculate','sales.order.export','sales.return.credit','wf.decide.write_off'],
-          'the full gated set (admin.import.run too, once it exists; exports gated by 20261104000710 and 20261104001100)');
+                'perf.commission.calculate','perf.commission_plan.manage','sales.order.export','sales.return.credit','wf.decide.write_off'],
+          'the full gated set (admin.import.run too, once it exists; exports gated by 20261104000710 and 20261104001100; the rate editor by 20261125000400)');
 select ok((select bool_and(p.is_sensitive) from authz.permissions p where p.requires_mfa),
           'every gated permission is also marked sensitive');
 select is((select requires_mfa from api.v_permissions where code = 'perf.commission.calculate'), true,
