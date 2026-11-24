@@ -4,6 +4,9 @@ import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
 import type { InvoiceFilter, PaymentFilter, CollectionFilter } from "./logic";
 import { COLLECTION_FILTERS, INVOICE_FILTERS, PAYMENT_FILTERS } from "./logic";
+import { ilikeAny, type Page, type PageRequest } from "@/modules/orders/kit/paging";
+import { runPage } from "@/modules/orders/kit/run-page";
+import { AGING_LIST, PAYMENT_LIST, invoiceList } from "./lists";
 import { parseCompanyProfile, type CompanyProfile } from "./print";
 import type {
   PrintPartyRow,
@@ -83,6 +86,22 @@ export async function listInvoices({ filter, customerId, bucket }: InvoiceListFi
   if (bucket) query = query.eq("aging_bucket", bucket);
   const ordered = filter === "open" || filter === "overdue" ? query.order("due_date") : query.order("issue_date", { ascending: false });
   return run("v_invoices", ordered.order("invoice_no", { ascending: false }).limit(LIST_LIMIT), []);
+}
+
+/** One page of the invoices list (server pagination), with the total the filters match. */
+export async function listInvoicesPage({ filter, customerId, bucket }: InvoiceListFilter, page: PageRequest): Promise<Result<Page<InvoiceRow>>> {
+  const db = await createClient();
+  let query = db.from("v_invoices").select(INVOICE_COLUMNS, { count: "exact" });
+  const statuses = INVOICE_FILTERS[filter];
+  if (statuses.length > 0) query = query.in("status", [...statuses]);
+  if (filter === "overdue") query = query.eq("is_overdue", true);
+  if (filter === "open" || filter === "overdue") query = query.gt("open_amount", 0);
+  if (customerId) query = query.eq("customer_id", customerId);
+  if (bucket) query = query.eq("aging_bucket", bucket);
+  const search = ilikeAny(invoiceList(filter).searchColumns ?? [], page.search);
+  if (search) query = query.or(search);
+  const ordered = query.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("invoice_no", { ascending: false }).order("id");
+  return runPage("finance", "v_invoices", ordered.range(page.offset, page.offset + page.limit - 1));
 }
 
 export async function getInvoice(invoiceId: string): Promise<Result<InvoiceRow | null>> {
@@ -227,6 +246,20 @@ export async function listPayments(filter: PaymentFilter, customerId: string | n
   return run("v_payments", query.order("received_at", { ascending: false }).limit(LIST_LIMIT), []);
 }
 
+/** One page of the payments list (server pagination). */
+export async function listPaymentsPage(filter: PaymentFilter, customerId: string | null, page: PageRequest): Promise<Result<Page<PaymentRow>>> {
+  const db = await createClient();
+  let query = db.from("v_payments").select(PAYMENT_COLUMNS, { count: "exact" });
+  const statuses = PAYMENT_FILTERS[filter];
+  if (statuses.length > 0) query = query.in("status", [...statuses]);
+  if (filter === "unallocated") query = query.gt("unallocated", 0);
+  if (customerId) query = query.eq("customer_id", customerId);
+  const search = ilikeAny(PAYMENT_LIST.searchColumns ?? [], page.search);
+  if (search) query = query.or(search);
+  const ordered = query.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("received_at", { ascending: false }).order("id");
+  return runPage("finance", "v_payments", ordered.range(page.offset, page.offset + page.limit - 1));
+}
+
 export async function getPayment(paymentId: string): Promise<Result<PaymentRow | null>> {
   const db = await createClient();
   return run("v_payments", db.from("v_payments").select(PAYMENT_COLUMNS).eq("id", paymentId).maybeSingle(), null);
@@ -274,6 +307,16 @@ export async function listCustomers(): Promise<Result<CustomerOption[]>> {
 export async function listAging(): Promise<Result<AgingRow[]>> {
   const db = await createClient();
   return run("v_ar_aging", db.from("v_ar_aging").select(AGING_COLUMNS).order("overdue_amount", { ascending: false }).limit(1000), []);
+}
+
+/** One page of the receivables aging (one row per customer). */
+export async function listAgingPage(page: PageRequest): Promise<Result<Page<AgingRow>>> {
+  const db = await createClient();
+  let query = db.from("v_ar_aging").select(AGING_COLUMNS, { count: "exact" });
+  const search = ilikeAny(AGING_LIST.searchColumns ?? [], page.search);
+  if (search) query = query.or(search);
+  const ordered = query.order(page.sort.column, { ascending: page.sort.ascending, nullsFirst: false }).order("customer_name").order("customer_id");
+  return runPage("finance", "v_ar_aging", ordered.range(page.offset, page.offset + page.limit - 1));
 }
 
 export async function getAgingTotals(): Promise<Result<AgingTotalsRow | null>> {

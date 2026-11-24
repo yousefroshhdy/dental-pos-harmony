@@ -243,5 +243,11 @@
       "battery": "موفّر البطارية",
       "reported": "بلاغ الهاتف"
     }
+  },
+  "teamTable": {
+    "search": "ابحث باسم المندوب",
+    "filter": "عرض",
+    "everyone": "الكل",
+    "flaggedOnly": "للمراجعة"
   }
 }

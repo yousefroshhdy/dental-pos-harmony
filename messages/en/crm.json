@@ -10,7 +10,8 @@
     "CUSTOMER_BLOCKED": "This customer is blocked or archived.",
     "LOCATION_UNAVAILABLE": "Your location could not be read.",
     "LOCATION_INACCURATE": "The location fix isn't accurate enough. Move to an open spot and try again.",
-    "DUPLICATE_CUSTOMER_HIDDEN": "A customer with this phone number already exists that you can't see. Ask your manager for access or a reassignment instead of creating a new record."
+    "DUPLICATE_CUSTOMER_HIDDEN": "A customer with this phone number already exists that you can't see. Ask your manager for access or a reassignment instead of creating a new record.",
+    "PHONE_REQUIRED": "A saved phone can't be removed. Enter the correct number instead."
   },
   "stage": {
     "lead": "Lead",
@@ -88,7 +89,27 @@
     "next": "Next",
     "empty": "No customers yet.",
     "emptyFiltered": "No customers match these filters.",
-    "export": "Export customers (CSV)"
+    "export": "Export customers (CSV)",
+    "intro": "Search by name, customer number or phone. Filters stay in the link, so you can share a list.",
+    "filters": "Filters",
+    "filtersCount": "{count, plural, one {# filter} other {# filters}}",
+    "allStages": "All stages",
+    "allTerritories": "All territories",
+    "allSpecialties": "All specialties",
+    "allReps": "All representatives",
+    "repSearch": "Find a representative",
+    "repEmpty": "No representative matches.",
+    "overdue": "Overdue",
+    "phoneMissing": "Phone missing",
+    "locationMissing": "No location",
+    "balance": "Balance",
+    "created": "Added",
+    "emptyTitle": "No customers yet",
+    "emptyBody": "Add the first clinic or doctor, or import the customer list on the imports screen.",
+    "emptyFilteredTitle": "No customers match",
+    "emptyFilteredBody": "Change or clear the filters.",
+    "errorTitle": "The customers couldn't load",
+    "done": "Show results"
   },
   "form": {
     "newTitle": "New customer",
@@ -126,7 +147,14 @@
     "tags": "Tags",
     "tagsHint": "Separate tags with commas.",
     "notes": "Notes",
-    "duplicateOutsideScope": "A matching customer exists that you can't see — ask your manager before creating a new record."
+    "duplicateOutsideScope": "A matching customer exists that you can't see — ask your manager before creating a new record.",
+    "phoneOptionalHint": "Leave it empty if the clinic has no phone yet: the customer is marked “phone missing” and the representative adds it on the next visit.",
+    "phoneMissingWarning": "No phone entered. The customer will be created and marked “phone missing”.",
+    "sectionIdentity": "Clinic and doctor",
+    "sectionContact": "Contact",
+    "sectionPlace": "Address",
+    "sectionMore": "More details",
+    "required": "required"
   },
   "detail": {
     "metaTitle": "Customer",
@@ -164,7 +192,39 @@
     "pipeline": "Open the pipeline",
     "reassign": "Request reassignment",
     "statement": "Account statement",
-    "recordPayment": "Record payment"
+    "recordPayment": "Record payment",
+    "phoneMissingCreated": "This customer has no phone yet. Add it now, or on the next visit.",
+    "contact": "Contact",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "newOrder": "New order",
+    "checkIn": "Check in",
+    "more": "More actions",
+    "overdue": "Overdue",
+    "tabsLabel": "Customer sections",
+    "tabs": {
+      "overview": "Overview",
+      "visits": "Visits",
+      "orders": "Orders",
+      "invoices": "Invoices",
+      "activity": "Activity"
+    },
+    "noVisits": "No visits yet.",
+    "noOrders": "No orders yet.",
+    "noInvoices": "No invoices yet.",
+    "latest": "The latest {limit}.",
+    "allOrders": "All orders",
+    "allInvoices": "All invoices of this customer",
+    "allVisits": "All visits",
+    "date": "Date",
+    "number": "No.",
+    "status": "Status",
+    "total": "Total",
+    "open": "Open",
+    "dueDate": "Due",
+    "representative": "Representative",
+    "outcome": "Outcome",
+    "plannedFor": "Planned for {date}"
   },
   "activity": {
     "type": "Type",
@@ -250,5 +310,19 @@
     "errorTitle": "This page couldn't load",
     "errorBody": "Please try again. If it keeps happening, tell your administrator.",
     "retry": "Try again"
+  },
+  "gap": {
+    "phone_missing": "Phone missing",
+    "location_missing": "Location missing"
+  },
+  "addPhone": {
+    "open": "Add phone",
+    "title": "Add the customer's phone",
+    "description": "Ask the clinic for its mobile or landline number. It is saved as +20… and closes the “phone missing” gap.",
+    "label": "Mobile or phone",
+    "submit": "Save phone",
+    "saving": "Saving…",
+    "saved": "Phone saved.",
+    "cancel": "Cancel"
   }
 }

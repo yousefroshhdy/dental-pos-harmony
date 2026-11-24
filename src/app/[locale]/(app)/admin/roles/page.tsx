@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
-import { Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { ListError } from "@/components/page-kit/list-error";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { readTableParams } from "@/components/ui/data-table-params";
+import { PageHeader } from "@/components/ui/page-header";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
-import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { CreateRoleForm } from "@/modules/admin/components/create-role-form";
+import { RolesTable, type RoleListRow } from "@/modules/admin/components/roles-table";
 import { localizedName } from "@/modules/admin/logic";
-import { listRoles } from "@/modules/admin/queries";
+import { listRolesPage } from "@/modules/admin/queries";
+import { ROLES_TABLE, sortColumn } from "@/modules/admin/tables";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -16,64 +19,54 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: t("title") };
 }
 
-export default async function RolesPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function RolesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale } = await params;
   setRequestLocale(locale);
   const ctx = await getUserContext();
   if (!can(ctx, "admin.role.read")) return <Forbidden />;
 
   const t = await getTranslations("admin.roles");
-  const roles = await listRoles();
-  if (!roles.ok) return <ErrorMessage messageKey={roles.error.messageKey} requestId={roles.error.requestId} />;
+  const tx = await getTranslations("setup.console");
+  const table = readTableParams(await searchParams, ROLES_TABLE);
+  const roles = await listRolesPage({
+    offset: table.offset,
+    pageSize: table.pageSize,
+    orderBy: sortColumn(table.sorting[0]?.id, locale, "code", { en: "name_en", ar: "name_ar" }),
+    desc: table.sorting[0]?.desc ?? false,
+    search: table.search,
+  });
+
+  const rows: RoleListRow[] = (roles.ok ? roles.data.rows : []).map((role) => ({
+    id: role.id,
+    code: role.code,
+    name: localizedName(locale, role.name_en, role.name_ar),
+    description: role.description,
+    isOwner: role.is_owner_role,
+    isSystem: role.is_system,
+    isActive: role.is_active,
+    permissionCount: Number(role.permission_count),
+  }));
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      <PageHeader title={t("title")} description={tx("rolesIntro")} />
 
-      {roles.data.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("empty")}</p>
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <Th>{t("code")}</Th>
-              <Th>{t("name")}</Th>
-              <Th>{t("type")}</Th>
-              <Th className="text-end">{t("permissions")}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {roles.data.map((role) => (
-              <tr key={role.id}>
-                <Td>
-                  <Link
-                    href={`/admin/roles/${role.id}`}
-                    className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    <code dir="ltr">{role.code}</code>
-                  </Link>
-                </Td>
-                <Td className="min-w-40">
-                  {localizedName(locale, role.name_en, role.name_ar)}
-                  {role.description ? <span className="block text-xs text-muted-foreground">{role.description}</span> : null}
-                </Td>
-                <Td>
-                  <span className="flex flex-wrap gap-1">
-                    {role.is_owner_role ? <Badge tone="info">{t("owner")}</Badge> : null}
-                    {role.is_system ? <Badge>{t("system")}</Badge> : null}
-                    {!role.is_active ? <Badge tone="warning">{t("inactive")}</Badge> : null}
-                  </span>
-                </Td>
-                <Td className="text-end tabular-nums">{role.is_owner_role ? t("allPermissions") : Number(role.permission_count)}</Td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
+      <RolesTable rows={rows} rowCount={roles.ok ? roles.data.total : 0} error={roles.ok ? undefined : <ListError error={roles.error} />} />
 
       {can(ctx, "admin.role.manage") ? (
         <Card className="space-y-4">
-          <CardTitle>{t("newRole")}</CardTitle>
+          <CardHeader>
+            <div className="space-y-1">
+              <CardTitle>{t("newRole")}</CardTitle>
+              <CardDescription>{t("ceilingNote")}</CardDescription>
+            </div>
+          </CardHeader>
           <CreateRoleForm locale={locale} />
         </Card>
       ) : null}

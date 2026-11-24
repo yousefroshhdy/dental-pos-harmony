@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
 import { buttonVariants } from "@/components/ui/button";
-import { Card } from "@/components/ui/primitives";
+import { CircleAlertIcon, HistoryIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
@@ -31,12 +34,9 @@ export default async function AuditRecordPage({ params, searchParams }: { params
   const route = parseRecordRoute(table, recordId);
   if (!route) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">{t("history.title")}</h1>
-        <Card className="text-sm text-muted-foreground">{t("history.invalid")}</Card>
-        <Link href="/audit" className={buttonVariants({ variant: "outline" })}>
-          {t("history.back")}
-        </Link>
+      <div className="space-y-6">
+        <PageHeader eyebrow={<BackLink href="/audit">{t("history.back")}</BackLink>} title={t("history.title")} />
+        <EmptyState tone="danger" icon={<CircleAlertIcon aria-hidden="true" />} title={t("history.invalid")} />
       </div>
     );
   }
@@ -52,30 +52,34 @@ export default async function AuditRecordPage({ params, searchParams }: { params
   const label = await tableLabel(route.schema, route.table);
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <Link href="/audit" prefetch={false} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("history.back")}
-        </Link>
-        <h1 className="text-2xl font-semibold">{t("history.title")}</h1>
-        <p className="text-sm">
-          {label}{" "}
-          <code dir="ltr" className="text-xs text-muted-foreground">
-            {tableRef(route.schema, route.table)}
-          </code>
-        </p>
-        <p className="text-sm break-all">
-          <span className="text-muted-foreground">{t("entry.record")} </span>
-          <code dir="ltr" className="text-xs">
-            {route.recordId}
-          </code>
-        </p>
-        {record ? (
-          <Link href={record} prefetch={false} className={buttonVariants({ variant: "outline" })}>
-            {t("entry.openRecord")}
-          </Link>
-        ) : null}
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow={<BackLink href="/audit">{t("history.back")}</BackLink>}
+        title={t("history.title")}
+        description={
+          <span className="flex flex-col gap-1">
+            <span>
+              {label}{" "}
+              <code dir="ltr" className="text-xs">
+                {tableRef(route.schema, route.table)}
+              </code>
+            </span>
+            <span className="break-all">
+              {t("entry.record")}{" "}
+              <code dir="ltr" className="text-xs">
+                {route.recordId}
+              </code>
+            </span>
+          </span>
+        }
+        actions={
+          record ? (
+            <Link href={record} prefetch={false} className={buttonVariants({ variant: "outline" })}>
+              {t("entry.openRecord")}
+            </Link>
+          ) : null
+        }
+      />
 
       <AccessNotice
         maskedCategories={entries.ok ? maskedCategories(entries.data) : []}
@@ -93,12 +97,12 @@ export default async function AuditRecordPage({ params, searchParams }: { params
         {!entries.ok ? (
           <AuditError error={entries.error} />
         ) : entries.data.length === 0 ? (
-          <Card className="text-sm text-muted-foreground">{t("history.empty")}</Card>
+          <EmptyState icon={<HistoryIcon aria-hidden="true" />} title={t("history.empty")} />
         ) : (
           <ol className="relative space-y-3 border-s ps-4">
             {entries.data.map((entry) => (
               <li key={entry.id} className="relative">
-                <span aria-hidden="true" className="absolute -start-[1.3rem] top-4 size-2.5 rounded-full bg-primary" />
+                <span aria-hidden="true" className="absolute -start-[1.3rem] top-4 size-2.5 rounded-full bg-primary ring-4 ring-background" />
                 <AuditEntryCard entry={entry} showRecord={false} />
               </li>
             ))}

@@ -1,8 +1,10 @@
 import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
+import { rangeOf, runPaged, searchFilter, type Paged } from "@/lib/list-query";
 import { createClient } from "@/lib/supabase/server";
 import { MARK_READ_MAX } from "./schemas";
+import { INBOX_SEARCH_COLUMNS, inboxOrder } from "./tables";
 import type { ApprovalRequestRow, ApprovalStepRow, InboxTab, NotificationRow } from "./types";
 
 /**
@@ -52,6 +54,22 @@ export async function listInbox(tab: InboxTab): Promise<Result<ApprovalRequestRo
   return run("v_approval_requests", query.limit(INBOX_LIMIT), []);
 }
 
+/** One page of an inbox tab (Phase P step 2b), optionally one workflow, with the exact count. */
+export async function listInboxPage(
+  tab: InboxTab,
+  req: { offset: number; pageSize: number; sort?: { id: string; desc: boolean }; search: string; workflow: string | null },
+): Promise<Result<Paged<ApprovalRequestRow>>> {
+  const db = await createClient();
+  let query = db.from("v_approval_requests").select(REQUEST_COLUMNS, { count: "exact" });
+  query = tab === "decide" ? query.eq("can_decide", true) : tab === "mine" ? query.eq("is_mine", true) : query.eq("decided_by_me", true);
+  if (req.workflow) query = query.eq("workflow_code", req.workflow);
+  const or = searchFilter(INBOX_SEARCH_COLUMNS, req.search);
+  if (or) query = query.or(or);
+  const order = inboxOrder(tab, req.sort);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_approval_requests", query.order(order.column, { ascending: order.ascending, nullsFirst: false }).order("request_id").range(from, to));
+}
+
 /** How many requests wait for the caller's decision (for the tab label). */
 export async function countToDecide(): Promise<Result<number>> {
   const db = await createClient();
@@ -92,6 +110,20 @@ export async function listNotifications(filter: "unread" | "all"): Promise<Resul
   let query = db.from("v_notifications").select("id, type, title, body, link, data, read_at, created_at");
   if (filter === "unread") query = query.is("read_at", null);
   return run("v_notifications", query.order("created_at", { ascending: false }).limit(NOTIFICATIONS_LIMIT), []);
+}
+
+/** One page of the caller's notifications (Phase P step 2b), newest first unless asked otherwise. */
+export async function listNotificationsPage(
+  filter: "unread" | "all",
+  req: { offset: number; pageSize: number; desc: boolean; search: string },
+): Promise<Result<Paged<NotificationRow>>> {
+  const db = await createClient();
+  let query = db.from("v_notifications").select("id, type, title, body, link, data, read_at, created_at", { count: "exact" });
+  if (filter === "unread") query = query.is("read_at", null);
+  const or = searchFilter(["title", "body"], req.search);
+  if (or) query = query.or(or);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_notifications", query.order("created_at", { ascending: !req.desc }).order("id").range(from, to));
 }
 
 export async function countUnreadNotifications(): Promise<Result<number>> {

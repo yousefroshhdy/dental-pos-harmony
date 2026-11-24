@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { OfferActiveForm } from "@/modules/offers/components/offer-active-form";
@@ -47,13 +48,21 @@ export default async function OfferPage({ params, searchParams }: { params: Para
 
   return (
     <div className="space-y-6">
-      <Link href="/offers" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("back")}
-      </Link>
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold break-words">{localizedName(locale, o.name_en, o.name_ar)}</h1>
-        <Badge tone={offerStateTone(state)}>{t(`state.${state}`)}</Badge>
-      </div>
+      <PageHeader
+        eyebrow={
+          <Link href="/offers" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {t("back")}
+          </Link>
+        }
+        title={
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="break-words">{localizedName(locale, o.name_en, o.name_ar)}</span>
+            <Badge tone={offerStateTone(state)} className="text-sm">
+              {t(`state.${state}`)}
+            </Badge>
+          </span>
+        }
+      />
       {sp.saved ? (
         <Alert tone="success" role="status">
           {t("saved")}

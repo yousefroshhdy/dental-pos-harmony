@@ -1,15 +1,20 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
+import { MinusIcon, PlusIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert, Card, CardTitle, Input, Label, Select } from "@/components/ui/primitives";
+import { Combobox } from "@/components/ui/combobox";
+import { FormField } from "@/components/ui/form-field";
+import { Alert, Input, Label, Select } from "@/components/ui/primitives";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { QueueItem } from "@/lib/offline/types";
 import { useOfflineQueue } from "@/modules/offline/use-offline-queue";
 import { loadDraftPricing, previewOrder, saveDraftOnDevice, searchVariants } from "../actions";
 import { loadDraft, removeLocalDraft, saveLocalDraft } from "../device-store";
 import { CAIRO_DATE_TIME } from "../format";
+import { StickyActionBar } from "../kit/sticky-bar";
+import { Section } from "./builder-section";
 import {
   addLine,
   adjustValid,
@@ -78,17 +83,21 @@ export function OrderBuilder({
   initial,
   locale,
   userId,
+  aboveBottomNav = false,
 }: {
   customers: CustomerOption[];
   initial: BuilderInitial;
   locale: string;
   userId: string;
+  /** The shell shows its phone bottom bar: the sticky action bar sits above it. */
+  aboveBottomNav?: boolean;
 }) {
   const t = useTranslations("orders.builder");
   const tOffline = useTranslations("orders.offline");
   const format = useFormatter();
   const router = useRouter();
-  const ids = { customer: useId(), filter: useId(), search: useId(), notes: useId(), results: useId(), offline: useId() };
+  const ids = { customer: useId(), search: useId(), notes: useId(), results: useId(), offline: useId() };
+  const previewRef = useRef<HTMLDivElement>(null);
   useOrdersDeviceStart(userId);
   const { engine, items, online } = useOfflineQueue(userId);
   const catalog = useCatalogSnapshot(userId, online);
@@ -113,7 +122,6 @@ export function OrderBuilder({
 
   const [seed, setSeed] = useState<BuilderSeed>(serverSeed);
   const [customerId, setCustomerId] = useState(serverSeed.customerId);
-  const [customerFilter, setCustomerFilter] = useState("");
   const [lines, setLines] = useState<BuilderLine[]>(serverSeed.lines);
   const [offers, setOffers] = useState<BuilderOffer[]>(serverSeed.offers);
   const [invoiceDiscount, setInvoiceDiscount] = useState<InvoiceDiscountInput>(serverSeed.invoiceDiscount);
@@ -206,15 +214,11 @@ export function OrderBuilder({
     });
   }, [restored, userId, slot, seed.orderId, seed.visitId, serverVersion, customerId, notes, lines, offers, invoiceDiscount, dirty, unconfirmed]);
 
-  const visibleCustomers = useMemo(() => {
-    const f = customerFilter.trim().toLowerCase();
-    const list = f
-      ? customers.filter((c) => c.display_name.toLowerCase().includes(f) || (c.customer_no ?? "").toLowerCase().includes(f))
-      : customers;
-    // Keep the selected customer selectable while filtering.
-    const selected = customers.find((c) => c.id === customerId);
-    return selected && !list.includes(selected) ? [selected, ...list] : list;
-  }, [customers, customerFilter, customerId]);
+  // Searchable by name and customer number (cmdk filters on the device; the list is the user's sellable customers).
+  const customerOptions = useMemo(
+    () => customers.map((c) => ({ value: c.id, label: c.display_name, description: c.customer_no ?? undefined, keywords: c.customer_no ? [c.customer_no] : [] })),
+    [customers],
+  );
 
   const quantitiesValid = lines.every((l) => Number.isInteger(l.quantity) && l.quantity >= 1 && l.quantity <= MAX_QUANTITY);
   const adjustsValid = lines.every((l) => adjustValid(l.adjust)) && invoiceDiscountValid(invoiceDiscount);
@@ -266,6 +270,8 @@ export function OrderBuilder({
       requestId: undefined,
     }));
     setPreview(res.ok ? { data: res.preview, error: null, pending: false } : { data: null, error: { code: res.errorCode, requestId: res.requestId }, pending: false });
+    // On a phone the result lands above the sticky bar: bring it into view.
+    requestAnimationFrame(() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   async function onSave(e: FormEvent) {
@@ -316,7 +322,7 @@ export function OrderBuilder({
   const snapshotTime = catalog.snapshot ? format.dateTime(new Date(catalog.snapshot.at), CAIRO_DATE_TIME) : null;
 
   return (
-    <form onSubmit={onSave} className="space-y-6 pb-28 sm:pb-0" noValidate>
+    <form onSubmit={onSave} className="space-y-4" noValidate>
       {!online ? (
         <Alert tone="info" role="status">
           {tOffline("offlineBanner")}
@@ -337,39 +343,23 @@ export function OrderBuilder({
 
       <DraftQueueNotice state={queueState} syncing={mine.some((i) => i.status === "syncing")} orderId={seed.orderId} dirty={dirty} />
 
-      <Card className="space-y-3">
-        <CardTitle>{t("customerTitle")}</CardTitle>
+      <Section step={1} title={t("customerTitle")}>
         {customers.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("noCustomers")}</p>
         ) : (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor={ids.filter}>{t("customerFilter")}</Label>
-              <Input
-                id={ids.filter}
-                type="search"
-                value={customerFilter}
-                onChange={(e) => setCustomerFilter(e.target.value)}
-                placeholder={t("customerFilterPlaceholder")}
-                autoComplete="off"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={ids.customer}>{t("customer")}</Label>
-              <Select id={ids.customer} value={customerId} onChange={(e) => changeCustomer(e.target.value)} required className="w-full">
-                <option value="" disabled>
-                  {t("selectCustomer")}
-                </option>
-                {visibleCustomers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.customer_no ? `${c.display_name} (${c.customer_no})` : c.display_name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </>
+          <FormField id={ids.customer} label={t("customer")} hint={t("customerFilterPlaceholder")} required>
+            <Combobox
+              options={customerOptions}
+              value={customerId || null}
+              onValueChange={(v) => changeCustomer(v ?? "")}
+              placeholder={t("selectCustomer")}
+              searchPlaceholder={t("customerFilter")}
+              emptyText={t("noCustomerMatch")}
+              clearable={false}
+            />
+          </FormField>
         )}
-      </Card>
+      </Section>
 
       {!pricingKnown && restored ? <Alert>{t("pricingUnknown")}</Alert> : null}
 
@@ -387,12 +377,11 @@ export function OrderBuilder({
         onAdd={(v) => changeLines((prev) => addLine(prev, { variant_id: v.variant_id, quantity: 1, sku: v.sku, name: v.variant_name }))}
       />
 
-      <Card className="space-y-3">
-        <CardTitle>{t("linesTitle", { count: lines.length })}</CardTitle>
+      <Section step={4} title={t("linesTitle", { count: lines.length })}>
         {lines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("noLines")}</p>
+          <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">{t("noLines")}</p>
         ) : (
-          <ul className="divide-y">
+          <ul className="space-y-2">
             {lines.map((line) => {
               const key = lineKey(line);
               const qtyId = `qty-${key}`;
@@ -401,86 +390,129 @@ export function OrderBuilder({
               const price = prices.get(line.variant_id);
               const mode = line.bonus ? "bonus" : (line.adjust?.kind ?? "list");
               return (
-                <li key={key} className="flex flex-wrap items-end gap-3 py-3">
-                  <div className="min-w-0 flex-1 basis-48">
-                    <p className="font-medium break-words">{line.name}</p>
-                    <p dir="ltr" className="text-xs text-muted-foreground text-start">
-                      {line.sku}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {line.bonus
-                        ? t("bonusLine")
-                        : price === undefined
-                          ? tOffline("noPrice")
-                          : tOffline("linePrice", { price: money(price), total: money(Math.round(price * Math.max(line.quantity, 0) * 100) / 100) })}
-                    </p>
-                  </div>
-                  <div className="w-24 space-y-1">
-                    <Label htmlFor={qtyId}>{t("quantity")}</Label>
-                    <Input
-                      id={qtyId}
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={MAX_QUANTITY}
-                      step={1}
-                      value={line.quantity === 0 ? "" : line.quantity}
-                      onChange={(e) => setQuantity(key, e.target.value)}
-                      aria-invalid={invalid || undefined}
-                    />
-                  </div>
-                  <div className="w-40 space-y-1">
-                    <Label htmlFor={`${priceId}-mode`}>{t("priceMode")}</Label>
-                    <Select
-                      id={`${priceId}-mode`}
-                      value={mode}
-                      className="w-full"
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        updateLine(key, (l) => {
-                          if (v === "bonus") return { ...l, bonus: true, adjust: null };
-                          const adjust: PriceAdjust = v === "discount" || v === "net" ? { kind: v, value: l.adjust?.value ?? "" } : null;
-                          return { ...l, bonus: false, adjust };
-                        });
-                      }}
-                    >
-                      <option value="list">{t("modeList")}</option>
-                      <option value="discount">{t("modeDiscount")}</option>
-                      <option value="net">{t("modeNet")}</option>
-                      <option value="bonus">{t("modeBonus")}</option>
-                    </Select>
-                  </div>
-                  {line.adjust && !line.bonus ? (
-                    <div className="w-32 space-y-1">
-                      <Label htmlFor={priceId}>{line.adjust.kind === "discount" ? t("discountPct") : t("netPrice")}</Label>
-                      <Input
-                        id={priceId}
-                        type="text"
-                        inputMode="decimal"
-                        dir="ltr"
-                        value={line.adjust.value}
-                        onChange={(e) => {
-                          const value = e.target.value.slice(0, 20);
-                          updateLine(key, (l) => (l.adjust ? { ...l, adjust: { kind: l.adjust.kind, value } } : l));
-                        }}
-                        aria-invalid={!adjustValid(line.adjust) || undefined}
-                        autoComplete="off"
-                      />
+                <li key={key} className={line.bonus ? "rounded-lg border border-success/40 bg-success/5 p-3" : "rounded-lg border bg-card p-3"}>
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium break-words">{line.name}</p>
+                      <p dir="ltr" className="text-start text-xs text-muted-foreground">
+                        {line.sku}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {line.bonus
+                          ? t("bonusLine")
+                          : price === undefined
+                            ? tOffline("noPrice")
+                            : tOffline("linePrice", { price: money(price), total: money(Math.round(price * Math.max(line.quantity, 0) * 100) / 100) })}
+                      </p>
                     </div>
-                  ) : null}
-                  <Button type="button" variant="ghost" onClick={() => changeLines((prev) => prev.filter((l) => lineKey(l) !== key))} aria-label={t("removeLine", { name: line.name })}>
-                    {t("remove")}
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => changeLines((prev) => prev.filter((l) => lineKey(l) !== key))}
+                      aria-label={t("removeLine", { name: line.name })}
+                      title={t("remove")}
+                    >
+                      <Trash2Icon aria-hidden="true" />
+                    </Button>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-[10rem_11rem_minmax(0,9rem)]">
+                    <div className="col-span-2 space-y-1.5 sm:col-span-1">
+                      <Label htmlFor={qtyId}>{t("quantity")}</Label>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          disabled={line.quantity <= 1}
+                          onClick={() => updateLine(key, (l) => ({ ...l, quantity: Math.max(1, l.quantity - 1) }))}
+                          aria-label={t("decrease", { name: line.name })}
+                        >
+                          <MinusIcon aria-hidden="true" />
+                        </Button>
+                        <Input
+                          id={qtyId}
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={MAX_QUANTITY}
+                          step={1}
+                          value={line.quantity === 0 ? "" : line.quantity}
+                          onChange={(e) => setQuantity(key, e.target.value)}
+                          aria-invalid={invalid || undefined}
+                          className="text-center tabular-nums"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          disabled={line.quantity >= MAX_QUANTITY}
+                          onClick={() => updateLine(key, (l) => ({ ...l, quantity: Math.min(MAX_QUANTITY, Math.max(0, l.quantity) + 1) }))}
+                          aria-label={t("increase", { name: line.name })}
+                        >
+                          <PlusIcon aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`${priceId}-mode`}>{t("priceMode")}</Label>
+                      <Select
+                        id={`${priceId}-mode`}
+                        value={mode}
+                        className="w-full"
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          updateLine(key, (l) => {
+                            if (v === "bonus") return { ...l, bonus: true, adjust: null };
+                            const adjust: PriceAdjust = v === "discount" || v === "net" ? { kind: v, value: l.adjust?.value ?? "" } : null;
+                            return { ...l, bonus: false, adjust };
+                          });
+                        }}
+                      >
+                        <option value="list">{t("modeList")}</option>
+                        <option value="discount">{t("modeDiscount")}</option>
+                        <option value="net">{t("modeNet")}</option>
+                        <option value="bonus">{t("modeBonus")}</option>
+                      </Select>
+                    </div>
+                    {line.adjust && !line.bonus ? (
+                      <div className="space-y-1.5">
+                        <Label htmlFor={priceId}>{line.adjust.kind === "discount" ? t("discountPct") : t("netPrice")}</Label>
+                        <Input
+                          id={priceId}
+                          type="text"
+                          inputMode="decimal"
+                          dir="ltr"
+                          value={line.adjust.value}
+                          onChange={(e) => {
+                            const value = e.target.value.slice(0, 20);
+                            updateLine(key, (l) => (l.adjust ? { ...l, adjust: { kind: l.adjust.kind, value } } : l));
+                          }}
+                          aria-invalid={!adjustValid(line.adjust) || undefined}
+                          autoComplete="off"
+                          className="tabular-nums"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
-        {!quantitiesValid ? <p className="text-sm text-destructive">{t("quantityInvalid", { max: MAX_QUANTITY })}</p> : null}
-        {!adjustsValid ? <p className="text-sm text-destructive">{t("priceInvalid")}</p> : null}
+        {!quantitiesValid ? (
+          <p role="alert" className="text-sm font-medium text-destructive">
+            {t("quantityInvalid", { max: MAX_QUANTITY })}
+          </p>
+        ) : null}
+        {!adjustsValid ? (
+          <p role="alert" className="text-sm font-medium text-destructive">
+            {t("priceInvalid")}
+          </p>
+        ) : null}
         {lines.some((l) => l.bonus) ? <p className="text-xs text-muted-foreground">{t("bonusHint")}</p> : null}
         {lines.length > 0 ? (
-          <div className="space-y-1 rounded-md bg-muted/50 p-3 text-sm">
+          <div className="space-y-1 rounded-md bg-muted/60 p-3 text-sm">
             <p className="font-medium">
               {tOffline("indicativeTotal", { total: money(totals.total) })}
               {totals.missing > 0 ? <span className="ms-1 font-normal text-muted-foreground">{tOffline("missingPrices", { count: totals.missing })}</span> : null}
@@ -490,13 +522,12 @@ export function OrderBuilder({
           </div>
         ) : null}
         <p className="text-xs text-muted-foreground">{t("pricesHint")}</p>
-        <p className="text-xs font-medium">{PRICES_INCLUDE_VAT ? t("vatIncluded") : t("vatExcluded")}</p>
-      </Card>
+        <p className="rounded-md bg-muted px-2 py-1 text-xs font-medium">{PRICES_INCLUDE_VAT ? t("vatIncluded") : t("vatExcluded")}</p>
+      </Section>
 
-      <Card className="space-y-3">
-        <CardTitle>{t("invoiceDiscountTitle")}</CardTitle>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="w-44 space-y-1">
+      <Section step={5} title={t("invoiceDiscountTitle")}>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-[11rem_9rem]">
+          <div className="space-y-1.5">
             <Label htmlFor={`${ids.notes}-idk`}>{t("invoiceDiscountKind")}</Label>
             <Select
               id={`${ids.notes}-idk`}
@@ -513,7 +544,7 @@ export function OrderBuilder({
             </Select>
           </div>
           {invoiceDiscount ? (
-            <div className="w-36 space-y-1">
+            <div className="space-y-1.5">
               <Label htmlFor={`${ids.notes}-idv`}>{invoiceDiscount.kind === "pct" ? t("discountPct") : t("invoiceDiscountValue")}</Label>
               <Input
                 id={`${ids.notes}-idv`}
@@ -524,27 +555,18 @@ export function OrderBuilder({
                 onChange={(e) => changeInvoiceDiscount({ kind: invoiceDiscount.kind, value: e.target.value.slice(0, 20) })}
                 aria-invalid={!invoiceDiscountValid(invoiceDiscount) || undefined}
                 autoComplete="off"
+                className="tabular-nums"
               />
             </div>
           ) : null}
         </div>
         <p className="text-xs text-muted-foreground">{t("invoiceDiscountHint")}</p>
-      </Card>
+        <FormField id={ids.notes} label={t("notes")}>
+          <Input name="notes" value={notes} onChange={(e) => changeNotes(e.target.value)} maxLength={1000} autoComplete="off" />
+        </FormField>
+      </Section>
 
-      <Card className="space-y-2">
-        <Label htmlFor={ids.notes}>{t("notes")}</Label>
-        <Input id={ids.notes} name="notes" value={notes} onChange={(e) => changeNotes(e.target.value)} maxLength={1000} autoComplete="off" />
-      </Card>
-
-      <div className="space-y-3">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!online || preview.pending || !canSaveDraft(customerId, lines, offers, invoiceDiscount)}
-          onClick={() => void onPreview()}
-        >
-          {preview.pending ? t("previewing") : t("preview")}
-        </Button>
+      <div ref={previewRef} className="scroll-mt-20 space-y-3">
         {!online ? <p className="text-xs text-muted-foreground">{t("previewOffline")}</p> : null}
         {preview.error ? <OrderError code={preview.error.code} requestId={preview.error.requestId} /> : null}
         {preview.data ? <OrderPreviewPanel preview={preview.data} /> : null}
@@ -552,22 +574,32 @@ export function OrderBuilder({
 
       {error ? <OrderError code={error.code} requestId={error.requestId} /> : null}
 
-      {/* Primary action stays reachable at the bottom on phones. */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1">
-          <div className="min-w-0 flex-1 text-sm text-muted-foreground">
-            <p>{t("summary", { count: lines.length + offers.length })}</p>
-            {!online ? (
-              <p id={ids.offline} className="text-xs">
-                {tOffline("submitNeedsConnection")}
-              </p>
-            ) : null}
-          </div>
-          <Button type="submit" size="lg" disabled={!canSave} aria-describedby={!online ? ids.offline : undefined}>
+      {/* Server price preview and save stay in reach on phones (sticky, above the shell's bottom bar). */}
+      <StickyActionBar aboveBottomNav={aboveBottomNav}>
+        <div className="min-w-0 flex-1 text-sm">
+          <p className="font-medium">{t("summary", { count: lines.length + offers.length })}</p>
+          {lines.length > 0 ? <p className="text-xs text-muted-foreground tabular-nums">{tOffline("indicativeTotal", { total: money(totals.total) })}</p> : null}
+          {!online ? (
+            <p id={ids.offline} className="text-xs text-muted-foreground">
+              {tOffline("submitNeedsConnection")}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            disabled={!online || preview.pending || !canSaveDraft(customerId, lines, offers, invoiceDiscount)}
+            onClick={() => void onPreview()}
+          >
+            {preview.pending ? t("previewing") : t("preview")}
+          </Button>
+          <Button type="submit" size="lg" className="flex-1 sm:flex-none" disabled={!canSave} aria-describedby={!online ? ids.offline : undefined}>
             {pending ? t("saving") : online ? t("save") : tOffline("saveOnDevice")}
           </Button>
         </div>
-      </div>
+      </StickyActionBar>
     </form>
   );
 }
@@ -678,19 +710,22 @@ function ProductSearch({
   }, [active, online, q]);
 
   return (
-    <Card className="space-y-3">
-      <CardTitle>{t("productsTitle")}</CardTitle>
+    <Section step={3} title={t("productsTitle")}>
       <div className="space-y-2">
         <Label htmlFor={searchId}>{t("search")}</Label>
-        <Input
-          id={searchId}
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("searchPlaceholder")}
-          autoComplete="off"
-          aria-controls={resultsId}
-        />
+        <div className="relative">
+          <SearchIcon aria-hidden="true" className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id={searchId}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            autoComplete="off"
+            aria-controls={resultsId}
+            className="ps-9"
+          />
+        </div>
         {!online ? (
           <p className="text-xs text-muted-foreground">
             {snapshotTime ? tOffline("localSearch", { time: snapshotTime }) : tOffline("noSnapshot")}
@@ -721,6 +756,7 @@ function ProductSearch({
                     </p>
                   </div>
                   <Button type="button" variant="outline" disabled={full} onClick={() => onAdd(v)} aria-label={t("addLine", { name: v.variant_name })}>
+                    <PlusIcon aria-hidden="true" />
                     {t("add")}
                   </Button>
                 </li>
@@ -730,6 +766,6 @@ function ProductSearch({
         ) : null}
         {full ? <p className="text-sm text-muted-foreground">{t("maxLines", { max: MAX_LINES })}</p> : null}
       </div>
-    </Card>
+    </Section>
   );
 }

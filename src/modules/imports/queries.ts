@@ -1,9 +1,10 @@
 import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
+import { rangeOf, runPaged, searchFilter, type Paged } from "@/lib/list-query";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_ROWS, PREVIEW_ROWS, REJECTS_SHOWN } from "./logic";
-import type { ImportBatchView, ImportRowView } from "./types";
+import type { BatchStatus, ImportBatchView, ImportRowView } from "./types";
 
 /**
  * Import reads, through the user's session against api.v_import_* (security_invoker):
@@ -34,6 +35,24 @@ const ROW_COLUMNS = "id, batch_id, row_no, raw, normalized, errors, status, resu
 export async function listBatches(limit = 50): Promise<Result<ImportBatchView[]>> {
   const db = await createClient();
   return run("v_import_batches", db.from("v_import_batches").select(BATCH_COLUMNS).order("created_at", { ascending: false }).limit(limit), []);
+}
+
+/** One page of import batches (Phase P step 2b); the search matches the file name. */
+export async function listBatchesPage(req: {
+  offset: number;
+  pageSize: number;
+  orderBy: string;
+  desc: boolean;
+  search: string;
+  status: BatchStatus | null;
+}): Promise<Result<Paged<ImportBatchView>>> {
+  const db = await createClient();
+  let query = db.from("v_import_batches").select(BATCH_COLUMNS, { count: "exact" });
+  if (req.status) query = query.eq("status", req.status);
+  const or = searchFilter(["file_name", "kind"], req.search);
+  if (or) query = query.or(or);
+  const [from, to] = rangeOf(req.offset, req.pageSize);
+  return runPaged("v_import_batches", query.order(req.orderBy, { ascending: !req.desc }).order("id").range(from, to));
 }
 
 export async function getBatch(batchId: string): Promise<Result<ImportBatchView | null>> {

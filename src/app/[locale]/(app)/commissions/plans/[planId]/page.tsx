@@ -3,7 +3,10 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/page-kit/back-link";
+import { PageHeader } from "@/components/ui/page-header";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { CommissionError } from "@/modules/commissions/components/commission-error";
@@ -46,7 +49,14 @@ export default async function CommissionPlanPage({ params, searchParams }: { par
   const format = await getFormatter();
   const today = cairoToday();
   const plan = await getPlan(planId);
-  if (!plan.ok) return <CommissionError code={commissionErrorCode(plan.error)} requestId={plan.error.requestId} />;
+  const back = <BackLink href="/commissions/plans">{t("back")}</BackLink>;
+  if (!plan.ok)
+    return (
+      <div className="space-y-6">
+        {back}
+        <CommissionError code={commissionErrorCode(plan.error)} requestId={plan.error.requestId} />
+      </div>
+    );
   if (!plan.data) notFound();
   const p = plan.data;
   const editable = canManage && canEditPlan(p.status);
@@ -64,35 +74,53 @@ export default async function CommissionPlanPage({ params, searchParams }: { par
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <Link href="/commissions/plans" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold" dir="ltr">
-            {p.code}
-          </h1>
-          <Badge tone={planStatusTone(p.status)}>{t(`status.${p.status}`)}</Badge>
-          {p.is_default ? <Badge tone="info">{t("default")}</Badge> : null}
-        </div>
-        <p className="text-sm text-muted-foreground break-words">{p.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {p.status === "draft" ? t("notActive") : t("fromDay", { day: formatDay(format, p.effective_from) })}
-          {p.effective_to ? ` · ${t("toDay", { day: formatDay(format, p.effective_to) })}` : null}
-          {p.activated_at ? ` · ${t("activatedAt", { at: format.dateTime(new Date(p.activated_at), CAIRO_DATE_TIME) })}` : null}
-          {p.status !== "draft" ? ` · ${t("assignedCount", { count: p.assigned_count })}` : null}
-        </p>
-        <p className="text-xs text-muted-foreground">{t("rulesExplained")}</p>
-      </div>
+      <PageHeader
+        eyebrow={back}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <span dir="ltr">{p.code}</span>
+            <Badge tone={planStatusTone(p.status)}>{t(`status.${p.status}`)}</Badge>
+            {p.is_default ? <Badge tone="info">{t("default")}</Badge> : null}
+          </span>
+        }
+        description={
+          <span className="flex flex-col gap-1">
+            <span className="break-words">{p.name}</span>
+            <span className="text-xs">
+              {p.status === "draft" ? t("notActive") : t("fromDay", { day: formatDay(format, p.effective_from) })}
+              {p.effective_to ? ` · ${t("toDay", { day: formatDay(format, p.effective_to) })}` : null}
+              {p.activated_at ? ` · ${t("activatedAt", { at: format.dateTime(new Date(p.activated_at), CAIRO_DATE_TIME) })}` : null}
+              {p.status !== "draft" ? ` · ${t("assignedCount", { count: p.assigned_count })}` : null}
+            </span>
+          </span>
+        }
+      />
+      <Alert tone="info" role="status">
+        {t("rulesExplained")}
+      </Alert>
 
       {canManage && p.status === "draft" ? (
-        <Card className="space-y-3">
+        <Card className="space-y-3 border-warning/60">
           <CardTitle>{t("activateTitle")}</CardTitle>
           <p className="text-sm text-muted-foreground">{t("activateHint")}</p>
           <ActivatePlanForm planId={p.id} code={p.code} today={today} />
         </Card>
       ) : null}
 
+      {/* Remounts when a "set rate" link changes ?target=, so the rate tab opens with the form filled in. */}
+      <Tabs key={`${wanted ?? ""}:${targetId ?? ""}`} defaultValue="rates" dir={directionOf(locale)}>
+        <TabsList className="w-full justify-start sm:w-auto">
+          <TabsTrigger value="rates">{t("rulesLive")}</TabsTrigger>
+          <TabsTrigger value="unrated">
+            {t("unratedTitle")}
+            {unrated.ok && unrated.data.length > 0 ? (
+              <span className="rounded-full bg-warning/25 px-1.5 text-xs tabular-nums">{unrated.data.length}</span>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="history">{t("historyTitle")}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="rates" className="space-y-4">
       <section className="space-y-3" aria-labelledby="rates-live">
         <h2 id="rates-live" className="text-lg font-semibold">
           {t("rulesLive")}
@@ -111,9 +139,13 @@ export default async function CommissionPlanPage({ params, searchParams }: { par
           ) : null}
         </Card>
       ) : canManage && p.status === "retired" ? (
-        <Alert tone="info">{t("retiredReadOnly")}</Alert>
+        <Alert tone="info" role="status">
+          {t("retiredReadOnly")}
+        </Alert>
       ) : null}
+        </TabsContent>
 
+        <TabsContent value="unrated">
       <section className="space-y-3" aria-labelledby="rates-unrated">
         <h2 id="rates-unrated" className="text-lg font-semibold">
           {t("unratedTitle")}
@@ -126,6 +158,9 @@ export default async function CommissionPlanPage({ params, searchParams }: { par
         )}
       </section>
 
+        </TabsContent>
+
+        <TabsContent value="history">
       <section className="space-y-3" aria-labelledby="rates-history">
         <h2 id="rates-history" className="text-lg font-semibold">
           {t("historyTitle")}
@@ -137,9 +172,11 @@ export default async function CommissionPlanPage({ params, searchParams }: { par
           </>
         ) : null}
       </section>
+        </TabsContent>
+      </Tabs>
 
       {canManage && p.status === "active" ? (
-        <Card className="space-y-3">
+        <Card className="space-y-3 border-destructive/40">
           <CardTitle>{t("deactivateTitle")}</CardTitle>
           <p className="text-sm text-muted-foreground">{t("deactivateHint")}</p>
           <DeactivatePlanForm planId={p.id} code={p.code} today={today} />

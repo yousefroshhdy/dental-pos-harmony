@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { z } from "zod";
+import { ArrowLeftIcon } from "lucide-react";
 import { Forbidden } from "@/components/forbidden";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
@@ -66,15 +68,20 @@ export default async function EditCustomerPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <Link href={`/customers/${c.id}`} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("backToCustomer")}
-      </Link>
-      <h1 className="text-2xl font-semibold">
-        {t("editTitle")} <span className="text-base font-normal text-muted-foreground">{c.display_name}</span>
-      </h1>
+      <PageHeader
+        eyebrow={
+          <Link href={`/customers/${c.id}`} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
+            <ArrowLeftIcon aria-hidden="true" className="me-1 size-4 rtl:rotate-180" />
+            {t("backToCustomer")}
+          </Link>
+        }
+        title={t("editTitle")}
+        description={<span className="break-words">{c.display_name}</span>}
+      />
       <EditCustomerForm
         customerId={c.id}
         version={c.version}
+        hasPhone={Boolean(c.phone_primary)}
         stageOptions={lifecycleOptions(c.lifecycle_stage).map((s) => ({ value: s, label: tStage(s) }))}
         locale={locale === "en" ? "en" : "ar"}
         governorates={governorates.data

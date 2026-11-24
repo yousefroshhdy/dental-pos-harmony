@@ -44,8 +44,13 @@ describe("createCustomerSchema", () => {
     expect(createCustomerSchema.safeParse({ ...newCustomer, clinic_name: undefined, doctor_name: "Dr. Test" }).success).toBe(true);
   });
 
-  it("rejects a missing or invalid phone", () => {
-    for (const phone of [undefined, "12345", "+14155550100"]) {
+  it("accepts a customer without a phone (Phase P: phone missing, completed on the next visit)", () => {
+    const parsed = createCustomerSchema.parse({ ...newCustomer, phone_primary: undefined });
+    expect(parsed.phone_primary).toBeUndefined();
+  });
+
+  it("rejects an invalid phone", () => {
+    for (const phone of ["12345", "+14155550100"]) {
       const result = createCustomerSchema.safeParse({ ...newCustomer, phone_primary: phone });
       expect(result.success).toBe(false);
       if (!result.success) expect(invalidFieldsOf(result.error)).toContain("phone_primary");

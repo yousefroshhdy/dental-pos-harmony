@@ -1,14 +1,19 @@
+import { ShieldCheckIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
-import { Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { BackLink } from "@/components/page-kit/back-link";
+import { PageError } from "@/components/page-kit/page-error";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { revokeRole } from "@/modules/admin/actions";
-import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { GrantRoleForm } from "@/modules/admin/components/grant-role-form";
 import { ReasonActionForm } from "@/modules/admin/components/reason-action-form";
 import { CAIRO_DATE, CAIRO_DATE_TIME } from "@/modules/admin/format";
@@ -45,103 +50,105 @@ export default async function UserAccessPage({ params }: { params: Params }) {
     listRoles(),
     mayAssign ? listTerritories() : Promise.resolve(null),
   ]);
-  if (!user.ok) return <ErrorMessage messageKey={user.error.messageKey} requestId={user.error.requestId} />;
+  const back = <BackLink href="/admin/users">{t("back")}</BackLink>;
+  if (!user.ok) return <PageError back={back} error={user.error} />;
   if (!user.data) notFound();
-  if (!assignments.ok) return <ErrorMessage messageKey={assignments.error.messageKey} requestId={assignments.error.requestId} />;
-  if (!roles.ok) return <ErrorMessage messageKey={roles.error.messageKey} requestId={roles.error.requestId} />;
+  if (!assignments.ok) return <PageError back={back} error={assignments.error} />;
+  if (!roles.ok) return <PageError back={back} error={roles.error} />;
 
   const profile = user.data;
   const name = localizedName(locale, profile.full_name_en, profile.full_name_ar) || profile.email || profile.user_id;
-  const now = new Date();
-  const active = activeRolesByUser(assignments.data, roles.data, now).get(userId) ?? [];
+  const active = activeRolesByUser(assignments.data, roles.data, new Date()).get(userId) ?? [];
   const rows = new Map(assignments.data.map((a) => [a.id, a]));
   const territoryList = territories?.ok ? territories.data : [];
   const territoryName = new Map(territoryList.map((tr) => [tr.id, localizedName(locale, tr.name_en, tr.name_ar)]));
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Link href="/admin/users" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{t("title", { name })}</h1>
-          <Badge tone={statusTone(profile.status)}>{tUsers(STATUS_KEY[profile.status])}</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {[profile.job_title, profile.employee_no].filter(Boolean).join(" · ")}
-          {profile.email ? (
-            <>
-              {" · "}
-              <span dir="ltr">{profile.email}</span>
-            </>
-          ) : null}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={back}
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {t("title", { name })}
+            <Badge tone={statusTone(profile.status)}>{tUsers(STATUS_KEY[profile.status])}</Badge>
+          </span>
+        }
+        description={
+          <>
+            {[profile.job_title, profile.employee_no].filter(Boolean).join(" · ")}
+            {profile.email ? (
+              <>
+                {" · "}
+                <span dir="ltr">{profile.email}</span>
+              </>
+            ) : null}
+          </>
+        }
+      />
 
-      <section className="space-y-3">
-        <CardTitle>{t("assignments")}</CardTitle>
+      <Card className="space-y-4">
+        <CardHeader>
+          <CardTitle>{t("assignments")}</CardTitle>
+        </CardHeader>
         {active.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("noAssignments")}</p>
+          <EmptyState compact icon={<ShieldCheckIcon aria-hidden="true" />} title={t("noAssignments")} />
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>{t("role")}</Th>
-                <Th>{t("territory")}</Th>
-                <Th>{t("grantedAt")}</Th>
-                <Th>{t("validTo")}</Th>
-                {mayAssign ? <Th>{tCommon("actions")}</Th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {active.map((a) => {
-                const row = rows.get(a.assignmentId);
-                const territoryId = row?.scope_territory_id ?? null;
-                return (
-                  <tr key={a.assignmentId}>
-                    <Td className="min-w-40">
-                      <span className="flex flex-wrap items-center gap-2">
-                        {localizedName(locale, a.nameEn, a.nameAr)}
-                        {a.isOwnerRole ? <Badge tone="info">{t("ownerRole")}</Badge> : null}
-                      </span>
-                      <code dir="ltr" className="block text-xs text-muted-foreground">
+          <ul className="divide-y">
+            {active.map((a) => {
+              const row = rows.get(a.assignmentId);
+              const territoryId = row?.scope_territory_id ?? null;
+              return (
+                <li key={a.assignmentId} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 space-y-1">
+                    <p className="flex flex-wrap items-center gap-2 font-medium">
+                      {localizedName(locale, a.nameEn, a.nameAr)}
+                      {a.isOwnerRole ? <Badge tone="info">{t("ownerRole")}</Badge> : null}
+                      <code dir="ltr" className="text-xs font-normal text-muted-foreground">
                         {a.code}
                       </code>
-                    </Td>
-                    <Td>{territoryId ? (territoryName.get(territoryId) ?? t("boundTerritory")) : t("defaultScope")}</Td>
-                    <Td className="whitespace-nowrap">{row ? format.dateTime(new Date(row.granted_at), CAIRO_DATE_TIME) : "—"}</Td>
-                    <Td className="whitespace-nowrap">{row?.valid_to ? format.dateTime(new Date(row.valid_to), CAIRO_DATE) : t("noEnd")}</Td>
-                    {mayAssign ? (
-                      <Td>
-                        {canRevokeAssignment(ctx, a) ? (
-                          <ReasonActionForm
-                            action={revokeRole}
-                            fields={{ user_role_id: a.assignmentId, user_id: userId }}
-                            trigger={t("revoke")}
-                            confirm={t("revokeConfirm")}
-                            reasonLabel={tCommon("reason")}
-                            reasonPlaceholder={tCommon("reasonPlaceholder")}
-                            destructive
-                          />
-                        ) : null}
-                      </Td>
-                    ) : null}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </Table>
+                    </p>
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
+                      <dt className="text-muted-foreground">{t("territory")}</dt>
+                      <dd>{territoryId ? (territoryName.get(territoryId) ?? t("boundTerritory")) : t("defaultScope")}</dd>
+                      <dt className="text-muted-foreground">{t("grantedAt")}</dt>
+                      <dd className="tabular-nums">{row ? format.dateTime(new Date(row.granted_at), CAIRO_DATE_TIME) : "—"}</dd>
+                      <dt className="text-muted-foreground">{t("validTo")}</dt>
+                      <dd className="tabular-nums">{row?.valid_to ? format.dateTime(new Date(row.valid_to), CAIRO_DATE) : t("noEnd")}</dd>
+                    </dl>
+                  </div>
+                  {mayAssign && canRevokeAssignment(ctx, a) ? (
+                    <div className="shrink-0">
+                      <ReasonActionForm
+                        action={revokeRole}
+                        fields={{ user_role_id: a.assignmentId, user_id: userId }}
+                        trigger={t("revoke")}
+                        confirm={t("revokeConfirm")}
+                        reasonLabel={tCommon("reason")}
+                        reasonPlaceholder={tCommon("reasonPlaceholder")}
+                        destructive
+                      />
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </section>
+      </Card>
 
       {canGrantTo(ctx, userId) ? (
         <Card className="space-y-4">
-          <div>
-            <CardTitle>{t("grantTitle")}</CardTitle>
-            <p className="text-sm text-muted-foreground">{t("grantHint")}</p>
-          </div>
-          {territories && !territories.ok ? <p className="text-sm text-muted-foreground">{t("territoriesUnavailable")}</p> : null}
+          <CardHeader>
+            <div className="space-y-1">
+              <CardTitle>{t("grantTitle")}</CardTitle>
+              <CardDescription>{t("grantHint")}</CardDescription>
+            </div>
+          </CardHeader>
+          {territories && !territories.ok ? (
+            <Alert tone="warning" role="status">
+              {t("territoriesUnavailable")}
+            </Alert>
+          ) : null}
           <GrantRoleForm
             userId={userId}
             roles={grantableRoles(roles.data, ctx).map((r) => ({ value: r.id, label: `${localizedName(locale, r.name_en, r.name_ar)} (${r.code})` }))}
@@ -152,3 +159,4 @@ export default async function UserAccessPage({ params }: { params: Params }) {
     </div>
   );
 }
+

@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { CheckIcon, MapIcon, UsersIcon, WarehouseIcon } from "lucide-react";
+import { ListError } from "@/components/page-kit/list-error";
+import { PageError } from "@/components/page-kit/page-error";
+import { Alert } from "@/components/ui/alert";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge, Card, CardTitle, Input } from "@/components/ui/primitives";
+import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { createTerritory, setTerritoryCoverage } from "@/modules/admin/actions";
 import { ActionForm } from "@/modules/admin/components/action-form";
-import { ErrorMessage } from "@/modules/admin/components/action-message";
 import { Field } from "@/modules/admin/components/field";
 import { BaseLocationForm } from "@/modules/admin/components/setup/base-location-form";
 import { LegacyImportCard } from "@/modules/imports/legacy/components/setup-card";
@@ -56,7 +62,8 @@ export default async function SetupPage({ params }: { params: Params }) {
     listRoles(),
     listOpenAssignments(),
   ]);
-  if (!overview.ok) return <ErrorMessage messageKey={overview.error.messageKey} requestId={overview.error.requestId} />;
+  const header = <PageHeader title={t("title")} description={t("intro")} />;
+  if (!overview.ok) return <PageError back={header} error={overview.error} />;
   const o = overview.data;
 
   const steps = o ? setupSteps(o) : [];
@@ -79,25 +86,47 @@ export default async function SetupPage({ params }: { params: Params }) {
   const baseById = new Map((bases.ok ? bases.data : []).map((b) => [b.employee_id, b]));
   const people = (employees.ok ? employees.data : []).filter((e) => e.employment_status === "active");
   const newWarehouseId = crypto.randomUUID();
+  const doneCount = steps.filter((s) => s.done).length;
+  const pct = steps.length === 0 ? 0 : Math.round((doneCount / steps.length) * 100);
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("intro")}</p>
-      </div>
+    <div className="space-y-6">
+      {header}
 
       {/* Checklist */}
-      <section aria-labelledby="setup-progress" className="space-y-3">
-        <h2 id="setup-progress" className="text-lg font-semibold">
-          {t("progress.title")}
-        </h2>
+      <Card className="space-y-4">
+        <section aria-labelledby="setup-progress" className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="setup-progress" className="text-lg font-semibold">
+            {t("progress.title")}
+          </h2>
+          <span className="text-sm text-muted-foreground tabular-nums">{t("progress.countOf", { count: doneCount, total: steps.length })}</span>
+        </div>
+        <div
+          role="progressbar"
+          aria-labelledby="setup-progress"
+          aria-valuemin={0}
+          aria-valuemax={steps.length}
+          aria-valuenow={doneCount}
+          className="h-2 overflow-hidden rounded-full bg-muted"
+        >
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+        </div>
         <ol className="grid gap-2 sm:grid-cols-2">
           {steps.map((s, i) => (
             <li key={s.key}>
-              <a href={s.href.startsWith("#") ? s.href : `/${locale}${s.href}`} className="flex min-h-11 items-center gap-3 rounded-md border px-3 py-2 hover:bg-muted">
-                <span aria-hidden className="w-6 text-center font-semibold tabular-nums">
-                  {i + 1}
+              <a
+                href={s.href.startsWith("#") ? s.href : `/${locale}${s.href}`}
+                className="flex min-h-11 items-center gap-3 rounded-md border bg-card px-3 py-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
+                    s.done ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {s.done ? <CheckIcon className="size-4" /> : i + 1}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{t(`progress.steps.${s.key}`)}</span>
@@ -110,16 +139,20 @@ export default async function SetupPage({ params }: { params: Params }) {
             </li>
           ))}
         </ol>
-      </section>
+        </section>
+      </Card>
 
       {/* 1. Main warehouse */}
-      <section id="setup-warehouse" aria-labelledby="setup-warehouse-title" className="space-y-3">
-        <CardTitle id="setup-warehouse-title">{t("warehouse.title")}</CardTitle>
+      <section id="setup-warehouse" aria-labelledby="setup-warehouse-title" className="scroll-mt-20 space-y-3 rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <CardTitle id="setup-warehouse-title" className="flex items-center gap-2">
+          <StepNo n={1} />
+          {t("warehouse.title")}
+        </CardTitle>
         <p className="text-sm text-muted-foreground">{t("warehouse.intro")}</p>
         {!warehouses.ok ? (
-          <ErrorMessage messageKey={warehouses.error.messageKey} requestId={warehouses.error.requestId} />
+          <ListError compact error={warehouses.error} />
         ) : mainWarehouses.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("warehouse.empty")}</p>
+          <EmptyState compact icon={<WarehouseIcon aria-hidden="true" />} title={t("warehouse.empty")} />
         ) : (
           <ul className="space-y-1 text-sm">
             {mainWarehouses.map((w) => (
@@ -130,7 +163,7 @@ export default async function SetupPage({ params }: { params: Params }) {
           </ul>
         )}
         {o && o.main_warehouses === 0 ? (
-          <Card>
+          <Card className="bg-muted/40 shadow-none">
             <ActionForm action={createMainWarehouse} submitLabel={t("warehouse.create")} success={t("saved")} fieldsClassName="sm:grid-cols-2">
               <input type="hidden" name="warehouse_id" value={newWarehouseId} />
               <Field id="wh-code" label={t("warehouse.code")} hint={t("warehouse.codeHint")}>
@@ -145,13 +178,16 @@ export default async function SetupPage({ params }: { params: Params }) {
       </section>
 
       {/* 2. Territories */}
-      <section id="setup-territories" aria-labelledby="setup-territories-title" className="space-y-3">
-        <CardTitle id="setup-territories-title">{t("territories.title")}</CardTitle>
+      <section id="setup-territories" aria-labelledby="setup-territories-title" className="scroll-mt-20 space-y-3 rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <CardTitle id="setup-territories-title" className="flex items-center gap-2">
+          <StepNo n={2} />
+          {t("territories.title")}
+        </CardTitle>
         <p className="text-sm text-muted-foreground">{t("territories.intro")}</p>
         {!territories.ok ? (
-          <ErrorMessage messageKey={territories.error.messageKey} requestId={territories.error.requestId} />
+          <ListError compact error={territories.error} />
         ) : activeTerritories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("territories.empty")}</p>
+          <EmptyState compact icon={<MapIcon aria-hidden="true" />} title={t("territories.empty")} />
         ) : (
           <ul className="space-y-1 text-sm">
             {activeTerritories.map((x) => (
@@ -166,7 +202,7 @@ export default async function SetupPage({ params }: { params: Params }) {
           </ul>
         )}
         {mansoura ? (
-          <Card className="space-y-2">
+          <Card className="space-y-2 bg-muted/40 shadow-none">
             <p className="text-sm">{t("territories.mansouraHint")}</p>
             <ActionForm action={setTerritoryCoverage} submitLabel={t("territories.coverMansoura")} success={t("saved")}>
               <input type="hidden" name="territory_id" value={mansoura.id} />
@@ -193,8 +229,11 @@ export default async function SetupPage({ params }: { params: Params }) {
       </section>
 
       {/* 3. People: employees, logins, roles, base addresses */}
-      <section id="setup-people" aria-labelledby="setup-people-title" className="space-y-3">
-        <CardTitle id="setup-people-title">{t("people.title")}</CardTitle>
+      <section id="setup-people" aria-labelledby="setup-people-title" className="scroll-mt-20 space-y-3 rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <CardTitle id="setup-people-title" className="flex items-center gap-2">
+          <StepNo n={3} />
+          {t("people.title")}
+        </CardTitle>
         <p className="text-sm text-muted-foreground">{t("people.intro")}</p>
         <ActionForm action={addSetupPerson} trigger={t("people.add")} submitLabel={t("people.create")} success={t("saved")} fieldsClassName="sm:grid-cols-2">
           <input type="hidden" name="locale" value={uiLocale} />
@@ -219,9 +258,9 @@ export default async function SetupPage({ params }: { params: Params }) {
         </ActionForm>
 
         {!employees.ok ? (
-          <ErrorMessage messageKey={employees.error.messageKey} requestId={employees.error.requestId} />
+          <ListError compact error={employees.error} />
         ) : people.length === 0 ? (
-          <Card className="text-center text-sm text-muted-foreground">{t("people.empty")}</Card>
+          <EmptyState compact icon={<UsersIcon aria-hidden="true" />} title={t("people.empty")} />
         ) : (
           <ul className="space-y-3">
             {people.map((e) => {
@@ -231,7 +270,7 @@ export default async function SetupPage({ params }: { params: Params }) {
               const isRep = held.some((r) => r.code === "sales_rep");
               return (
                 <li key={e.id}>
-                  <Card className="space-y-3 p-3 sm:p-4">
+                  <Card className="space-y-3 bg-background p-3 shadow-none sm:p-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <h3 className="font-medium">{localizedName(locale, e.full_name_en, e.full_name_ar)}</h3>
@@ -306,12 +345,15 @@ export default async function SetupPage({ params }: { params: Params }) {
       </section>
 
       {/* 4. Imports, in order */}
-      <section id="setup-imports" aria-labelledby="setup-imports-title" className="space-y-3">
-        <CardTitle id="setup-imports-title">{t("imports.title")}</CardTitle>
+      <section id="setup-imports" aria-labelledby="setup-imports-title" className="scroll-mt-20 space-y-3 rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <CardTitle id="setup-imports-title" className="flex items-center gap-2">
+          <StepNo n={4} />
+          {t("imports.title")}
+        </CardTitle>
         <p className="text-sm text-muted-foreground">{t("imports.intro")}</p>
         <LegacyImportCard />
         {o && o.legacy_catalog_missing.length > 0 ? (
-          <Card className="space-y-2">
+          <Card className="space-y-2 bg-muted/40 shadow-none">
             <p className="text-sm">{t("imports.catalogHint", { codes: o.legacy_catalog_missing.join(", ") })}</p>
             <ActionForm action={addLegacyCatalog} submitLabel={t("imports.catalogAdd")} success={t("saved")}>
               {null}
@@ -331,9 +373,19 @@ export default async function SetupPage({ params }: { params: Params }) {
           ))}
         </ol>
         {o && o.customers_phone_missing > 0 ? (
-          <p className="text-sm font-medium">{t("imports.phoneMissing", { count: o.customers_phone_missing })}</p>
+          <Alert tone="warning" role="status">
+            {t("imports.phoneMissing", { count: o.customers_phone_missing })}
+          </Alert>
         ) : null}
       </section>
     </div>
+  );
+}
+
+function StepNo({ n }: { n: number }) {
+  return (
+    <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground tabular-nums">
+      {n}
+    </span>
   );
 }

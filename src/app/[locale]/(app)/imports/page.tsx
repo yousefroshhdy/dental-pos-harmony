@@ -1,20 +1,30 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { DownloadIcon, FileSpreadsheetIcon } from "lucide-react";
+import { FilterChips } from "@/components/page-kit/filter-chips";
+import { buttonVariants } from "@/components/ui/button";
+import { readTableParams } from "@/components/ui/data-table-params";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge, Card, CardTitle } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { directionOf } from "@/i18n/routing";
+import { pickParam } from "@/lib/list-query";
+import { BatchesTable, type BatchListRow } from "@/modules/imports/components/batches-table";
 import { getUserContext } from "@/lib/authz/context";
 import { ImportErrorMessage } from "@/modules/imports/components/import-error";
 import { SyntheticDataNotice } from "@/modules/imports/components/synthetic-notice";
 import { UploadForm } from "@/modules/imports/components/upload-form";
 import { IMPORT_KINDS, isImportKind, KIND_SPECS } from "@/modules/imports/kinds";
 import { batchStatusTone, canImportKind, canRunImports, MAX_ROWS } from "@/modules/imports/logic";
-import { listBatches } from "@/modules/imports/queries";
+import { listBatchesPage } from "@/modules/imports/queries";
+import { BATCH_STATUSES, BATCHES_TABLE, historyRequested } from "@/modules/imports/tables";
 import { localizedName } from "@/modules/admin/logic";
 import { listGovernorates } from "@/modules/admin/queries";
 
 type Params = Promise<{ locale: string }>;
-type Search = Promise<{ kind?: string | string[] }>;
+type Search = Promise<Record<string, string | string[] | undefined>>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
@@ -33,7 +43,31 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
   const t = await getTranslations("imports");
   const format = await getFormatter();
   const kinds = IMPORT_KINDS.filter((k) => canImportKind(ctx, k));
-  const [batches, governorates] = await Promise.all([listBatches(), listGovernorates()]);
+  const table = readTableParams(search, BATCHES_TABLE);
+  const status = pickParam(search, "status", [...BATCH_STATUSES, "all"] as const, "all");
+  const [batches, governorates] = await Promise.all([
+    listBatchesPage({
+      offset: table.offset,
+      pageSize: table.pageSize,
+      orderBy: table.sorting[0]?.id ?? "created_at",
+      desc: table.sorting[0]?.desc ?? true,
+      search: table.search,
+      status: status === "all" ? null : status,
+    }),
+    listGovernorates(),
+  ]);
+  const batchRows: BatchListRow[] = (batches.ok ? batches.data.rows : []).map((b) => ({
+    id: b.id,
+    kind: b.kind,
+    fileName: b.file_name,
+    createdAt: b.created_at,
+    when: format.dateTime(new Date(b.created_at), { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Cairo", numberingSystem: "latn" }),
+    by: (locale === "ar" ? b.created_by_name_ar : null) ?? b.created_by_name_en ?? "—",
+    rows: b.row_count,
+    errors: b.error_count,
+    status: b.status,
+    statusTone: batchStatusTone(b.status),
+  }));
   const governorateChoices = (governorates.ok ? governorates.data : []).map((g) => ({
     code: g.code,
     name: localizedName(locale, g.name_en, g.name_ar),
@@ -41,12 +75,20 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("summary")}</p>
-      </div>
+      <PageHeader title={t("title")} description={t("summary")} />
       <SyntheticDataNotice />
 
+      <Tabs defaultValue={historyRequested(search) ? "history" : "upload"} dir={directionOf(locale)}>
+        <TabsList className="w-full justify-start sm:w-auto">
+          <TabsTrigger value="upload">{t("upload.title")}</TabsTrigger>
+          <TabsTrigger value="templates">{t("templates.title")}</TabsTrigger>
+          <TabsTrigger value="history">
+            {t("history.title")}
+            {batches.ok ? <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">{batches.data.total}</span> : null}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upload">
       <Card className="space-y-4">
         <CardTitle>{t("upload.title")}</CardTitle>
         <ol className="list-decimal space-y-1 ps-5 text-sm text-muted-foreground">
@@ -56,7 +98,7 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
           <li>{t("steps.four")}</li>
         </ol>
         {kinds.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("upload.noKinds")}</p>
+          <EmptyState compact icon={<FileSpreadsheetIcon aria-hidden="true" />} title={t("upload.noKinds")} />
         ) : (
           <UploadForm
             kinds={kinds}
@@ -66,7 +108,9 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
           />
         )}
       </Card>
+        </TabsContent>
 
+        <TabsContent value="templates">
       <section aria-labelledby="import-templates" className="space-y-3">
         <h2 id="import-templates" className="text-lg font-semibold">
           {t("templates.title")}
@@ -82,11 +126,8 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
                     <h3 className="font-semibold">{t(`kinds.${kind}.title`)}</h3>
                     <p className="text-sm text-muted-foreground">{t(`kinds.${kind}.description`)}</p>
                   </div>
-                  <a
-                    href={`/${locale}/imports/templates/${kind}`}
-                    download
-                    className="inline-flex min-h-11 items-center rounded-md border px-3 text-sm font-medium hover:bg-muted"
-                  >
+                  <a href={`/${locale}/imports/templates/${kind}`} download className={buttonVariants({ variant: "outline" })}>
+                    <DownloadIcon aria-hidden="true" />
                     {t("templates.download")}
                   </a>
                 </div>
@@ -111,45 +152,31 @@ export default async function ImportsPage({ params, searchParams }: { params: Pa
           })}
         </div>
       </section>
+        </TabsContent>
 
+        <TabsContent value="history">
       <section aria-labelledby="import-history" className="space-y-3">
-        <h2 id="import-history" className="text-lg font-semibold">
+        <h2 id="import-history" className="sr-only">
           {t("history.title")}
         </h2>
-        {!batches.ok ? (
-          <ImportErrorMessage messageKey={batches.error.messageKey} requestId={batches.error.requestId} />
-        ) : batches.data.length === 0 ? (
-          <Card className="text-center text-sm text-muted-foreground">{t("history.empty")}</Card>
-        ) : (
-          <ul className="space-y-2" aria-label={t("history.listLabel")}>
-            {batches.data.map((b) => (
-              <li key={b.id}>
-                <Card className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-                  <div className="min-w-0 space-y-1">
-                    <Link
-                      href={`/imports/${b.id}`}
-                      className="inline-flex min-h-11 items-center font-semibold text-primary underline-offset-4 hover:underline"
-                    >
-                      {t(`kinds.${b.kind}.title`)}
-                    </Link>
-                    <p className="text-sm break-all text-muted-foreground">{b.file_name ?? t("history.fileUnnamed")}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("history.meta", {
-                        at: format.dateTime(new Date(b.created_at), { dateStyle: "medium", timeStyle: "short" }),
-                        by: (locale === "ar" ? b.created_by_name_ar : null) ?? b.created_by_name_en ?? "—",
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="tabular-nums">{t("history.counts", { rows: b.row_count, errors: b.error_count })}</span>
-                    <Badge tone={batchStatusTone(b.status)}>{t(`status.${b.status}`)}</Badge>
-                  </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
+        <BatchesTable
+          rows={batchRows}
+          rowCount={batches.ok ? batches.data.total : 0}
+          error={batches.ok ? undefined : <ImportErrorMessage messageKey={batches.error.messageKey} requestId={batches.error.requestId} />}
+          filters={
+            <FilterChips
+              label={t("table.status")}
+              pathname="/imports"
+              params={{ ...search, tab: "history" }}
+              param="status"
+              current={status === "all" ? null : status}
+              options={[{ value: null, label: t("table.allStatuses") }, ...BATCH_STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))]}
+            />
+          }
+        />
       </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

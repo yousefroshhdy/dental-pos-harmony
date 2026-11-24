@@ -181,5 +181,13 @@
     "toYou": "Escalated to you",
     "canDecide": "You can decide",
     "open": "Open"
+  },
+  "rulesTable": {
+    "workflow": "Workflow",
+    "code": "Code",
+    "rules": "Rules",
+    "status": "Status",
+    "search": "Search workflows",
+    "close": "Close"
   }
 }

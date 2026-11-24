@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
-import { Badge, Card, CardTitle } from "@/components/ui/primitives";
+import { BadgePercentIcon } from "lucide-react";
+import { FormSheet } from "@/components/page-kit/form-sheet";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Badge, Card } from "@/components/ui/primitives";
 import { getUserContext } from "@/lib/authz/context";
 import { endPromotion } from "@/modules/catalog/actions";
 import { CatalogErrorMessage } from "@/modules/catalog/components/action-form";
@@ -36,6 +40,7 @@ export default async function PromotionsPage({ params }: { params: Params }) {
   const t = await getTranslations("catalog.promotions");
   const format = await getFormatter();
   const manage = canManagePrices(ctx);
+  const tl = await getTranslations("catalog.list");
   const day = (d: string) => format.dateTime(dateOnly(d), { dateStyle: "medium", timeZone: "UTC", numberingSystem: "latn" });
 
   const [promotions, brands, categories, skus] = await Promise.all([
@@ -48,24 +53,35 @@ export default async function PromotionsPage({ params }: { params: Params }) {
   return (
     <div className="space-y-6">
       <CatalogTabs ctx={ctx} current="promotions" />
-      <div>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("intro")}</p>
-      </div>
+      <PageHeader
+        title={t("title")}
+        description={t("intro")}
+        actions={
+          manage && brands?.ok && categories?.ok ? (
+            <FormSheet trigger={t("newTitle")} title={t("newTitle")} description={t("pricingNote")} closeLabel={tl("close")}>
+              <PromotionForm
+                newId={crypto.randomUUID()}
+                today={todayInCairo()}
+                brands={brands.data}
+                categories={categories.data}
+                skus={skus && skus.ok ? skus.data : []}
+              />
+            </FormSheet>
+          ) : null
+        }
+      />
 
       {!promotions.ok ? (
         <CatalogErrorMessage messageKey={promotions.error.messageKey} requestId={promotions.error.requestId} />
       ) : promotions.data.length === 0 ? (
-        <Card>
-          <p className="text-sm text-muted-foreground">{t("empty")}</p>
-        </Card>
+        <EmptyState icon={<BadgePercentIcon aria-hidden="true" />} title={t("empty")} />
       ) : (
-        <ul className="space-y-3" aria-label={t("listLabel")}>
+        <ul className="grid gap-3 lg:grid-cols-2" aria-label={t("listLabel")}>
           {sortPromotions(promotions.data).map((p) => {
             const targets = promotionTargets(p, locale);
             return (
               <li key={p.id}>
-                <Card className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <Card className="flex h-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-semibold">{p.name}</h2>
@@ -108,18 +124,6 @@ export default async function PromotionsPage({ params }: { params: Params }) {
 
       <p className="text-xs text-muted-foreground">{t("pricingNote")}</p>
 
-      {manage && brands?.ok && categories?.ok ? (
-        <Card className="space-y-4">
-          <CardTitle>{t("newTitle")}</CardTitle>
-          <PromotionForm
-            newId={crypto.randomUUID()}
-            today={todayInCairo()}
-            brands={brands.data}
-            categories={categories.data}
-            skus={skus && skus.ok ? skus.data : []}
-          />
-        </Card>
-      ) : null}
     </div>
   );
 }

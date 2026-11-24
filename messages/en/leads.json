@@ -1,0 +1,197 @@
+{
+  "nav": {
+    "leads": "Leads near me",
+    "team": "Leads by rep"
+  },
+  "list": {
+    "title": "Leads near me",
+    "intro": "Dental clinics Google Maps lists around your base, nearest first. Visit one, record the clinic's details, and it becomes a prospect.",
+    "notConfigured": "Google Places key not configured: discovery does not run and clinic names cannot be loaded. The owner adds GOOGLE_MAPS_SERVER_KEY.",
+    "budgetReached": "This month's Google budget is used up: some clinic names are not shown. The owner can raise the budget.",
+    "noBase": "Your base location is not set yet, so no leads have been searched for you. Ask the office to set it.",
+    "filterLabel": "Show",
+    "viewLabel": "View",
+    "rep": "Rep",
+    "allReps": "All reps",
+    "apply": "Show",
+    "empty": "No open leads. New clinics appear after the next discovery run.",
+    "emptyFiltered": "No leads match this filter.",
+    "summary": "{total} leads · page {page} of {pages}",
+    "unnamed": "Clinic (name not loaded)",
+    "notSeenLately": "Not found in the last search",
+    "openFirstVisit": "Open · first visit",
+    "open": "Open",
+    "directions": "Directions",
+    "pagination": "Pages",
+    "previous": "Previous",
+    "next": "Next",
+    "detailsError": "Clinic names could not be loaded from Google right now. Try again later."
+  },
+  "filter": {
+    "open": "To visit",
+    "planned": "Planned today",
+    "not_interested": "Not interested",
+    "converted": "Converted",
+    "all": "All"
+  },
+  "view": {
+    "list": "List",
+    "map": "Map"
+  },
+  "distance": {
+    "m": "{value} m",
+    "km": "{value} km"
+  },
+  "status": {
+    "new": "New",
+    "visited": "Visited",
+    "prospect": "Prospect",
+    "customer": "Customer",
+    "not_interested": "Not interested"
+  },
+  "statusAction": {
+    "new": "Back to new",
+    "visited": "Mark visited",
+    "not_interested": "Not interested"
+  },
+  "plan": {
+    "addToday": "Add to today's plan",
+    "remove": "Remove from plan",
+    "today": "Planned today",
+    "on": "Planned for {date}"
+  },
+  "notes": {
+    "label": "My notes",
+    "hint": "Your own notes (best time to visit, who to ask for). Do not paste text from Google.",
+    "save": "Save notes"
+  },
+  "convert": {
+    "title": "First visit",
+    "intro": "At the clinic, record what the clinic tells you. This becomes HONEST's own customer record at stage prospect.",
+    "doctor": "Doctor's name",
+    "clinic": "Clinic name",
+    "phone": "Phone (optional)",
+    "phoneHint": "Egyptian number. You can add it on a later visit.",
+    "specialty": "Specialty",
+    "noSpecialty": "Not known",
+    "governorate": "Governorate",
+    "choose": "Choose…",
+    "city": "City or area",
+    "notes": "Notes",
+    "pinHint": "Next you check in at the clinic: your phone's location is proposed as the clinic pin, and a manager confirms it.",
+    "submit": "Save and check in"
+  },
+  "reassign": {
+    "title": "Reassign",
+    "to": "Move to",
+    "choose": "Choose…",
+    "reason": "Reason",
+    "submit": "Reassign lead"
+  },
+  "map": {
+    "label": "Map of the leads on this page",
+    "open": "Open lead",
+    "openInGoogleMaps": "Open in Google Maps",
+    "base": "Your base"
+  },
+  "attribution": {
+    "source": "Clinic names and addresses:",
+    "providers": "Data providers:",
+    "terms": "Google Maps Terms of Service",
+    "privacy": "Google Privacy Policy"
+  },
+  "detail": {
+    "title": "Lead",
+    "back": "← Leads near me",
+    "rep": "Rep: {name}",
+    "openCustomer": "Customer {no}"
+  },
+  "done": {
+    "saved": "Saved.",
+    "planned": "Added to the plan.",
+    "unplanned": "Removed from the plan.",
+    "moved": "{count} lead(s) moved.",
+    "queued": "Saved. A new search around the base is queued.",
+    "ran": "Search finished: {count} new lead(s)."
+  },
+  "errors": {
+    "DAILY_CAP": "That day already has the most visits allowed in a plan.",
+    "PAST_DATE": "A visit cannot be planned in the past.",
+    "NO_BASE_LOCATION": "Set the rep's base location first (Admin → Setup).",
+    "ALREADY_CUSTOMER": "This clinic is already a customer.",
+    "DUPLICATE_CUSTOMER": "This phone number already belongs to a customer.",
+    "NOT_CONFIGURED": "The Google Places key is not configured, so the search did not run.",
+    "CAP_REACHED": "Today's Google request limit is reached. The search waits for tomorrow, or raise the limit.",
+    "BUDGET_REACHED": "This month's Google budget is reached. The search waits, or raise the budget."
+  },
+  "routeError": {
+    "title": "Leads could not be loaded",
+    "body": "Something went wrong while loading this page. Try again.",
+    "retry": "Try again"
+  },
+  "runStatus": {
+    "queued": "Waiting",
+    "running": "Running",
+    "done": "Done",
+    "failed": "Failed",
+    "not_configured": "Key not configured",
+    "cancelled": "Cancelled"
+  },
+  "team": {
+    "title": "Leads by rep",
+    "intro": "Leads found around each rep's base, how many were visited and how many became CRM records.",
+    "running": "Searching…",
+    "runNow": "Search now",
+    "radius": "Radius (km)",
+    "saveRadius": "Save radius",
+    "budget": {
+      "title": "Google cost guard",
+      "today": "Search requests today: {used} of {cap}.",
+      "month": "Estimated spend this month: {spent} of {budget} USD ({details} clinic names loaded).",
+      "note": "Estimates use Google's list price and ignore its free monthly usage, so the real bill is lower. Set a budget alert in Google Cloud as well.",
+      "settings": "Change the limits (Admin → Settings → Field)"
+    },
+    "stats": {
+      "title": "Per rep",
+      "empty": "No leads yet.",
+      "rep": "Rep",
+      "total": "Leads",
+      "new": "Not visited",
+      "visitedPct": "Visited",
+      "convertedPct": "Converted",
+      "plannedToday": "Planned today",
+      "lastRun": "Last search",
+      "definitions": "Visited = visited, prospect or customer. Converted = became a CRM record (prospect or customer)."
+    },
+    "reps": {
+      "title": "Search around each rep",
+      "empty": "No rep has a base location yet.",
+      "toSetup": "Set base locations",
+      "radius": "Radius {km} km"
+    },
+    "bulk": {
+      "title": "Move a rep's open leads",
+      "from": "From",
+      "to": "To",
+      "choose": "Choose…",
+      "reason": "Reason",
+      "submit": "Move leads"
+    },
+    "runs": {
+      "title": "Recent searches",
+      "empty": "No search has run yet.",
+      "truncated": "Stopped at the limit",
+      "refusal": {
+        "daily_cap": "Waiting: daily limit",
+        "monthly_budget": "Waiting: monthly budget"
+      },
+      "line": "{when} · {trigger} · {radius} km · {requests} requests ≈ {cost} USD · {found} found, {added} new, {excluded} already customers",
+      "error": "Google answered: {code}",
+      "trigger": {
+        "base_location": "base changed",
+        "owner": "owner",
+        "refresh": "monthly refresh"
+      }
+    }
+  }
+}

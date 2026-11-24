@@ -255,5 +255,17 @@
     "historyTitle": "History",
     "historyEmpty": "No earlier rates.",
     "limited": "Showing the latest {count} rate rows."
+  },
+  "tables": {
+    "month": "Month",
+    "status": "Status",
+    "closing": "Closing",
+    "actions": "Actions",
+    "plan": "Plan",
+    "name": "Name",
+    "window": "In force",
+    "rates": "Rates",
+    "close": "Close",
+    "searchEmployee": "Search by name"
   }
 }

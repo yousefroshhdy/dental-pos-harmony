@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { SirenIcon } from "lucide-react";
+import { BackLink } from "@/components/page-kit/back-link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -29,17 +33,14 @@ export default async function EscalationsPage({ params }: { params: Promise<{ lo
   const now = new Date();
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("escalations.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("escalations.subtitle")}</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader eyebrow={<BackLink href="/workflow">{t("hub.title")}</BackLink>} title={t("escalations.title")} description={t("escalations.subtitle")} />
       {!rows.ok ? (
         <WorkflowErrorMessage messageKey={errorKeyFor(rows.error)} requestId={rows.error.requestId} />
       ) : open.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">{t("escalations.empty")}</p>
+        <EmptyState icon={<SirenIcon aria-hidden="true" />} title={t("escalations.empty")} />
       ) : (
-        <ul className="space-y-2">
+        <ul className="grid gap-3 md:grid-cols-2">
           {open.map((r) => {
             const key = workflowLabelKey(r.workflow_code);
             return (

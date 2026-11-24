@@ -3,6 +3,7 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { Forbidden } from "@/components/forbidden";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge, Card } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { OfferError } from "@/modules/offers/components/offer-error";
@@ -33,24 +34,24 @@ export default async function OffersPage({ params }: { params: Params }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("intro")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {canSetVat(ctx) ? (
-            <Link href="/offers/vat" className={buttonVariants({ variant: "outline" })}>
-              {t("vatLink")}
-            </Link>
-          ) : null}
-          {canManageOffers(ctx) ? (
-            <Link href="/offers/new" className={buttonVariants()}>
-              {t("new")}
-            </Link>
-          ) : null}
-        </div>
-      </div>
+      <PageHeader
+        title={t("title")}
+        description={t("intro")}
+        actions={
+          <>
+            {canSetVat(ctx) ? (
+              <Link href="/offers/vat" className={buttonVariants({ variant: "outline" })}>
+                {t("vatLink")}
+              </Link>
+            ) : null}
+            {canManageOffers(ctx) ? (
+              <Link href="/offers/new" className={buttonVariants()}>
+                {t("new")}
+              </Link>
+            ) : null}
+          </>
+        }
+      />
 
       {!offers.ok ? (
         <OfferError code={offerErrorCode(offers.error)} requestId={offers.error.requestId} />
@@ -59,12 +60,12 @@ export default async function OffersPage({ params }: { params: Params }) {
           <p className="text-sm text-muted-foreground">{canManageOffers(ctx) ? t("emptyOwner") : t("empty")}</p>
         </Card>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-3 md:grid-cols-2">
           {offers.data.map((o) => {
             const state = offerState(o, today);
             return (
               <li key={o.id}>
-                <Link href={`/offers/${o.id}`} className="block rounded-lg border bg-card p-4 hover:bg-muted/50">
+                <Link href={`/offers/${o.id}`} className="block h-full min-h-11 rounded-lg border bg-card p-4 shadow-xs transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium break-words">{localizedName(locale, o.name_en, o.name_ar)}</span>
                     <Badge tone={offerStateTone(state)}>{t(`state.${state}`)}</Badge>

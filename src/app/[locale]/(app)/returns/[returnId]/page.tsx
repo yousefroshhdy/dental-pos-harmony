@@ -3,10 +3,13 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { notFound } from "next/navigation";
 import { Forbidden } from "@/components/forbidden";
 import { Alert, Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import { getUserContext } from "@/lib/authz/context";
 import { BackLink, Field } from "@/modules/returns/components/bits";
 import { CancelReturnForm, CreditReturnForm, ReceiveReturnForm } from "@/modules/returns/components/return-forms";
+import { returnProgress } from "@/modules/returns/progress";
 import { ReturnsError } from "@/modules/returns/components/returns-error";
 import { CAIRO_DATE, CAIRO_DATE_TIME, dateOnly, QUANTITY } from "@/modules/returns/format";
 import {
@@ -55,19 +58,44 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
   const customerCredit = toNumber(r.customer_credit);
   const warehouses = showReceive ? await listQuarantineWarehouses() : null;
   const next = nextStepKey(r.status);
+  const progress = returnProgress(r.status, { approved: r.approval_status === "approved" || r.received_at !== null });
 
   return (
     <div className="space-y-6 pb-6">
-      <div className="space-y-2">
-        <BackLink href="/returns" label={t("detail.back")} />
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">
+      <PageHeader
+        eyebrow={<BackLink href="/returns" label={t("detail.back")} />}
+        title={
+          <span className="flex flex-wrap items-center gap-2">
             <span dir="ltr">{r.return_no}</span>
-          </h1>
-          <Badge tone={statusTone(r.status)}>{t(`status.${r.status}`)}</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">{r.customer_name ?? "—"}</p>
-      </div>
+            <Badge tone={statusTone(r.status)} className="text-sm">
+              {t(`status.${r.status}`)}
+            </Badge>
+          </span>
+        }
+        description={r.customer_name ?? "—"}
+      />
+
+      <ol aria-label={t("detail.progressLabel")} className="grid grid-cols-4 gap-1">
+        {progress.steps.map(({ step, state }, i) => (
+          <li key={step} aria-current={state === "current" ? "step" : undefined} className="flex min-w-0 flex-col gap-1.5">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "h-1.5 rounded-full",
+                state === "done" && "bg-success",
+                state === "current" && "bg-primary",
+                state === "stopped" && "bg-destructive",
+                state === "todo" && "bg-muted",
+              )}
+            />
+            <span className={cn("flex items-center gap-1 text-xs", state === "todo" ? "text-muted-foreground" : "font-medium", state === "stopped" && "text-destructive")}>
+              <span className="tabular-nums">{i + 1}.</span>
+              <span className="truncate">{t(`detail.steps.${step}`)}</span>
+            </span>
+            <span className="sr-only">{t(`detail.stepState.${state}`)}</span>
+          </li>
+        ))}
+      </ol>
 
       {requested ? (
         <Alert tone="success" role="status">
@@ -124,7 +152,34 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
         {lines.data.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("detail.noLines")}</p>
         ) : (
-          <Table>
+          <>
+          <ul className="space-y-2 md:hidden">
+            {lines.data.map((l) => (
+              <li key={l.return_item_id} className="space-y-1 rounded-lg border bg-card p-3 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p dir="ltr" className="text-start font-medium">
+                      {l.sku ?? "—"}
+                    </p>
+                    <p className="text-xs break-words text-muted-foreground">{l.variant_name}</p>
+                  </div>
+                  <p className="text-end whitespace-nowrap">
+                    <span className="block font-semibold tabular-nums">{format.number(l.quantity, QUANTITY)}</span>
+                    <span className="block text-xs text-muted-foreground tabular-nums">{money(l.estimated_total)}</span>
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("lines.lot")}: <span dir="ltr">{l.lot_no ?? "—"}</span>
+                  {l.expiry_date ? <> · {format.dateTime(dateOnly(l.expiry_date), CAIRO_DATE)}</> : null}
+                </p>
+                <p className="text-xs">
+                  {l.reason_code ? t(`reasons.${l.reason_code}`) : "—"} · <span className="text-muted-foreground">{t(`conditions.${l.condition}`)}</span>
+                </p>
+                {l.credited_qty > 0 ? <p className="text-xs text-muted-foreground">{t("lines.credited", { count: l.credited_qty })}</p> : null}
+              </li>
+            ))}
+          </ul>
+          <Table containerClassName="hidden md:block">
             <thead>
               <tr>
                 <Th>{t("lines.sku")}</Th>
@@ -164,6 +219,7 @@ export default async function ReturnDetailPage({ params, searchParams }: { param
               ))}
             </tbody>
           </Table>
+          </>
         )}
         <p className="text-xs text-muted-foreground">{t("detail.estimateHelp")}</p>
       </section>

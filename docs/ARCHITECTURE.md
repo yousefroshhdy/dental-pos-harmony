@@ -178,6 +178,7 @@ flowchart LR
   |-------|-----|-----|-------------------------------|
   | `/api/cron/tracking` | `41 0 * * *` | auto-close shifts, 90-day point purge | daily is fine |
   | `/api/cron/commissions` | `47 1 * * *` | close months past day 6 (Cairo), recalculate open months | daily is fine |
+  | `/api/cron/leads` | `13 2 * * *` | lead distances older than 30 days cleared, monthly refresh queued, then queued Places discovery runs within the cost caps (Phase P step 4) | daily is fine |
   | `/api/cron/overdue` | `7 3 * * *` | overdue scan → collection tasks | daily is fine |
   | `/api/cron/outbox` | `17 3 * * *` | outbox dispatch | `*/2 * * * *` (or pg_cron + pg_net) |
   | `/api/cron/escalations` | `47 4 * * *` | approval escalation, one level per run | `*/15 * * * *` |

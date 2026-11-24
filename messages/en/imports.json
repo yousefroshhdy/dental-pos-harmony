@@ -225,5 +225,16 @@
     "PERMISSION_DENIED": "You don't have permission to run this import.",
     "CONFIRM_REQUIRED": "Tick the confirmation box before committing.",
     "VALIDATION": "The file could not be staged. Check the columns against the template."
+  },
+  "table": {
+    "kind": "Import",
+    "file": "File",
+    "when": "Uploaded",
+    "rows": "Rows",
+    "errors": "Rejected",
+    "status": "Status",
+    "allStatuses": "All",
+    "search": "Search by file name",
+    "emptyHint": "Upload a file on the first tab; each upload is checked (dry run) before anything is saved."
   }
 }

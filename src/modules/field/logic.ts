@@ -228,6 +228,41 @@ export function groupToday(items: TodayItem[]): TodayGroups {
   return groups;
 }
 
+export interface TodayAction {
+  key: "checkIn" | "unplanned" | "newOrder";
+  href: string;
+}
+
+/**
+ * Quick actions at the top of Today. Check-in jumps to today's plan (each planned visit has
+ * its own check-in button); a new order is linked to the visit in progress when there is one,
+ * so the order lands on that visit (the order command checks the link again).
+ */
+export function todayQuickActions(opts: { mayCheckIn: boolean; mayOrder: boolean; groups: TodayGroups }): TodayAction[] {
+  const out: TodayAction[] = [];
+  if (opts.mayCheckIn && opts.groups.planned.length > 0) out.push({ key: "checkIn", href: "#plan" });
+  if (opts.mayCheckIn) out.push({ key: "unplanned", href: "/visits/new" });
+  if (opts.mayOrder) {
+    const open = opts.groups.inProgress.find((v) => v.customer_id);
+    out.push({
+      key: "newOrder",
+      href: open?.customer_id ? `/orders/new?customer=${open.customer_id}&visit=${open.item_id}` : "/orders/new",
+    });
+  }
+  return out;
+}
+
+/** Counts for the Today header. */
+export function todaySummary(groups: TodayGroups): { planned: number; inProgress: number; due: number; overdue: number } {
+  const due = [...groups.followUps, ...groups.tasks];
+  return {
+    planned: groups.planned.length,
+    inProgress: groups.inProgress.length,
+    due: due.length,
+    overdue: due.filter((i) => i.is_overdue).length,
+  };
+}
+
 /** /today needs either part of the rep's day. */
 export function canSeeToday(ctx: UserContext): boolean {
   return can(ctx, "field.visit.create") || can(ctx, "work.task.read");

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ArrowLeftIcon } from "lucide-react";
 import { Forbidden } from "@/components/forbidden";
+import { PageHeader } from "@/components/ui/page-header";
 import { Alert } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
@@ -37,11 +39,16 @@ export default async function NewCustomerPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <Link href="/customers" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-        {t("backToList")}
-      </Link>
-      <h1 className="text-2xl font-semibold">{t("newTitle")}</h1>
-      <p className="text-sm text-muted-foreground">{t("newIntro")}</p>
+      <PageHeader
+        eyebrow={
+          <Link href="/customers" className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
+            <ArrowLeftIcon aria-hidden="true" className="me-1 size-4 rtl:rotate-180" />
+            {t("backToList")}
+          </Link>
+        }
+        title={t("newTitle")}
+        description={t("newIntro")}
+      />
       <CreateCustomerForm
         // A fresh idempotency key per page load: a double tap or a retry after a lost response replays, not duplicates.
         clientRef={crypto.randomUUID()}

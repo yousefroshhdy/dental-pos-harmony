@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Forbidden } from "@/components/forbidden";
+import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/primitives";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
@@ -9,6 +10,7 @@ import { FinanceError } from "@/modules/finance/components/finance-error";
 import { RecordPaymentForm } from "@/modules/finance/components/payment-forms";
 import { financeErrorCode, parseUuid } from "@/modules/finance/logic";
 import { listCustomers } from "@/modules/finance/queries";
+import { hasBottomNav } from "@/modules/orders/kit/bottom-nav";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -35,8 +37,11 @@ export default async function RecordPaymentPage({
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      {can(ctx, "finance.payment.read") ? <BackLink href="/finance/payments" label={t("record.back")} /> : null}
-      <h1 className="text-2xl font-semibold">{t("record.title")}</h1>
+      <PageHeader
+        eyebrow={can(ctx, "finance.payment.read") ? <BackLink href="/finance/payments" label={t("record.back")} /> : undefined}
+        title={t("record.title")}
+        description={t("record.intro")}
+      />
       {!customers.ok ? (
         <FinanceError code={financeErrorCode(customers.error)} requestId={customers.error.requestId} />
       ) : (
@@ -45,6 +50,7 @@ export default async function RecordPaymentPage({
             customers={customers.data}
             defaultCustomerId={preselected && customers.data.some((c) => c.id === preselected) ? preselected : null}
             locale={locale}
+            aboveBottomNav={hasBottomNav(ctx)}
           />
         </Card>
       )}

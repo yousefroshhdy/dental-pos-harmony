@@ -6,6 +6,7 @@
     { "path": "/api/cron/kpi-snapshot", "schedule": "23 22 * * *" },
     { "path": "/api/cron/tracking", "schedule": "41 0 * * *" },
     { "path": "/api/cron/escalations", "schedule": "47 4 * * *" },
-    { "path": "/api/cron/commissions", "schedule": "47 1 * * *" }
+    { "path": "/api/cron/commissions", "schedule": "47 1 * * *" },
+    { "path": "/api/cron/leads", "schedule": "13 2 * * *" }
   ]
 }

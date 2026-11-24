@@ -14,7 +14,7 @@
 | Deployed branch | `ccr-cd8ec6c2-y28xig` (Vercel serves it as production for this project) |
 | Production deployment | `dpl_GXrFWzZHXudxD9xuH7e9gfwPfjR5` from `e669a0d` (2026-10-31), READY, aliased to the URL above |
 | Env vars set | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key), `NEXT_PUBLIC_APP_URL` |
-| Cron | six daily jobs in `vercel.json` (outbox, overdue, kpi-snapshot, tracking, commissions, escalations; Hobby limit; see ARCHITECTURE §2.6) |
+| Cron | seven daily jobs in `vercel.json` (outbox, overdue, kpi-snapshot, tracking, commissions, leads, escalations; Hobby limit; see ARCHITECTURE §2.6) |
 | Separation | Nothing is shared with the Noah projects (`noah-os`, `noor`) |
 
 **Still to do (owner; secrets never go through chat):**
@@ -126,7 +126,7 @@ Build, signing and install steps are in [`mobile/README.md`](../../mobile/README
    | `OUTBOX_SIGNING_SECRET` | `openssl rand -hex 32` | **server only, Sensitive** |
 
 5. **Domains:** add `app.honesteg.co`, then create the CNAME record at the DNS provider for `honesteg.co`. The public site on Framer is not affected.
-6. **Cron Jobs:** `vercel.json` schedules the six `/api/cron/*` routes (ARCHITECTURE §2.6); on Pro, move outbox and escalations to their frequent schedules. Vercel sends `Authorization: Bearer $CRON_SECRET` automatically when `CRON_SECRET` is set.
+6. **Cron Jobs:** `vercel.json` schedules the seven `/api/cron/*` routes (ARCHITECTURE §2.6); on Pro, move outbox and escalations to their frequent schedules. Vercel sends `Authorization: Bearer $CRON_SECRET` automatically when `CRON_SECRET` is set.
 
 ## 5. Smoke test after each deploy
 - [ ] `https://app.honesteg.co/api/health` returns `{"status":"ok"}`

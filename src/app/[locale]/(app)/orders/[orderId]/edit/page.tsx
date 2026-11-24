@@ -4,11 +4,13 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
 import { Card } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page-header";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { OrderBuilder } from "@/modules/orders/components/order-builder";
 import { OrderError } from "@/modules/orders/components/order-error";
+import { hasBottomNav } from "@/modules/orders/kit/bottom-nav";
 import { linesToBuilder, orderErrorCode } from "@/modules/orders/logic";
 import { getOrder, listOrderLines, listSellableCustomers } from "@/modules/orders/queries";
 
@@ -39,18 +41,21 @@ export default async function EditOrderPage({ params }: { params: Params }) {
   const o = order.data;
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Link href={`/orders/${o.id}`} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          {t("backToOrder")}
-        </Link>
-        <h1 className="text-2xl font-semibold">{t("editTitle")}</h1>
-      </div>
+      <PageHeader
+        eyebrow={
+          <Link href={`/orders/${o.id}`} className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {t("backToOrder")}
+          </Link>
+        }
+        title={t("editTitle")}
+      />
       {!ctx.user_id ? null : o.status !== "draft" ? (
         <Card className="text-sm text-muted-foreground">{t("notDraft")}</Card>
       ) : (
         <OrderBuilder
           locale={locale}
           userId={ctx.user_id}
+          aboveBottomNav={hasBottomNav(ctx)}
           customers={customers.data}
           initial={{
             orderId: o.id,
