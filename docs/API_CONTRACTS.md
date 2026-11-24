@@ -195,6 +195,29 @@ Views: `v_workflow_definitions`, `v_workflow_rules`, `v_workflow_stages`, `v_del
 
 **New error codes:** `MFA_REQUIRED`, `RATE_LIMITED`, `QTY_EXCEEDS_RETURNABLE`, `WAREHOUSE_NOT_QUARANTINE`, `CREDIT_QTY_EXCEEDED`, `WRITE_OFF_PENDING`, `ALREADY_COMMITTED`, `ALREADY_IMPORTED`, `PREVIOUS_PERIOD_OPEN`, `PERIOD_NOT_ENDED`, `PERIOD_CLOSED`, `SELF_ADJUSTMENT`, `SETTING_NOT_WHITELISTED`, `SETTING_READ_ONLY`, `SETTING_OUT_OF_RANGE`, `SETTING_SECRET_REFUSED`, `MANAGER_CYCLE`, `TERRITORY_TOO_DEEP`, `TERRITORY_CYCLE`, `TERRITORY_HAS_CHILDREN`, `NOT_ASSIGNED`, `PAST_DATE`, `DAILY_CAP`, `TIMEOUT`, `INVALID_CONDITION`, `CATCH_ALL_REQUIRED`, `RULE_IN_USE`.
 
+### 1c. Phase P step 6: pricing, offers and VAT (migrations `20261125000200`, `20261125000210`; suite 56)
+
+Pricing rules (all in `sales.price_order`, documented at the top of `20261125000210`): prices exclude VAT; VAT per line at the product's rate; bonus lines 0; offers (per-line net or package price spread by list value, capped at list); net price → exact amount and % (2 decimals, half-up); invoice discount spread by net value, last line takes the rounding.
+
+**Orders (changed, same signatures):**
+- `save_order_draft(p_order_id, p_customer_id, p_lines, p_notes, p_visit_id, p_version, p_employee_id)`: `p_lines` is the old array **or** `{"lines": [...], "invoice_discount_amount": n}` / `{"lines": [...], "invoice_discount_pct": n}` (one of the two). A line is a product line `{variant_id, quantity, requested_discount_pct? | net_unit_price?, is_bonus?}` (net price > 0, 2 decimals; a bonus line takes neither) or an offer line `{offer_id, quantity?}` (packages, default 1; each offer once) that the server expands into the offer's items. Replay keys and fingerprint are unchanged (the request as sent), so payloads queued before this change replay as before. The answer adds `invoice_discount_amount`, `invoice_discount_pct`, and per line `is_bonus`, `offer_id`, `line_discount`, `manual_discount_pct`, `line_tax`.
+- `submit_order(p_order_id)`: re-checks every offer on the order (validity, targeting, composition) and raises `OFFER_EXPIRED`, `OFFER_NOT_STARTED`, `OFFER_INACTIVE`, `OFFER_NOT_ELIGIBLE`, `OFFER_CHANGED` (P0001). Discount authority per `sales.discount.limit_mode` (DECISIONS 2026-11-25). New reason `free item outside an offer`. The request payload adds `limit_mode`, `owner_required`, `free_items`.
+- `preview_order(p_customer_id, p_lines, p_employee_id = null) → jsonb`: the full server pricing of a would-be draft, nothing saved: `subtotal, discount_total, tax_total, total, prices_include_vat (false), invoice_discount_total, lines[], vat_groups[{rate, taxable, vat}], approval{needed, reasons[], owner_required, mode, limit_pct, …}` (the credit check runs only at submit). Needs `sales.order.create`; same validation errors as a save.
+- `issue_invoice`: copies `is_bonus` to the invoice line; a partial invoice of a net-price, offer or invoice-discount line takes its discount pro rata from the line's amount. VAT is the rate stored on the order line.
+- New errors: `NET_PRICE_ABOVE_LIST`, `INVOICE_DISCOUNT_TOO_LARGE` (P0001).
+
+**Offers (new, `sales.offer.manage` at scope `all`; owner implicitly):**
+- `upsert_offer(p_offer_id, p_code, p_name_en, p_name_ar, p_pricing_mode 'package'|'per_line', p_package_price, p_valid_from date, p_valid_to date, p_items jsonb, p_customer_ids uuid[] = null, p_target_tags text[] = null, p_description = null, p_expected_version = null) → {offer_id, code, version, created}`. Items `[{variant_id, quantity, is_bonus?, net_unit_price?}]`, 1–50, per package; a package has no per-line prices, a per-line offer needs one on every paid line, at least one paid line, each variant once per bonus flag. Replaces items and targets. Errors `VALIDATION`, `NOT_FOUND`, `DUPLICATE_CODE`, `CONFLICT` (stale version), `PERMISSION_DENIED`.
+- `set_offer_active(p_offer_id, p_active) → {offer_id, is_active, changed, version}`.
+- `eligible_offers(p_customer_id) → jsonb[]`: offers usable today for a customer in the caller's CRM scope, with items and indicative prices. Needs `sales.order.create`.
+- Views: `v_offers` (with `is_current`, item counts, `is_targeted`), `v_offer_items`, `v_offer_customers` (a target only when the customer is visible).
+
+**VAT (new):** `set_product_vat_rate(p_product_id, p_vat_rate_pct, p_reason = null) → {product_id, vat_rate_pct, changed}`: owner only (`OWNER_ONLY`, 42501), 0–100 with 2 decimals.
+
+**Views (columns appended):** `v_orders` + `invoice_discount_amount`, `invoice_discount_pct`; `v_order_lines` + `is_bonus`, `offer_id`, `offer_code`, `offer_packages`, `requested_net_price`, `invoice_discount_share`, `manual_discount_pct`; `v_invoice_lines` + `is_bonus`.
+
+**Outbox:** `offer.created`, `offer.updated`, `product.vat_changed`.
+
 **New outbox events:** `import.committed`; `return.requested`, `return.approved`, `return.rejected`, `return.received`, `return.credited`, `return.cancelled`; `commission.period_closed`, `commission.adjusted`; `invoice.written_off`; `setting.updated`; `employee.updated`, `employee.status_changed`, `employee.territory_assigned`, `employee.territory_ended`; `territory.created`, `.renamed`, `.moved`, `.deactivated`, `.reactivated`, `.coverage_changed`; `field.visits_planned`, `field.visit_unplanned`; `approval.escalated`. `credit_note.issued` gains `customer_credit` and `applied_to_invoice`.
 
 ## 2. Commands (MVP)

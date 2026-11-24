@@ -32,10 +32,11 @@ async function run<T>(name: string, query: Query, empty: T): Promise<Result<T>> 
 const ORDER_COLUMNS =
   "id, order_no, customer_id, customer_name, employee_id, employee_name, territory_id, visit_id, status, currency, " +
   "payment_terms_days, subtotal, discount_total, tax_total, total, notes, submitted_at, approved_at, version, " +
-  "created_at, updated_at, pending_approval_request_id";
+  "created_at, updated_at, pending_approval_request_id, invoice_discount_amount, invoice_discount_pct";
 const LINE_COLUMNS =
   "order_item_id, order_id, line_no, variant_id, sku, variant_name, quantity, list_price, applied_discount_pct, " +
-  "tax_rate_pct, line_subtotal, line_discount, line_tax, line_total, fulfilled_qty, reserved_qty";
+  "tax_rate_pct, line_subtotal, line_discount, line_tax, line_total, fulfilled_qty, reserved_qty, " +
+  "is_bonus, offer_id, offer_code, offer_packages, requested_net_price, requested_discount_pct, invoice_discount_share, manual_discount_pct";
 const VARIANT_COLUMNS = "variant_id, sku, variant_name, uom, product_code, product_name_en, product_name_ar, brand_name";
 
 export const ORDER_LIST_LIMIT = 200;

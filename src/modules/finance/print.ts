@@ -95,10 +95,30 @@ export interface VatGroup {
   vat: number;
 }
 
-/** VAT summary of a printed invoice: one row per rate, in cents so sums never drift. */
-export function vatSummary(lines: readonly Pick<InvoiceLineRow, "tax_rate_pct" | "line_subtotal" | "discount" | "tax_amount">[]): VatGroup[] {
+/**
+ * Invoice prices are BEFORE VAT: VAT is added per line at the rate stored on the
+ * invoice line when it was issued (decision C; migration 20261125000210). The
+ * printed invoice says so next to the VAT summary.
+ */
+export const PRICES_INCLUDE_VAT = false;
+
+/** Which phrase the document prints about the VAT basis (finance.print.vatBasis*). */
+export const vatBasisKey = (): "vatBasisExclusive" | "vatBasisInclusive" => (PRICES_INCLUDE_VAT ? "vatBasisInclusive" : "vatBasisExclusive");
+
+/** A free (bonus) invoice line: price 0, shown as free, left out of the VAT summary. */
+export const isBonusLine = (line: { is_bonus?: boolean | null }): boolean => line.is_bonus === true;
+
+/**
+ * VAT summary of a printed invoice: one row per rate, in cents so sums never drift.
+ * Free (bonus) lines carry no amount and are left out, so a rate used only by free
+ * items does not print an empty row.
+ */
+export function vatSummary(
+  lines: readonly (Pick<InvoiceLineRow, "tax_rate_pct" | "line_subtotal" | "discount" | "tax_amount"> & { is_bonus?: boolean | null })[],
+): VatGroup[] {
   const groups = new Map<number, { taxable: number; vat: number }>();
   for (const l of lines) {
+    if (isBonusLine(l)) continue;
     const rate = toCents(l.tax_rate_pct) / 100;
     const g = groups.get(rate) ?? { taxable: 0, vat: 0 };
     g.taxable += toCents(l.line_subtotal) - toCents(l.discount);

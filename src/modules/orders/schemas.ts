@@ -23,14 +23,34 @@ const id = z.guid();
 const locale = z.enum(["ar", "en"]);
 const reason = z.string().trim().min(3).max(500);
 
+/** At most 2 decimals (money and percentages), tolerant of binary floating point. */
+const twoDecimals = (v: number) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-6;
+const requestedPct = z.number().gt(0).max(100).refine(twoDecimals);
+const requestedAmount = z.number().gt(0).max(999_999_999_999.99).refine(twoDecimals);
+const quantity = z.number().int().min(1).max(MAX_QUANTITY);
+
 /**
- * One builder line. Strict: the client sends a variant id and a whole quantity,
- * nothing else — never a price, discount, tax or total (CLAUDE.md rule 7).
+ * One product line. Strict: a variant id, a whole quantity and, optionally, what
+ * the seller ASKS for — a discount % or a net unit price (one of them), or a free
+ * (bonus) line. Never a list price, tax or total (CLAUDE.md rule 7): the server
+ * prices the line, converts a net price into the discount and checks the limits.
  */
-export const draftLineSchema = z.strictObject({
-  variant_id: id,
-  quantity: z.number().int().min(1).max(MAX_QUANTITY),
-});
+export const draftLineSchema = z
+  .strictObject({
+    variant_id: id,
+    quantity,
+    requested_discount_pct: requestedPct.optional(),
+    net_unit_price: requestedAmount.optional(),
+    is_bonus: z.literal(true).optional(),
+  })
+  .refine((l) => !(l.requested_discount_pct !== undefined && l.net_unit_price !== undefined), { message: "discount or net price" })
+  .refine((l) => !(l.is_bonus && (l.requested_discount_pct !== undefined || l.net_unit_price !== undefined)), { message: "bonus is free" });
+
+/** An offer picked on the order: the server expands it into its items (quantity = packages). */
+export const offerLineSchema = z.strictObject({ offer_id: id, quantity });
+
+/** The invoice-level discount the seller asks for: an amount in EGP or a percentage of the order net. */
+export const invoiceDiscountSchema = z.union([z.strictObject({ amount: requestedAmount }), z.strictObject({ pct: requestedPct })]);
 
 /**
  * One draft save as the device fixed it (offline-logic.ts buildDraftPayload). The
@@ -41,13 +61,24 @@ export const draftPayloadSchema = z.strictObject({
   /** Generated on the device: the creating call and its replays share it. */
   order_id: id,
   customer_id: id,
-  lines: z.array(draftLineSchema).min(1).max(MAX_LINES),
+  lines: z.array(z.union([draftLineSchema, offerLineSchema])).min(1).max(MAX_LINES),
   notes: z.string().trim().max(1000).nullable(),
   visit_id: id.nullable(),
   /** The draft version this save is based on (optimistic concurrency); null for a new draft. */
   version: z.number().int().min(1).nullable(),
+  /** Optional, so payloads queued before offers existed still replay unchanged. */
+  invoice_discount: invoiceDiscountSchema.nullable().optional(),
 });
 export type DraftPayloadInput = z.infer<typeof draftPayloadSchema>;
+
+/** A pricing preview: the same lines as a save, for a customer (online only, nothing saved). */
+export const previewSchema = z.strictObject({
+  customer_id: id,
+  lines: z.array(z.union([draftLineSchema, offerLineSchema])).min(1).max(MAX_LINES),
+  invoice_discount: invoiceDiscountSchema.nullable().optional(),
+});
+
+export const idSchema = id;
 
 export const orderRefSchema = z.object({ order_id: id, locale });
 export const orderReasonSchema = orderRefSchema.extend({ reason });

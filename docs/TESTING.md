@@ -161,6 +161,7 @@ Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **27
 | 52_audit4_audit_exports | audit 4 A-LM2, A-L4 | 66 |
 | 53_audit4_planning | audit 4 F2, F5, F6, F9 | 51 |
 | 54_export_permissions | per-kind export permissions: catalogue, same roles and scopes as before (user by user), refusal per kind without its export permission, MFA at aal1/aal2, whitelist | 49 |
+| 56_phase_p_pricing | Phase P step 6 (synthetic copies of real invoice shapes): package with 2 bonus lines (stock, invoice, commission base), 46.64 % offer without approval, manual 24 % rep (approval) / sales manager (direct), 30 % → owner, credit + owner routing, net price 2,667.85 from 5,000, invoice discount 33.33/33.33/33.34 and 5 %, free item outside an offer, VAT-0 next to 14 %, owner-only audited VAT, issued invoices keep their VAT, expired / untargeted / changed / switched-off offers refused, package capped at list, partial invoice of a net-price line, old payloads | 122 |
 
 **Pinned sets:** suites 39 and 48 compare the exact MFA-gated permission set; flagging a permission means updating both.
 

@@ -20,6 +20,7 @@ import {
   removePriceItemSchema,
   variantSchema,
   variantStatusSchema,
+  vatRateSchema,
 } from "./schemas";
 import type { ActionResult, ActionState } from "./types";
 
@@ -227,4 +228,20 @@ export async function endPromotion(_prev: ActionState, form: FormData): Promise<
   const parsed = endPromotionSchema.safeParse(formToObject(form));
   if (!parsed.success) return invalid(parsed.error);
   return command("end_promotion", { p_promotion_id: parsed.data.promotion_id });
+}
+
+/**
+ * A product's VAT rate (decision C): api.set_product_vat_rate, owner only and audited.
+ * Drafts take the new rate at their next save; submitted orders and issued invoices keep theirs.
+ */
+export async function setProductVatRate(_prev: ActionState, form: FormData): Promise<ActionResult> {
+  const parsed = vatRateSchema.safeParse(formToObject(form));
+  if (!parsed.success) return invalid(parsed.error);
+  const result = await command("set_product_vat_rate", {
+    p_product_id: parsed.data.product_id,
+    p_vat_rate_pct: Number(parsed.data.vat_rate_pct),
+    p_reason: parsed.data.reason ?? null,
+  });
+  if (result.ok) revalidatePath("/[locale]/offers/vat", "page");
+  return result;
 }

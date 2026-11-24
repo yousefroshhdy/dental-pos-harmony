@@ -46,6 +46,7 @@ Definitions are in `docs/TESTING.md` §4.
 | Phase 3 UI: rep Today, visits (GPS check-in/out, exceptions, consent screen), tasks | Implemented, unit-tested | `src/modules/field`, routes `/today` `/visits` `/tasks` |
 | Phase 3 UI: customers (create/edit, duplicates, reassignment, location, timeline), opportunities pipeline | Implemented, Tested | `src/modules/crm`, suite 19 |
 | Phase 3 UI: order builder, list, detail, lifecycle actions (server pricing only) | Implemented, Tested | `src/modules/orders`, suite 21 |
+| **Phase P — Make it usable**, step 6: offers/packages (owner), bonus lines, net-price entry, invoice discount, decision-B tiers (settings, ship as `per_role`), per-product VAT (owner), server price preview, VAT shown on order/print | DB Implemented, Tested; UI Implemented, unit-tested (no click-through) | migrations `20261125000200`–`0210`, suite 56 (122), `src/modules/offers`, `/offers`, `/offers/vat`, builder in `src/modules/orders` |
 | Phase 3 UI: stock, ledger, receipts, transfers, adjustments, reorder/expiry alerts | Implemented, Tested | `src/modules/inventory`, suite 22 |
 | Phase 3 UI: approvals inbox and detail, notifications, header bell | Implemented, Tested | `src/modules/approvals`, suite 23 |
 | Catalogue maintenance commands and admin UI (products, SKUs, price lists, promotions) | Implemented, Tested | `src/modules/catalog`, suite 24 |

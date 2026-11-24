@@ -151,6 +151,20 @@ export const promotionSchema = z
 
 export const endPromotionSchema = z.object({ promotion_id: id });
 
+/**
+ * A product's VAT rate (decision C, owner only): 0–100 with at most 2 decimals; 0 is
+ * allowed (an exempt item). api.set_product_vat_rate checks the owner and the range.
+ */
+export const vatRateSchema = z.object({
+  product_id: id,
+  vat_rate_pct: z
+    .string()
+    .trim()
+    .regex(/^\d{1,3}(\.\d{1,2})?$/)
+    .refine((s) => Number(s) >= 0 && Number(s) <= 100),
+  reason: z.string().trim().max(500).optional(),
+});
+
 /** Field names that failed validation (first path segment), for aria-invalid hints. */
 export function invalidFieldsOf(error: z.ZodError): string[] {
   return [...new Set(error.issues.map((i) => String(i.path[0] ?? "")).filter(Boolean))];

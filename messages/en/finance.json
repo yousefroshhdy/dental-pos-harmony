@@ -433,6 +433,9 @@
     "collectedBy": "Collected by",
     "signature": "Signature",
     "receiptFooter": "Amounts in Egyptian pounds (EGP). This receipt is valid for confirmed payments only. Computer-generated document.",
-    "receiptUnavailable": "Only a confirmed payment has a receipt. This payment is pending, bounced or reversed."
+    "receiptUnavailable": "Only a confirmed payment has a receipt. This payment is pending, bounced or reversed.",
+    "vatBasisExclusive": "Prices are before VAT. VAT is added per item at the rate shown.",
+    "vatBasisInclusive": "Prices include VAT.",
+    "bonus": "Free"
   }
 }

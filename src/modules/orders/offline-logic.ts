@@ -3,8 +3,18 @@ import type { EnqueueInput } from "@/lib/offline/queue";
 import { toSendResult } from "@/lib/offline/result";
 import type { Json, JsonObject, QueueItem, SendResult } from "@/lib/offline/types";
 import { nameBasedId } from "@/modules/field/logic";
-import { MAX_LINES, MAX_QUANTITY, orderErrorCode, sanitizeSearch, type OrderErrorCode } from "./logic";
-import type { BuilderLine, SellableVariant } from "./types";
+import {
+  adjustValid,
+  invoiceDiscountValid,
+  MAX_LINES,
+  MAX_QUANTITY,
+  orderErrorCode,
+  parseAmount,
+  parseDiscountPct,
+  sanitizeSearch,
+  type OrderErrorCode,
+} from "./logic";
+import type { BuilderLine, BuilderOffer, InvoiceDiscountInput, SellableVariant } from "./types";
 
 /**
  * Offline order drafts (docs/ARCHITECTURE.md §6, A-05: "Order: draft only;
@@ -15,8 +25,11 @@ import type { BuilderLine, SellableVariant } from "./types";
  *   queue (offline, lost answer, or behind an earlier save of the same draft).
  *   The command is replay-safe under (order id, base version) (migration
  *   20261103000300), so the queue item id is derived from exactly that key.
- * - The payload holds ids, whole quantities and text. Never a price, discount,
- *   tax or total (CLAUDE.md rule 7): buildDraftPayload copies only allowed keys.
+ * - The payload holds ids, whole quantities, text and what the seller ASKS for
+ *   (an offer and its packages, a discount % or net unit price per line, a free
+ *   line, an invoice discount). Never a list price, tax or total (CLAUDE.md
+ *   rule 7): buildDraftPayload copies only allowed keys, and the server prices
+ *   the order and checks every request against the limits.
  * - Submitting is online-only; nothing here queues it.
  * - The builder shows indicative list prices from the last online catalogue
  *   snapshot; the server sets the real price.
@@ -29,11 +42,74 @@ export interface DraftPayload {
   /** Generated on the device for a new draft; the creating call and its replays share it. */
   order_id: string;
   customer_id: string;
-  lines: { variant_id: string; quantity: number }[];
+  /** Offer lines first ({offer_id, quantity = packages}), then product lines. */
+  lines: DraftPayloadLine[];
   notes: string | null;
   visit_id: string | null;
   /** The draft's server version this save is based on; null for the creating call. */
   version: number | null;
+  /** Absent in payloads queued before offers existed (they replay unchanged). */
+  invoice_discount?: { amount: number } | { pct: number } | null;
+}
+
+export type DraftProductLine = {
+  variant_id: string;
+  quantity: number;
+  requested_discount_pct?: number;
+  net_unit_price?: number;
+  is_bonus?: true;
+};
+export type DraftOfferLine = { offer_id: string; quantity: number };
+export type DraftPayloadLine = DraftProductLine | DraftOfferLine;
+
+/** A product line as sent: only the keys the server accepts, and only the ones in use. */
+export function toProductLine(l: Pick<BuilderLine, "variant_id" | "quantity" | "bonus" | "adjust">): DraftProductLine {
+  const line: DraftProductLine = { variant_id: l.variant_id, quantity: l.quantity };
+  if (l.bonus) {
+    line.is_bonus = true;
+  } else if (l.adjust?.kind === "discount") {
+    const pct = parseDiscountPct(l.adjust.value);
+    if (pct !== null) line.requested_discount_pct = pct;
+  } else if (l.adjust?.kind === "net") {
+    const net = parseAmount(l.adjust.value);
+    if (net !== null) line.net_unit_price = net;
+  }
+  return line;
+}
+
+/** The invoice discount as sent, or null. */
+export function toInvoiceDiscount(input: InvoiceDiscountInput): { amount: number } | { pct: number } | null {
+  if (!input) return null;
+  if (input.kind === "pct") {
+    const pct = parseDiscountPct(input.value);
+    return pct === null ? null : { pct };
+  }
+  const amount = parseAmount(input.value);
+  return amount === null ? null : { amount };
+}
+
+/**
+ * The p_lines argument of api.save_order_draft / api.preview_order: the old array
+ * when there is no invoice discount (so payloads queued earlier keep the same
+ * request fingerprint), else {lines, invoice_discount_amount | invoice_discount_pct}.
+ */
+export function toCommandLines(
+  lines: readonly DraftPayloadLine[],
+  invoiceDiscount: { amount: number } | { pct: number } | null | undefined,
+): DraftPayloadLine[] | Record<string, unknown> {
+  const clean = lines.map((l): DraftPayloadLine => ("offer_id" in l ? { offer_id: l.offer_id, quantity: l.quantity } : toCleanProduct(l)));
+  if (!invoiceDiscount) return clean;
+  return "amount" in invoiceDiscount
+    ? { lines: clean, invoice_discount_amount: invoiceDiscount.amount }
+    : { lines: clean, invoice_discount_pct: invoiceDiscount.pct };
+}
+
+function toCleanProduct(l: DraftProductLine): DraftProductLine {
+  const out: DraftProductLine = { variant_id: l.variant_id, quantity: l.quantity };
+  if (l.is_bonus === true) out.is_bonus = true;
+  else if (l.requested_discount_pct !== undefined) out.requested_discount_pct = l.requested_discount_pct;
+  else if (l.net_unit_price !== undefined) out.net_unit_price = l.net_unit_price;
+  return out;
 }
 
 /** What api.save_order_draft answers, reduced to what the device keeps (no prices: the order page shows them). */
@@ -63,29 +139,51 @@ export const draftGroupKey = (orderId: string) => `order:${orderId}`;
 export function buildDraftPayload(input: {
   orderId: string;
   customerId: string;
-  lines: readonly Pick<BuilderLine, "variant_id" | "quantity">[];
+  lines: readonly Pick<BuilderLine, "variant_id" | "quantity" | "bonus" | "adjust">[];
+  offers?: readonly Pick<BuilderOffer, "offer_id" | "packages">[];
+  invoiceDiscount?: InvoiceDiscountInput;
   notes: string;
   visitId: string | null;
   baseVersion: number;
 }): DraftPayload {
   const notes = input.notes.trim();
-  return {
+  const payload: DraftPayload = {
     order_id: input.orderId,
     customer_id: input.customerId,
-    lines: input.lines.map((l) => ({ variant_id: l.variant_id, quantity: l.quantity })),
+    lines: [
+      ...(input.offers ?? []).map((o): DraftOfferLine => ({ offer_id: o.offer_id, quantity: o.packages })),
+      ...input.lines.map(toProductLine),
+    ],
     notes: notes === "" ? null : notes,
     visit_id: input.visitId,
     version: input.baseVersion > 0 ? input.baseVersion : null,
   };
+  const discount = toInvoiceDiscount(input.invoiceDiscount ?? null);
+  if (discount) payload.invoice_discount = discount;
+  return payload;
 }
 
-/** The builder may save: a customer, 1..MAX_LINES lines, every quantity a whole number in range. */
-export function canSaveDraft(customerId: string, lines: readonly Pick<BuilderLine, "quantity">[]): boolean {
+const quantityOk = (q: number) => Number.isInteger(q) && q >= 1 && q <= MAX_QUANTITY;
+
+/**
+ * The builder may save: a customer, at least one line or offer (MAX_LINES in all),
+ * every quantity and package count a whole number in range, every typed discount,
+ * net price and invoice discount readable.
+ */
+export function canSaveDraft(
+  customerId: string,
+  lines: readonly Pick<BuilderLine, "quantity" | "adjust">[],
+  offers: readonly Pick<BuilderOffer, "packages">[] = [],
+  invoiceDiscount: InvoiceDiscountInput = null,
+): boolean {
+  const count = lines.length + offers.length;
   return (
     customerId !== "" &&
-    lines.length > 0 &&
-    lines.length <= MAX_LINES &&
-    lines.every((l) => Number.isInteger(l.quantity) && l.quantity >= 1 && l.quantity <= MAX_QUANTITY)
+    count > 0 &&
+    count <= MAX_LINES &&
+    lines.every((l) => quantityOk(l.quantity) && adjustValid(l.adjust)) &&
+    offers.every((o) => quantityOk(o.packages)) &&
+    invoiceDiscountValid(invoiceDiscount)
   );
 }
 
@@ -323,10 +421,14 @@ export interface IndicativeTotals {
 }
 
 /** Indicative list-price total (before discounts and VAT). Display only: it is never sent. */
-export function indicativeTotals(lines: readonly Pick<BuilderLine, "variant_id" | "quantity">[], prices: ReadonlyMap<string, number>): IndicativeTotals {
+export function indicativeTotals(
+  lines: readonly Pick<BuilderLine, "variant_id" | "quantity" | "bonus">[],
+  prices: ReadonlyMap<string, number>,
+): IndicativeTotals {
   let total = 0;
   let missing = 0;
   for (const l of lines) {
+    if (l.bonus) continue; // a free line is 0
     const p = prices.get(l.variant_id);
     if (p === undefined) missing++;
     else total += Math.round(p * l.quantity * 100) / 100;
@@ -352,6 +454,8 @@ export interface LocalDraft {
   visitId: string | null;
   notes: string;
   lines: BuilderLine[];
+  offers: BuilderOffer[];
+  invoiceDiscount: InvoiceDiscountInput;
   /** Changed since the last save. */
   dirty: boolean;
   updatedAt: string;
@@ -364,6 +468,8 @@ export interface BuilderSeed {
   visitId: string | null;
   notes: string;
   lines: BuilderLine[];
+  offers: BuilderOffer[];
+  invoiceDiscount: InvoiceDiscountInput;
 }
 
 export type RestoreNotice = "none" | "restored" | "replaced";
@@ -385,7 +491,7 @@ export function chooseBuilderStart(
   unconfirmedSaves: number,
 ): { seed: BuilderSeed; notice: RestoreNotice; dropLocal: boolean } {
   if (!local) return { seed: server, notice: "none", dropLocal: false };
-  const neverSaved = local.orderId === null && local.lines.length > 0;
+  const neverSaved = local.orderId === null && (local.lines.length > 0 || local.offers.length > 0);
   const hasWork = local.dirty || unconfirmedSaves > 0 || neverSaved;
   if (!hasWork) return { seed: server, notice: "none", dropLocal: true };
   const pendingSaves = unconfirmedSaves;
@@ -400,6 +506,8 @@ export function chooseBuilderStart(
       visitId: local.visitId,
       notes: local.notes,
       lines: local.lines,
+      offers: local.offers,
+      invoiceDiscount: local.invoiceDiscount,
     },
     notice: "restored",
     dropLocal: false,
