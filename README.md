@@ -8,11 +8,11 @@ The business operating system for **Honest®**, an Egyptian B2B distributor of d
   for field sales, CRM, leads, visits and tracking, orders with offers and decision-B discount
   approvals, inventory, invoices, payments, returns, commissions with the owner's rate editor,
   dashboards, maps (key-less state), owner setup and the old-system workbook import.
-  - `pnpm test:db`: 3431 assertions in 61 suites, 0 failing.
-  - `pnpm test`: 1974 unit tests.
-  - Local signed-in stack: 77 verification lines and 348 screenshots
+  - `pnpm test:db`: 3488 assertions in 62 suites, 0 failing.
+  - `pnpm test`: 2013 unit tests.
+  - Local signed-in stack: 78 verification lines and 348 screenshots
     ([`docs/VERIFICATION.md`](docs/VERIFICATION.md), [`docs/TESTING.md`](docs/TESTING.md) §7–8).
-- **On staging:** all 80 migrations. **Nothing is Verified**: that needs the owner's own
+- **On staging:** all 81 migrations. **Nothing is Verified**: that needs the owner's own
   click-through ([`docs/VERIFICATION.md`](docs/VERIFICATION.md)). MFA enforcement ships off.
 - **Owner actions pending:** rotate the Supabase secret key and re-add the three secrets as
   Sensitive in Vercel; Google Cloud keys and APIs (Maps JS, Places API (New), Geocoding) with a
