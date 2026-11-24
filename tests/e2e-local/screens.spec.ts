@@ -7,7 +7,7 @@ import { readIds, RESULTS_DIR, SHOTS_DIR, STATE_DIR, type ShotResult } from "./s
 /**
  * One full-page screenshot per screen × locale × width (docs/TESTING.md "Local signed-in
  * stack"), plus automatic checks written next to it (global-teardown turns them into index.md):
- * horizontal scroll at phone width, visible buttons/links in <main> under 44 px, text that looks
+ * horizontal scroll at phone width, visible buttons/links in <main> under 44 px on phones (24 px on desktop), a desktop sidebar shorter than the page, text that looks
  * like an untranslated message key, console errors, failed requests, error boundaries, 404/500.
  * Nothing is asserted: the run is a review aid, not a gate.
  */
@@ -15,7 +15,10 @@ const LOCALES = (process.env.SHOTS_LOCALES ?? "ar,en").split(",").map((s) => s.t
 const WIDTHS = (process.env.SHOTS_WIDTHS ?? "390,1440").split(",").map((s) => Number(s.trim())).filter(Boolean);
 const ONLY = process.env.SHOTS_ONLY?.split(",").map((s) => s.trim()).filter(Boolean);
 const HEIGHT: Record<number, number> = { 390: 844, 1440: 900 };
-const MIN_TAP = 44;
+// Touch target minimum on phones (44 px); from 600 px up a mouse is assumed and the WCAG 2.2
+// AA minimum (2.5.8, 24 px) applies instead.
+const MIN_TAP_PHONE = 44;
+const MIN_TAP_DESKTOP = 24;
 
 // Error boundaries and the shared "could not load" states, in both languages.
 const ERROR_TEXT = /something went wrong|could not be shown|حدث خطأ|تعذر عرض/i;
@@ -51,8 +54,13 @@ async function audit(page: Page, width: number) {
         .map((a) => (a.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 160))
         .filter(Boolean);
       const bodyText = document.body.innerText;
+      // The desktop sidebar's dark column must reach the bottom of the page (full-page captures too).
+      const aside = document.querySelector("aside");
+      const asideRect = aside && getComputedStyle(aside).display !== "none" ? aside.getBoundingClientRect() : null;
+      const sidebarShort = asideRect ? Math.round(asideRect.height) < doc.scrollHeight - 1 : false;
       return {
         hScroll,
+        sidebarShort,
         smallTargets: small,
         untranslated: [...untranslated],
         alerts,
@@ -60,7 +68,7 @@ async function audit(page: Page, width: number) {
         notFound: /^\s*404\b/.test(bodyText),
       };
     },
-    { minTap: MIN_TAP, phone: width < 600, keyLike: KEY_LIKE.source },
+    { minTap: width < 600 ? MIN_TAP_PHONE : MIN_TAP_DESKTOP, phone: width < 600, keyLike: KEY_LIKE.source },
   );
 }
 
@@ -120,6 +128,7 @@ for (const screen of screens) {
           url: new URL(page.url()).pathname + new URL(page.url()).search,
           status: response?.status() ?? null,
           hScroll: found.hScroll,
+          sidebarShort: found.sidebarShort,
           smallTargets: found.smallTargets,
           untranslated: found.untranslated,
           consoleErrors,

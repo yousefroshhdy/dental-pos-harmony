@@ -95,6 +95,7 @@ export type ShotResult = {
   url: string;
   status: number | null;
   hScroll: { scrollWidth: number; innerWidth: number } | null;
+  sidebarShort?: boolean;
   smallTargets: string[];
   untranslated: string[];
   consoleErrors: string[];
