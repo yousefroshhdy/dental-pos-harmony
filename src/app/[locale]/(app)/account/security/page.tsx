@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { permissionLabel } from "@/lib/i18n/permission-label";
 import { KeyRoundIcon, ShieldCheckIcon } from "lucide-react";
 import NextLink from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -39,6 +40,7 @@ export default async function AccountSecurityPage({
   const returnTo = stepUpReturnPath(next, locale);
   setRequestLocale(locale);
   const t = await getTranslations("security");
+  const tp = await getTranslations("permissions");
   const format = await getFormatter();
 
   const [status, factors] = await Promise.all([getMfaStatus(), listTotpFactors()]);
@@ -95,9 +97,7 @@ export default async function AccountSecurityPage({
                 <ul className="flex flex-wrap gap-1">
                   {status.data.required_permissions.map((code) => (
                     <li key={code}>
-                      <code dir="ltr" className="rounded bg-muted px-2 py-0.5 text-xs">
-                        {code}
-                      </code>
+                      <span className="rounded bg-muted px-2 py-0.5 text-xs">{permissionLabel(tp, code)}</span>
                     </li>
                   ))}
                 </ul>

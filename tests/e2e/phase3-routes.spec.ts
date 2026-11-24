@@ -11,6 +11,7 @@ const ROUTES = [
   "/visits/new",
   "/visits/privacy",
   "/tasks",
+  "/tasks/00000000-0000-0000-0000-000000000000",
   "/customers",
   "/customers/new",
   "/customers/00000000-0000-0000-0000-000000000001",

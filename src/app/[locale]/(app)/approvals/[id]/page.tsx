@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { permissionLabel } from "@/lib/i18n/permission-label";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { HistoryIcon } from "lucide-react";
@@ -36,6 +37,7 @@ export default async function ApprovalDetailPage({ params }: { params: Params })
   if (!z.guid().safeParse(id).success) notFound();
 
   const t = await getTranslations("approvals");
+  const tp = await getTranslations("permissions");
   const format = await getFormatter();
   const [request, steps] = await Promise.all([getRequest(id), listSteps(id)]);
   const back = <BackLink href="/approvals">{t("detail.back")}</BackLink>;
@@ -168,9 +170,7 @@ export default async function ApprovalDetailPage({ params }: { params: Params })
             <div>
               <dt className="text-xs text-muted-foreground">{t("detail.neededPermission")}</dt>
               <dd>
-                <code dir="ltr" className="text-sm">
-                  {row.stage_permission}
-                </code>
+                <span className="text-sm">{permissionLabel(tp, row.stage_permission)}</span>
               </dd>
             </div>
           ) : null}
