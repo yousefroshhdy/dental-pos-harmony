@@ -6,6 +6,8 @@ import {
   RECEIPT_STATUSES,
   TRANSFER_STATUSES,
   type AdjustmentOutcome,
+  type LotCostRow,
+  type LotCostStatus,
   type MovementType,
   type ReceiptStatus,
   type ReorderAlertRow,
@@ -493,6 +495,7 @@ export const INVENTORY_ERROR_CODES = [
   "APPROVAL_REQUIRED",
   "NO_LINES",
   "SAME_WAREHOUSE",
+  "COST_ALREADY_SET",
 ] as const;
 export type InventoryErrorCode = (typeof INVENTORY_ERROR_CODES)[number];
 
@@ -513,4 +516,49 @@ export function toAmount(value: number | string | null | undefined): number | nu
   if (value === null || value === undefined || value === "") return null;
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+// ---------------------------------------------------------------------------
+// Lot cost (owner decision 2026-11-24: an unknown cost is set once, by the owner)
+// ---------------------------------------------------------------------------
+
+/** Largest amount a numeric(14,2) holds. */
+export const MAX_UNIT_COST = 999_999_999_999.99;
+const UNIT_COST_PATTERN = /^\d{1,12}(\.\d{1,2})?$/;
+
+/**
+ * A typed unit cost in EGP ("1250", "1250.5", "1,250.50", Arabic-Indic digits, Arabic decimal
+ * separator) → number, or null unless it is more than 0 with at most two decimals. The database
+ * checks the same rules again (api.set_lot_cost).
+ */
+export function parseUnitCost(raw: string | null | undefined): number | null {
+  if (raw === null || raw === undefined) return null;
+  const text = raw
+    .trim()
+    .replace(/[٠-٩۰-۹]/g, (d) => String(d.charCodeAt(0) & 0xf))
+    .replace(/[,\s\u066C]/g, "")
+    .replace("\u066B", ".");
+  if (!UNIT_COST_PATTERN.test(text)) return null;
+  const value = Number(text);
+  if (!(value > 0) || value > MAX_UNIT_COST) return null;
+  return value;
+}
+
+/** Lot id → its cost status row (api.v_lot_costs). */
+export function lotCostsByLot(rows: readonly LotCostRow[]): Map<string, LotCostRow> {
+  return new Map(rows.map((r) => [r.lot_id, r]));
+}
+
+/**
+ * What the lot table shows in the cost column: the amount, "cost unknown", or nothing (a lot
+ * without a row: not received through a receipt, or the reader may not see costs).
+ */
+export function lotCostDisplay(row: LotCostRow | undefined): { status: LotCostStatus; amount: number | null } | null {
+  if (!row) return null;
+  return { status: row.cost_status, amount: row.cost_status === "unknown" ? null : toAmount(row.unit_cost) };
+}
+
+/** UI only: the owner may set an unknown cost (inventory.lot.set_cost is MFA-gated and owner only in Postgres). */
+export function canSetLotCost(ctx: UserContext): boolean {
+  return ctx.active && ctx.is_owner && can(ctx, "inventory.lot.set_cost");
 }

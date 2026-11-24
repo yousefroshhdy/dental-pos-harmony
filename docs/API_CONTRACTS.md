@@ -278,6 +278,21 @@ Implemented and Tested (DB suite 62, unit `legacy-browser-import`, `legacy-conve
 **HTTP:** `POST /api/legacy-import` (multipart, route handler, same origin only). Fields: `file` (.xlsx ≤ 4 MB), `mode` = `analyze` (`governorate_code`, `warehouse_code`) → `{ok, mode, analysis}` (reconciliation rows, negative-stock items, credits count and total, rows per step; nothing stored) · `start` (+ `idempotency_key`, `decisions` JSON `{sku: zero|skip}`, `credits_mode`) → `{ok, mode, sessionId}` · `restage` (`session_id`, `step`, `idempotency_key`) → `{ok, mode, sessionId}`. Errors `{ok:false, code, messageKey, requestId, problem?}`; `problem` ∈ `no_file`, `not_xlsx`, `too_large`, `not_zip`, `zip_bomb`, `too_many_rows`, `too_many_sheets`, `unreadable`, `missing_sheets`, `bad_request`, `bad_origin`, `decisions_incomplete`, `new_negative_items`, `file_rejected`. 403 for a cross-origin post, `PERMISSION_DENIED`, `OWNER_ONLY`, `MFA_REQUIRED`; 413 above the size cap.
 
 **Server side (no DB command):** `src/lib/maps/geocode.ts` (server-only) calls the Google Geocoding API with `GOOGLE_MAPS_SERVER_KEY` (region `eg`, `components=country:EG`, language `ar`); without a key it answers `not_configured`. Logins on /admin/setup: `authorize_sign_in_link` → Auth admin `generateLink` (`invite` or `magiclink`) → `register_user` → `assign_employee_territory` → `grant_role`; the owner copies the link `/<locale>/auth/confirm?token_hash=…&type=…`.
+
+### 1b-3. Phase P: the owner sets an unknown lot cost once (migration `20261126000400`, 2026-11-26; suite 63)
+
+Implemented and Tested (DB suite 63, unit `inventory-lot-cost`, verification line OWN-20 on the local stack); nothing Verified. Owner decision 2026-11-24 (DECISIONS Part C).
+
+| Command | Answer | Errors / notes |
+|---------|--------|----------------|
+| `set_lot_cost(p_lot_id uuid, p_unit_cost numeric, p_reason text, p_idempotency_key uuid)` | `{lot_id, variant_id, unit_cost, cost_status:'set', set_at, replayed}` | `authz.require('inventory.lot.set_cost')` (MFA-gated, granted to no role) then the owner role (`OWNER_ONLY`, 42501). `VALIDATION` (P0001): key missing, cost NULL / ≤ 0 / more than 2 decimals / above 999,999,999,999.99, reason not 3–500 characters after trimming. `NOT_FOUND` (P0002): no such lot. The lot row is locked (`for update`). `COST_ALREADY_SET` (P0001): the lot already has a set cost (unless the same key **and** value: then the first answer with `replayed:true`), or it has no units received with an unknown cost (every receipt carried a cost). `CONFLICT` (P0001): the key was used for another lot. Stores one row in `inventory.lot_costs` (append-only, audited with the reason). Past movements and receipt lines are **not** back-filled. |
+
+**View** (security_invoker): `v_lot_costs`: one row per received lot: `lot_id, variant_id, sku, variant_name, product_id, lot_no, expiry_date, cost_status` (`unknown` = a receipt brought units in without a cost and none was set · `set` = the owner's cost · `known` = every receipt had a cost), `unit_cost` (the set cost, the latest receipt cost when known, NULL when unknown), `received_qty, cost_set_at, cost_set_by`. Rows only for `catalog.cost.read` holders with company-wide `inventory.movement.read` (owner, inventory manager); reps and finance get none. `v_legacy_import_quality` is restated: a `cost_unknown` item also leaves the list once none of its lots has unknown-cost units left.
+
+**Outbox:** `inventory.lot_cost_set` (aggregate `inventory.lot`; `{lot_id, variant_id, sku, lot_no}`, no amount).
+
+**Screen:** `/inventory/stock/<variant>`: a **Unit cost** column for cost readers ("Cost unknown" badge or the amount); the owner gets **Set cost** (bottom sheet: unit cost in EGP and a reason) on an unknown-cost lot, through the server action `setLotCost` with a page-generated key. The legacy import's "items without cost" rows link there.
+
 ### 1c. Phase P step 3: Google Maps (migrations `20261125000300`, `…000310`; suite 57)
 
 Implemented and Tested (DB suite 57, unit tests); nothing Verified. Same conventions as 1b.

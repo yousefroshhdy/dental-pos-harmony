@@ -47,9 +47,9 @@ select is((select array_agg(code order by code) from authz.permissions where req
                 'admin.user.suspend','admin.workflow.manage','audit.row_image.unmask',
                 'catalog.price.manage','crm.customer.export','field.tracking.export','field.visit.export',
                 'finance.aging.export','finance.credit_limit.change','finance.invoice.export','finance.payment.export',
-                'finance.payment.reverse','inventory.quarantine.release','inventory.stock.export',
+                'finance.payment.reverse','inventory.lot.set_cost','inventory.quarantine.release','inventory.stock.export',
                 'perf.commission.calculate','perf.commission_plan.manage','sales.order.export','sales.return.credit','wf.decide.write_off'],
-          'the sensitive set requires MFA (admin.import.run too, once it exists; extended by 20261104000300, 20261104000710, 20261104001100 and 20261125000400)');
+          'the sensitive set requires MFA (admin.import.run too, once it exists; extended by 20261104000300, 20261104000710, 20261104001100, 20261125000400 and 20261126000400)');
 select is((select count(*)::int from authz.permissions where requires_mfa = false and code in
             ('crm.customer.read','sales.order.create','finance.payment.record','finance.payment.read','admin.user.create')),
           5, 'ordinary permissions do not require MFA');

@@ -88,7 +88,25 @@
     "empty": "No stock for this SKU in the selected warehouses.",
     "adjust": "Adjust",
     "transfer": "Transfer",
-    "viewMovements": "View this SKU in the stock ledger"
+    "viewMovements": "View this SKU in the stock ledger",
+    "unitCost": "Unit cost"
+  },
+  "lotCost": {
+    "unknown": "Cost unknown",
+    "open": "Set cost",
+    "title": "Set the purchase cost",
+    "description": "Enter the purchase cost of one unit of this lot. It can be set only once and is never changed afterwards. Units already sold keep no cost.",
+    "unitCost": "Unit cost (EGP)",
+    "unitCostHint": "More than 0, up to 2 decimals.",
+    "unitCostInvalid": "Enter an amount more than 0 with up to 2 decimals.",
+    "reason": "Reason",
+    "reasonHint": "Where the cost comes from, for example the supplier invoice.",
+    "reasonInvalid": "Write a short reason, at least 3 characters.",
+    "stepUpFirst": "This needs a code from your authenticator app first.",
+    "submit": "Save cost",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "saved": "Cost saved: {amount} per unit."
   },
   "movements": {
     "title": "Stock ledger",
@@ -325,7 +343,8 @@
     "WAREHOUSE_NOT_SELLABLE": "Stock in a quarantine or transit warehouse cannot be reserved or sold.",
     "APPROVAL_REQUIRED": "This needs approval first.",
     "NO_LINES": "Add at least one line.",
-    "SAME_WAREHOUSE": "The source and destination must be different warehouses."
+    "SAME_WAREHOUSE": "The source and destination must be different warehouses.",
+    "COST_ALREADY_SET": "This lot's cost is already recorded. A recorded cost is never changed."
   },
   "adjustments": {
     "title": "Stock adjustments",

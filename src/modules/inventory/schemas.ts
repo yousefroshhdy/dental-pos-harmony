@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseStockLineValue, REASON_CODES } from "./logic";
+import { parseStockLineValue, parseUnitCost, REASON_CODES } from "./logic";
 
 /**
  * Input validation for the inventory Server Actions. These reject malformed
@@ -138,6 +138,35 @@ export const adjustmentSchema = z
     idempotency_key: z.string().regex(/^[A-Za-z0-9:_-]{8,100}$/),
   })
   .refine((v) => v.reason_code !== "other" || (v.note?.length ?? 0) >= 3, { path: ["note"], message: "note required" });
+
+// ---------------------------------------------------------------------------
+// Lot cost: the owner sets an unknown purchase cost once (api.set_lot_cost)
+// ---------------------------------------------------------------------------
+
+export const setLotCostSchema = z.object({
+  lot_id: id,
+  variant_id: id,
+  /** EGP per unit: more than 0, at most two decimals (Arabic-Indic digits accepted). */
+  unit_cost: z.string().transform((v, ctx) => {
+    const value = parseUnitCost(v);
+    if (value === null) {
+      ctx.addIssue({ code: "custom", message: "invalid unit cost" });
+      return z.NEVER;
+    }
+    return value;
+  }),
+  reason: z.string().trim().min(3).max(500),
+  idempotency_key: z.guid(),
+});
+export type SetLotCostInput = z.infer<typeof setLotCostSchema>;
+
+/** The first field a "Set cost" form check refused, for the message next to it. */
+export function lotCostInvalidField(error: z.ZodError): "unit_cost" | "reason" | undefined {
+  const fields = new Set(error.issues.map((i) => String(i.path[0] ?? "")));
+  if (fields.has("unit_cost")) return "unit_cost";
+  if (fields.has("reason")) return "reason";
+  return undefined;
+}
 
 /** Which inventory.errors / errors key a validation failure maps to. */
 export function validationCode(error: z.ZodError): string {

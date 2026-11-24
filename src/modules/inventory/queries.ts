@@ -8,6 +8,7 @@ import { AVAILABLE_LIST, MOVEMENT_LIST, RECEIPT_LIST, STOCK_LIST } from "./lists
 import { addDays, cairoDayStartUtc, type MovementFilters, type StockFilters } from "./logic";
 import type {
   AvailableRow,
+  LotCostRow,
   MovementRow,
   ReceiptRow,
   ReceiptStatus,
@@ -115,6 +116,14 @@ export async function listStockDetail(filter: { variant?: string; warehouse?: st
   if (filter.warehouse) q = q.eq("warehouse_id", filter.warehouse);
   if (filter.onlyAvailable) q = q.gt("available", 0);
   return run("v_stock_detail", q.order("sku").order("expiry_date", { ascending: true, nullsFirst: false }).limit(STOCK_LIMIT), []);
+}
+
+const LOT_COST_COLUMNS = "lot_id, variant_id, lot_no, cost_status, unit_cost, cost_set_at";
+
+/** Cost status of one SKU's lots (api.v_lot_costs). Empty for anyone who may not read costs. */
+export async function listLotCosts(variantId: string): Promise<Result<LotCostRow[]>> {
+  const db = await createClient();
+  return run("v_lot_costs", db.from("v_lot_costs").select(LOT_COST_COLUMNS).eq("variant_id", variantId).limit(STOCK_LIMIT), []);
 }
 
 export async function listMovements(filter: MovementFilters): Promise<Result<MovementRow[]>> {
