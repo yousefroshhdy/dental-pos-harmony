@@ -1,6 +1,7 @@
 import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
+import { mapsKeyConfigured } from "@/lib/maps/config";
 import { refreshSession } from "@/lib/supabase/proxy-session";
 import {
   CSP_META_REQUEST_HEADER,
@@ -60,6 +61,7 @@ function contentSecurityPolicy(request: NextRequest): { nonce: string; header: s
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
     isDev: process.env.NODE_ENV === "development",
     upgradeInsecureRequests: isProduction && isHttpsRequest(request.url, request.headers.get("x-forwarded-proto")),
+    googleMaps: mapsKeyConfigured(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY),
   });
   return { nonce, header, meta };
 }

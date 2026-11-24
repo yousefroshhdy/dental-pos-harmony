@@ -10,6 +10,7 @@ import { fieldNav } from "@/modules/field/nav";
 import { financeNav } from "@/modules/finance/nav";
 import { importsNav } from "@/modules/imports/nav";
 import { inventoryNav } from "@/modules/inventory/nav";
+import { mapsNav } from "@/modules/maps/nav";
 import { ordersNav } from "@/modules/orders/nav";
 import { planningNav } from "@/modules/planning/nav";
 import { reportsNav } from "@/modules/reports/nav";
@@ -61,6 +62,7 @@ export const NAV_SOURCES: readonly { group: NavGroupId; items: readonly NavItem[
   { group: "field", items: fieldNav },
   { group: "field", items: planningNav },
   { group: "field", items: trackingNav },
+  { group: "field", items: mapsNav },
   { group: "orders", items: ordersNav },
   { group: "orders", items: returnsNav },
   { group: "finance", items: financeNav },

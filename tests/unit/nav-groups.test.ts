@@ -20,6 +20,7 @@ import { reportsNav } from "@/modules/reports/nav";
 import { returnsNav } from "@/modules/returns/nav";
 import { securityNav } from "@/modules/security/nav";
 import { trackingNav } from "@/modules/tracking/nav";
+import { mapsNav } from "@/modules/maps/nav";
 import { workflowNav } from "@/modules/workflow/nav";
 
 function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}): UserContext {
@@ -47,10 +48,11 @@ const REP = ctx({
   "catalog.product.read": "all",
 });
 
-/** Every nav array the pre-Phase-P app layout spread into its NAV list. */
+/** Every module nav array: the pre-Phase-P layout's list plus modules added in Phase P (maps). */
 const LAYOUT_NAVS: readonly (readonly NavItem[])[] = [
   dashboardsNav, fieldNav, trackingNav, crmNav, ordersNav, financeNav, approvalsNav, inventoryNav, catalogNav,
   planningNav, returnsNav, commissionsNav, reportsNav, importsNav, workflowNav, auditNav, securityNav, adminNav,
+  mapsNav,
 ];
 
 describe("department groups", () => {
@@ -74,6 +76,7 @@ describe("department groups", () => {
     expect(groupOf("/catalog")).toBe("sales");
     expect(groupOf("/today")).toBe("field");
     expect(groupOf("/tracking")).toBe("field");
+    expect(groupOf("/map")).toBe("field");
     expect(groupOf("/planning")).toBe("field");
     expect(groupOf("/orders")).toBe("orders");
     expect(groupOf("/returns")).toBe("orders");
