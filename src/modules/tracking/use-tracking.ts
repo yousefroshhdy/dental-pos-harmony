@@ -8,9 +8,11 @@ import type { SyncEngine } from "@/lib/offline/sync";
 import type { JsonObject } from "@/lib/offline/types";
 import type { GeoOutcome } from "@/modules/field/geo";
 import { ensureSendersRegistered, startOfflineDevice } from "@/modules/offline/senders";
-import { endShift, loadTrackingStatus, recordLocationPings, startShift } from "./actions";
+import { endShift, loadTrackingStatus, recordLocationPings, reportDeviceStatus, startShift } from "./actions";
 import { requestWakeLock, startCollector, type Sample } from "./collector";
+import { browserGeoPermission, nativeAppVersion, queuedPointCount } from "./device-info";
 import { applyStatus, EMPTY_STATE, trackingStoreFor, type DeviceState } from "./device-store";
+import { buildDeviceStatus, retryAfterMs, STATUS_REPORT_INTERVAL_MS } from "./health";
 import {
   isCollecting,
   shiftGroup,
@@ -171,6 +173,41 @@ async function syncAndPrune(userId: string, engine: SyncEngine): Promise<void> {
   }
 }
 
+/**
+ * The device's own status for the managers' health panel (api.report_device_status): which
+ * collector runs, the location permission as this device knows it, the shell's version when
+ * the shell can tell, and the points still on the phone. Online only, never queued (a stale
+ * snapshot is worse than none); every failure is ignored (the next report tries again), and a
+ * report within a minute of the last one is answered rate_limited by the server: the answer
+ * is then the wait in ms, so a change (e.g. a refused permission) still reaches the panel soon.
+ */
+export async function sendDeviceStatus(userId: string, shiftId: string): Promise<number | null> {
+  if (!online() || typeof window === "undefined") return null;
+  try {
+    const state = trackingStoreFor(userId).get();
+    const native = backgroundGeolocation() !== null;
+    const engine = engineFor(userId);
+    const [browserState, appVersion, queued] = await Promise.all([
+      native ? Promise.resolve(null) : browserGeoPermission(navigator as unknown as Parameters<typeof browserGeoPermission>[0]),
+      native ? nativeAppVersion(window as unknown as Parameters<typeof nativeAppVersion>[0]) : Promise.resolve(null),
+      engine ? engine.list().then(queuedPointCount, () => 0) : Promise.resolve(0),
+    ]);
+    const status = buildDeviceStatus({
+      native,
+      problem: state.problem,
+      hasFix: state.lastSampleMs !== null,
+      browserState,
+      appVersion,
+      batterySaver: null, // no web API tells the battery saver state; the shell does not expose it
+      pendingPoints: state.buffer.length + queued,
+    });
+    const result = await reportDeviceStatus({ shift_id: shiftId, status });
+    return result.ok && result.data.status === "rate_limited" ? retryAfterMs(result.data.retry_after_s) : null;
+  } catch {
+    return null; // offline or the server is busy: the next report tries again
+  }
+}
+
 function addSample(userId: string, sample: Sample, source: PingSource): void {
   const store = trackingStoreFor(userId);
   store.update((s) => {
@@ -216,6 +253,32 @@ export function useTrackingCollector(userId: string, enabled: boolean): DeviceSt
       window.removeEventListener("online", onOnline);
     };
   }, [enabled, userId]);
+
+  // The health panel: report the device status when collecting starts on a shift the server
+  // knows, every 5 minutes after, and at once when the location becomes blocked.
+  const reportShiftId = collecting ? (state.shift?.serverId ?? null) : null;
+  const blocked = state.problem === "denied" || state.problem === "services_off";
+  useEffect(() => {
+    if (!reportShiftId) return;
+    let alive = true;
+    let retry: number | null = null;
+    const report = async (mayRetry: boolean) => {
+      const wait = await sendDeviceStatus(userId, reportShiftId);
+      if (alive && mayRetry && wait !== null && retry === null) {
+        retry = window.setTimeout(() => {
+          retry = null;
+          void report(false); // once: the next regular report follows anyway
+        }, wait);
+      }
+    };
+    void report(true);
+    const timer = window.setInterval(() => void report(false), STATUS_REPORT_INTERVAL_MS);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      if (retry !== null) window.clearTimeout(retry);
+    };
+  }, [reportShiftId, blocked, userId]);
 
   // Inside the Android shell, while NOT collecting: remove any watcher an earlier page left
   // running (its callback died with that page, the GPS and notification did not).

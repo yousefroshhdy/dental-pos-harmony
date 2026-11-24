@@ -243,6 +243,8 @@ The rep restrictions requested in the brief map as follows:
 
 **Owner-only settings.** `security.*`, `tracking.*`, `finance.payment.*`, `commission.*`, `wf.delegation.*` and `wf.escalation.*` are owner-only by table CHECK on `core.setting_definitions`, as are VAT, visit-GPS retention, `company.timezone`, `company.currency` and the company tax and commercial-register numbers. A non-owner gets `OWNER_ONLY` (42501) before any MFA check.
 
+**Tracking health** (`20261125000500`, Phase P step 5). No new permission. `api.report_device_status` needs `field.shift.start` and writes only to the caller's own open shift. `api.v_tracking_health` follows the D-14 tracking scope exactly: the caller's own row, plus `field.tracking.read` at own/team/territory scope, plus everyone trackable for a global holder (the owner), through `authz.tracking_employee_ids()`; RLS on `field.work_shifts`, `field.location_pings` and `field.device_status` applies on top. It shows times, collector and device facts, never coordinates.
+
 ## 8. Approval-limit configuration
 
 Approval limits are **data**, not code:

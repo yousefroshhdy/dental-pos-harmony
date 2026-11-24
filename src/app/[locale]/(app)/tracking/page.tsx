@@ -8,6 +8,7 @@ import { getUserContext } from "@/lib/authz/context";
 import { cn } from "@/lib/utils";
 import { Empty, Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
 import { localizedName } from "@/modules/field/logic";
+import { TrackingHealthPanel } from "@/modules/tracking/components/health-panel";
 import { CAIRO_DATE_LONG, CAIRO_TIME, dayAsDate, formatDuration, formatKm } from "@/modules/tracking/format";
 import { addDays, cairoToday, canReadTracking, dayFlags, isRowFlagged, parseDay, sortTeamRows, trackingErrorCode } from "@/modules/tracking/logic";
 import { getTeamDay } from "@/modules/tracking/queries";
@@ -99,6 +100,9 @@ export default async function TrackingTeamPage({ params, searchParams }: { param
           ) : null}
         </nav>
       </div>
+
+      {/* Phase P step 5: is tracking working on each phone right now? (today only) */}
+      {day === today ? <TrackingHealthPanel /> : null}
 
       <h2 className="text-lg font-semibold">{format.dateTime(dayAsDate(day), CAIRO_DATE_LONG)}</h2>
 

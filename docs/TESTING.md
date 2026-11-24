@@ -161,6 +161,7 @@ Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **27
 | 52_audit4_audit_exports | audit 4 A-LM2, A-L4 | 66 |
 | 53_audit4_planning | audit 4 F2, F5, F6, F9 | 51 |
 | 54_export_permissions | per-kind export permissions: catalogue, same roles and scopes as before (user by user), refusal per kind without its export permission, MFA at aal1/aal2, whitelist | 49 |
+| 59_phase_p_tracking | Phase P step 5, tracking health: `api.report_device_status` (own open shift only, key whitelist and types, 1 KB cap, one report a minute per shift, snapshot replace, closed shift refused, no direct writes) and `api.v_tracking_health` (security_invoker, no coordinates; rep sees own row, area manager their team, sales director both reps, another rep and finance nothing, owner all trackable; attention after 15 minutes without an arriving point, cleared by a point, never on a closed shift) | 48 |
 
 **Pinned sets:** suites 39 and 48 compare the exact MFA-gated permission set; flagging a permission means updating both.
 
@@ -186,3 +187,43 @@ None of these is written yet. They need a seeded Supabase stack or staging.
 | Planning | Rep adds and removes a visit; a past day shows `PAST_DATE`; a manager generates next month and saves part of it; a second run does not repeat; a full day shows `DAILY_CAP`; a rep's plan hides Remove on a manager-planned visit; coverage loads and "Plan a visit" preselects the customer |
 | Admin v2 | Create an employee and assign a territory; the manager list excludes own reports; terminating keeps held customers listed; territory create, move, deactivate, coverage; RTL at 360×640 |
 | Android (device) | Tracking survives 10+ minutes with the screen off; an injected cross-origin iframe calling the bridge is refused (logcat `HonestBridge`); `adb shell run-as eg.honest.os` fails on the pilot APK; `chrome://inspect` shows nothing; End my day, sign-out and a shift ended elsewhere remove the notification; one watcher after a reload; code login inside the app; fallback page offline |
+| Tracking health (Phase P) | `/tracking` as an area manager at 390 px and 1440 px, ar and en: the "Tracking health now" panel lists only the team; a rep with an open day and no point for 16 minutes shows "Needs attention"; a refused permission shows "Refused" after the next report; a closed day shows "ended HH:MM"; empty and error states |
+
+### 6.1 One-phone test day (Phase P step 5)
+
+Every step below is **Planned**. A step becomes **Verified** only after the owner (or the person
+he names) runs it on staging and records the result in the table at the end; nothing here is
+automated. Steps 3 and 5 use the leads screen and the lead-to-prospect conversion, which come
+later in Phase P; steps 4 and 10 use the check-in at an unpinned clinic and the day map, which the
+maps step changes. Run those steps once that work is on staging, and the rest now.
+
+**Before the day**
+
+- Staging has: an **area manager** account M with a laptop, a **rep** account R in M's team
+  (`core.employees.manager_id`), R's base address saved, and at least two clinics near it (two
+  leads, or one lead and one existing test customer). Synthetic names only (owner decision A).
+- The pilot phone has the fresh APK, installed with `mobile/README.md` › "Install the pilot app,
+  step by step" steps 1–7 (notifications allowed, location "Allow only while using the app" with
+  precise location on, battery "Unrestricted", USB debugging off).
+- Write down: phone brand and model, Android version, the Android workflow run number.
+
+**The day** (labels in English, Arabic in brackets; the app opens in Arabic)
+
+| # | Who, where | Exact clicks | Expected result | Status |
+|---|---|---|---|---|
+| 1 | R, phone, at the office | Open **Honest OS** › **Today** (bottom bar; menu **My day**, يومي) › shift card **Start my day** (ابدأ يومي). First time only: read the notice › **I have read and understood this notice** (قرأت هذا الإشعار وفهمته) › **Start my day** again. If Android asks for location: **While using the app**, **Precise** on. | The card shows **On shift** (في يوم العمل) and "Since HH:MM". The notification "Honest OS is recording your location for your working day" appears. Within about a minute: "Last point recorded at HH:MM". | Planned |
+| 2 | M, laptop | **Tracking** (التتبع) › section **Tracking health now** (حالة التتبع الآن) | R's row: **Day open** since R's start time; last point a few minutes old; collected by **Android app**; location **Allowed** (right after the start it may say **Unknown** until the next 5-minute report); app version shows **Web** and the build; battery saver **Not reported**; no **Needs attention** badge. R's day is also in the team table below with "On shift: Yes". | Planned |
+| 3 | R, phone | Lock the phone, travel to the first clinic (at least 15 minutes). Unlock › bottom bar **Leads** › **Leads near me** › tap the nearest lead. | The lead list is sorted by distance; the lead opens with its details fetched live from Google, Google's attribution shown, status **new**. On M's panel, during the trip, the last point stays at most about 5 minutes old and no **Needs attention** badge appears. | Planned |
+| 4 | R, phone, at the clinic | On the lead: **Check in** (تسجيل الوصول). First time on this phone: accept the GPS notice. | A verdict shows. This clinic has no pinned location yet, so the check-in fix is proposed as the clinic's location for a manager to approve (the 2026-10-29 rule), and the visit is **In progress**. **Today** › **Visits in progress** (زيارات جارية) lists it. | Planned |
+| 5 | R, phone | On the visit or the lead: record the clinic's own data (doctor, clinic name, phone `+20…`, specialty, notes) › save. | The lead becomes a CRM customer at stage **prospect**, linked to its Google place; the lead's status shows **prospect**; the customer page opens with the data R typed. | Planned |
+| 6 | R, phone | **Today** › **Visits in progress** › **Check out** (تسجيل المغادرة) › Outcome **Interested** (مهتم) › a note › optionally **Next follow-up** tomorrow 10:00 › **Check out**. | "Checked out." confirmation; the visit shows **Completed** with the outcome; with a follow-up, a task appears under **Follow-ups** on Today. | Planned |
+| 7 | R, phone | Travel to the second clinic. **Today** › **Unplanned visit** (زيارة غير مخططة) › search the clinic › **Check in** › stay at least 10 minutes › **Today** › **Visits in progress** › **Check out** › Outcome **Order taken** (تم أخذ طلبية) or **Not interested** › **Check out**. | The second visit is **Completed**. Two visits on the day. | Planned |
+| 8 | R and M (health check) | R: pull down the quick settings › turn **Location** off for 20 minutes, keep the app open. Then turn it back on. | The shift card shows "The phone's location is switched off". On M's panel (reload): after the next report location shows **Location off**; 15 minutes after the last point R's row shows **Needs attention** and moves to the top. After R turns location on, a new point arrives within about 5 minutes and the badge clears on reload. The day page later shows this as a gap. | Planned |
+| 9 | R, phone | **Today** › **End my day** (أنهِ يومي) › **Yes, end my day** (نعم، أنهِ يومي). Wait for "All points sent" first if points are waiting. | "Your day has ended (H h MM min)"; the notification disappears. M's panel: **Day closed**, "ended HH:MM", no badge. | Planned |
+| 10 | R (phone) and M (laptop) | R: shift card › **See my day** (اعرض يومي). M: **Tracking** › R's name. | The day page shows the route drawn from the day's points, numbered stops, both visit check-ins, any gap (step 8), the distance, and 2 visits. M sees the same day; R sees only R's own. | Planned |
+
+**Record** (fill in on the day, keep in the PR or release notes; then set the steps to Verified)
+
+| Date | Phone, Android version | Workflow run | Steps passed | Steps failed (what was seen) | By |
+|---|---|---|---|---|---|
+| | | | | | |

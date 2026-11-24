@@ -76,6 +76,7 @@
 | `20261104000900_import_fk_indexes` | covering indexes for `import.batches.committed_by` / `discarded_by` (Supabase performance advisor); suite 40 now sweeps the `import` schema |
 | `20261104001000_drop_duplicate_indexes` | drops four duplicate indexes left by `20261103000700` (owner-approved); suite 40 now fails on any duplicate index |
 | `20261104001100_export_permissions` | owner decision 2026-10-31: one sensitive, MFA-gated `<module>.<resource>.export` permission per export kind (invoice, payment, aging, visit, stock, tracking), granted to the holders of the paired read permission at the same scope; `audit.export_kinds()` requires read + export per kind; suite 54 |
+| `20261125000500_tracking_device_status` | Phase P step 5, tracking health: table `field.device_status` (one row per shift, the device's last own report: collector, location permission, app version, web build, battery saver, points waiting; no coordinates, no device ids; RLS like `work_shifts`, select only, no audit trigger: overwritten every 5 minutes), command `api.report_device_status`, definer roster `field.tracking_health_roster()`, view `api.v_tracking_health` (security_invoker); suite 59 |
 
 **Local test harness.** This build environment has no Docker and cannot install pgTAP, so `scripts/db-test.sh` runs the migrations on plain PostgreSQL 16 with two test-only files:
 - `scripts/db/local_supabase_stub.sql` provides the Supabase roles, `auth.users` and `auth.uid()`.

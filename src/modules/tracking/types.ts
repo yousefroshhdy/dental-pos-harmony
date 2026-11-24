@@ -258,3 +258,43 @@ export interface AckResult {
 export type DeviceResult<T> =
   | { ok: true; data: T }
   | { ok: false; code: string; messageKey: TranslatedCode; retryable: boolean; requestId?: string };
+
+/**
+ * One row of api.v_tracking_health (Phase P step 5): a trackable rep in the caller's D-14
+ * scope, their latest shift, last point and the device's last own report. No coordinates.
+ */
+export interface HealthRow {
+  employee_id: string;
+  employee_no: string;
+  full_name_en: string;
+  full_name_ar: string | null;
+  shift_id: string | null;
+  shift_status: ShiftStatus | null;
+  shift_open: boolean;
+  shift_started_at: string | null;
+  shift_ended_at: string | null;
+  /** Open: when it started; closed: when it ended. */
+  shift_since: string | null;
+  /** The rep's latest point (any shift): when it was taken, when it arrived, which collector. */
+  last_point_at: string | null;
+  last_point_received_at: string | null;
+  last_point_source: PingSource | null;
+  /** The latest arrival of a point of this shift (the attention rule's clock). */
+  shift_last_received_at: string | null;
+  shift_point_count: number;
+  device_reported_at: string | null;
+  device_source: PingSource | null;
+  device_permission: string | null;
+  device_app_version: string | null;
+  device_web_build: string | null;
+  device_battery_saver: boolean | null;
+  device_pending_points: number | null;
+  /** The server clock of the read. */
+  checked_at: string;
+  needs_attention: boolean;
+}
+
+/** api.report_device_status: stored, or a report within a minute of the last one (nothing stored). */
+export type DeviceStatusResult =
+  | { status: "recorded"; shift_id: string; reported_at: string; report_count: number }
+  | { status: "rate_limited"; shift_id: string; reported_at: string; retry_after_s: number };

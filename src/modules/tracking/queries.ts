@@ -2,7 +2,7 @@ import "server-only";
 import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
-import type { TeamDayRow, TrackingDay, TrackingStatus } from "./types";
+import type { HealthRow, TeamDayRow, TrackingDay, TrackingStatus } from "./types";
 
 /**
  * Tracking reads, as the signed-in user. They are SECURITY DEFINER functions that
@@ -36,6 +36,21 @@ export async function getMyTrackingStatus(): Promise<Result<TrackingStatus | nul
 export async function getTeamDay(day: string): Promise<Result<TeamDayRow[]>> {
   const db = await createClient();
   return run("tracking_team_day", db.rpc("tracking_team_day", { p_day: day }), []);
+}
+
+const HEALTH_COLUMNS =
+  "employee_id, employee_no, full_name_en, full_name_ar, shift_id, shift_status, shift_open, shift_started_at, shift_ended_at, " +
+  "shift_since, last_point_at, last_point_received_at, last_point_source, shift_last_received_at, shift_point_count, " +
+  "device_reported_at, device_source, device_permission, device_app_version, device_web_build, device_battery_saver, " +
+  "device_pending_points, checked_at, needs_attention";
+
+/**
+ * api.v_tracking_health (security_invoker): one row per trackable rep in the caller's D-14
+ * scope, now. The view's roster and the tables' RLS decide the rows; no coordinates.
+ */
+export async function getTrackingHealth(): Promise<Result<HealthRow[]>> {
+  const db = await createClient();
+  return run("v_tracking_health", db.from("v_tracking_health").select(HEALTH_COLUMNS).order("employee_no").limit(500), []);
 }
 
 /** api.tracking_day: one rep, one Cairo day, with the timeline and the point list. */

@@ -90,6 +90,16 @@ Definitions are in `docs/TESTING.md` §4.
 | Audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, planner rule, fast coverage | Tested | suite 53, unit `planning-audit4` |
 | **Staging deploy of wave 2 and audit 4** | **Database done; owner steps pending** | All 66 migrations are on staging and all 52 suites pass there (2026-10-31). Still needed before anything is Verified: the runbook owner steps (§2 secrets, exposed schemas, OTP, template, rate limit, TOTP, owner login) and a human click-through |
 
+### Phase P — Make it usable (2026-11-24)
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Step 5: fresh pilot APK | Planned (the lead re-runs Actions › Android › Run workflow; artifacts expire after 14 days) | `mobile/README.md` › Install, step 1 |
+| Step 5: plain install steps for IT and reps (uninstall old APK, install, notifications, sign-in, location "Allow only while using the app": "Allow all the time" is not offered because the app declares no background location and records through a location foreground service; battery per brand; USB debugging off) | Implemented (docs); in-app guidance corrected the same way | `mobile/README.md`; unit `tracking-native-guidance` |
+| Step 5: tracking health panel (shift open/closed and since when, last point and age, collector, permission, app version or web build, battery saver, points waiting, "Needs attention" after 15 minutes) | Tested (DB + unit); not Verified | suite 59; unit `tracking-health`, `native-device-info`; `/tracking` |
+| Step 5: one-phone test-day script | Planned (each step Verified only after the owner runs it) | `docs/TESTING.md` §6.1 |
+| Step 5: visits flow checked in code (start shift → check-in → check-out → outcome) | Implemented; no blocking bug found in the tracking/field modules beyond the permission guidance | report of Phase P step 5 |
+
 ## 2. MVP scope (prioritised)
 
 **MVP goal:** reps and managers run daily field sales in Honest OS, and every order, stock movement and collection is recorded and controlled. **MVP = Phases 2 + 3 + the "AR core" of Phase 4 + basic dashboards from Phase 5.**
