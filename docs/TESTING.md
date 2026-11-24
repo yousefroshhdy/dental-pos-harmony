@@ -69,6 +69,7 @@
 - Every rep route at 360×640 and 390×844: no horizontal scroll, tap targets ≥ 44 px, primary action reachable with the thumb.
 - Arabic RTL screenshots (visual regression) for all rep routes and key manager routes. Mixed-direction strings (Arabic + SKU codes) render correctly.
 - Number, date and currency formatting in `ar-EG` and `en-EG`. Phone input accepts `01…` and normalises to `+201…`.
+- App shell and design system (Phase P, unit, Tested): `nav-groups` (department grouping, permission filtering, active entry, labels in both languages), `nav-bottom-bar` (who gets the field bar and which items), `ui-context-error` (context load failure vs inactive account), `ui-home-role` (owner > finance > manager > rep, home figures), `ui-components` (primitives compatibility, 44 px targets, no physical classes, FormField ARIA wiring, DataTable client/server pagination and states), `ui-helpers` (Cairo dates with Western digits, table URL state, zod → `form.*` messages). Playwright checks for the shell are listed as Planned in §6.
 
 ### 2.8 Security
 - No service-role key in client bundles (CI grep on `.next/static`).
@@ -189,6 +190,10 @@ None of these is written yet. They need a seeded Supabase stack or staging.
 | Admin v2 | Create an employee and assign a territory; the manager list excludes own reports; terminating keeps held customers listed; territory create, move, deactivate, coverage; RTL at 360×640 |
 | Android (device) | Tracking survives 10+ minutes with the screen off; an injected cross-origin iframe calling the bridge is refused (logcat `HonestBridge`); `adb shell run-as eg.honest.os` fails on the pilot APK; `chrome://inspect` shows nothing; End my day, sign-out and a shift ended elsewhere remove the notification; one watcher after a reload; code login inside the app; fallback page offline |
 | Tracking health (Phase P) | `/tracking` as an area manager at 390 px and 1440 px, ar and en: the "Tracking health now" panel lists only the team; a rep with an open day and no point for 16 minutes shows "Needs attention"; a refused permission shows "Refused" after the next report; a closed day shows "ended HH:MM"; empty and error states |
+| App shell (Phase P) | At 360×640 and 390×844, ar and en: no horizontal scroll; the menu button opens the drawer from the reading start and lists only permitted groups; a rep sees the bottom bar (5 items, 44 px+), an admin and the owner do not; content is not hidden under the bar. At 1440 px the sidebar collapses to icons and stays collapsed after a reload. |
+| Theme and CSP (Phase P) | Logged-in page and `/ar/login` in dark mode: the next-themes script carries the header nonce, no CSP violations, no flash of the light theme on reload; the account menu switches light / dark / system. |
+| Role homes (Phase P) | Owner, finance officer, area manager and rep each land on their home; every card shows data, its empty state or its error state; a rep's "Start my day" opens `/today`. |
+| Context error (Phase P) | With `my_context` failing (stub the RPC or cut the network after sign-in), the shell shows "couldn't load your account" with Try again, not "account not active"; tracking is not stopped. |
 
 ### 6.1 One-phone test day (Phase P step 5)
 

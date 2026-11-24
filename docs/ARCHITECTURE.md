@@ -128,7 +128,11 @@ honest-os/
 - **Server Actions** call `api.*` RPCs with the user's session. Every action validates input with zod, adds an idempotency key and maps Postgres errors to typed `AppError`s.
 - **PWA:** Web App Manifest plus a service worker (Serwist). The app shell and the rep's reference data (assigned customers, catalogue, price list snapshot) are cached for offline use.
 - **i18n:** `next-intl`. Locale is in the URL (`/ar/...`, `/en/...`). `dir="rtl"` on `<html>` for Arabic. Tailwind logical properties (`ms-*`, `pe-*`) so one stylesheet serves both directions. `Intl.NumberFormat('ar-EG', {currency:'EGP'})`.
-- **Design system:** shadcn/ui on Radix (accessible primitives), themed with Honest® brand tokens.
+- **Design system:** shadcn/ui on Radix (accessible primitives), themed with Honest® brand tokens. As built (Phase P, 2026-11-24):
+  - `src/components/ui/`: button, input, textarea, label, native-select, select, combobox (cmdk), command, popover, dialog, sheet, tabs, dropdown-menu, tooltip, checkbox, badge, card, alert, table, separator, scroll-area, skeleton, sonner (`<Toaster/>` in the shell), empty-state, page-header, calendar and date-picker (react-day-picker, Cairo time zone, `latn` digits), form-field (+ `form-messages.ts` for shared `form.*` validation strings) and data-table (@tanstack/react-table v9; `data-table-params.ts` + `use-url-table-state.ts` for server-side pages). `primitives.tsx` re-exports the pre-Phase-P names.
+  - Tokens in `src/app/globals.css` (`:root` light, `.dark` dark; `highlight` = warm brand accent, `sidebar-*` = the deep nav surface). Fonts are bundled from `@fontsource` (font-src 'self'). next-themes gets the CSP nonce from the root layout.
+  - App shell `src/app/[locale]/(app)/layout.tsx` + `src/components/app-shell/`: nav data is permission-filtered and translated on the server (`src/lib/nav.ts`) and handed to small client components (sidebar, phone drawer, bottom bar, account menu). The tracking and sync indicators are mounted once in the header because they run the collectors.
+  - Role homes: `src/modules/home` (selection in `logic.ts`, reads in `queries.ts`, plus the dashboards module's KPI queries).
 
 ### 2.3 Backend
 

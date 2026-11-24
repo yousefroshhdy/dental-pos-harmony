@@ -100,6 +100,12 @@ Definitions are in `docs/TESTING.md` §4.
 | Step 5: one-phone test-day script | Planned (each step Verified only after the owner runs it) | `docs/TESTING.md` §6.1 |
 | Step 5: visits flow checked in code (start shift → check-in → check-out → outcome) | Implemented; no blocking bug found in the tracking/field modules beyond the permission guidance | report of Phase P step 5 |
 | Step 7 commissions switched on: owner-only MFA rate editor (`/commissions/plans`), STD-2026 configured with decision D (brand rates; grafts/membranes unset and on the "no rate" list), activation with rep assignment from the editor, printable rep statement (collected cash → commissionable → commission → clawbacks → net) | Tested (DB + unit); STD-2026 stays a draft until the owner activates it in the editor; not Verified | suite 58, suites 37/46 unchanged, unit `commissions-editor`, `commissions-messages` |
+| Step 2a UI foundation: shadcn/ui components (`src/components/ui`), DataTable (@tanstack/react-table v9, client and server pagination, phone cards), date picker (Cairo calendar, Western digits), form field with inline validation messages, toasts | Implemented, Tested (unit) | unit `ui-components`, `ui-helpers` |
+| Step 2a type and theme: IBM Plex Sans Arabic / IBM Plex Sans (self-hosted), Bebas Neue for Latin display only, deep-teal brand tokens, light/dark (next-themes, nonce-carrying script) | Implemented, Tested (build; nonce checked on the built login page) | `src/app/globals.css`, `src/app/[locale]/layout.tsx` |
+| Step 2a app shell: department nav groups with permission filtering, collapsible desktop sidebar, phone menu drawer, field bottom bar (Today · Map · Leads · Visits · Orders), account menu with theme and language | Implemented, Tested (unit) | `src/lib/nav.ts`, `src/components/app-shell`, unit `nav-groups`, `nav-bottom-bar` |
+| Step 2a context-load error screen ("couldn't load your account", distinct from "account not active") | Implemented, Tested (unit) | `src/lib/authz/context.ts`, unit `ui-context-error` |
+| Step 2a role homes on `/[locale]` (owner > finance > manager > rep), existing `api.*` reads only | Implemented, Tested (unit: role choice, figures) | `src/modules/home`, unit `ui-home-role` |
+| Step 2b per-screen redesign (Today, Customers, Customer detail, Orders, then the rest) and screenshots | Planned (next wave) | — |
 
 ## 2. MVP scope (prioritised)
 
