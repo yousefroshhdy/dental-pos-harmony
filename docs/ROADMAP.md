@@ -36,6 +36,15 @@ Definitions are in `docs/TESTING.md` §4.
 | 3 Google Maps | Rep day map on the tracking day page: route, numbered stops and check-ins, gaps | Implemented, Tested (unit + DB scope) | `maps-logic.test.ts`, suite 57 |
 | 3 Google Maps | Team map `/map/team`: last point per rep during an open shift only (D-14) | Implemented, Tested (DB) | suite 57 |
 | 3 Google Maps | Live map on staging with the owner's browser key | Planned (owner: key + APIs) | — |
+| 4 Leads | Discovery queued on a base or radius change; daily cron `/api/cron/leads` and owner "Search now"; "not configured" without a server key | Implemented, Tested (DB + unit) | suite 60, unit `leads-discovery` |
+| 4 Leads | Places API (New): Nearby Search (dentist, dental_clinic) over a hex grid with split of full cells, Text Search "عيادة أسنان" with a rectangle restriction, place-id de-duplication, minimal field masks | Implemented, Tested (unit, fetch mocked; no live call) | unit `leads-grid`, `leads-places-client`; place type names not re-checked against Google's page |
+| 4 Leads | Places policy: only place id + HONEST's own data stored; live details; attribution + Google Terms/Privacy links; distances cleared after 30 days | Implemented, Tested (DB: no such columns; distance expiry) | suite 60; docs/DECISIONS.md 2026-11-26 (policy page to be confirmed by the owner) |
+| 4 Leads | Exclusions: customer place id, pinned customer within 50 m | Implemented, Tested (DB) | suite 60 |
+| 4 Leads | "Leads near me" `/leads`: list and map, nearest first, filters, add to today's plan (plan rules + daily cap, shared with `api.plan_visits`), status, notes | Implemented (UI), Tested (DB commands) | suite 60; e2e not run |
+| 4 Leads | First visit → CRM prospect (`api.convert_lead` → `api.create_customer`, place id linked), then check-in → pin proposal (step 3 flow) | Implemented, Tested (DB) | suite 60 |
+| 4 Leads | Manager view `/leads/team`: per-rep leads, visited %, converted %, runs; owner: search now, radius, cost guard; reassignment (crm.lead.assign) | Implemented (UI), Tested (DB) | suite 60 |
+| 4 Leads | Cost guard: `leads.daily_request_cap`, `leads.monthly_budget_usd` (owner), requests and estimated cost per run, refusal over either cap | Implemented, Tested (DB) | suite 60 |
+| 4 Leads | Live discovery on staging | Planned (owner: Places API (New), server key, budget alert) | — |
 
 ### Detail (as of 2026-10-30)
 

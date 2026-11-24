@@ -14,6 +14,7 @@ import { fieldNav } from "@/modules/field/nav";
 import { financeNav } from "@/modules/finance/nav";
 import { importsNav } from "@/modules/imports/nav";
 import { inventoryNav } from "@/modules/inventory/nav";
+import { leadsNav } from "@/modules/leads/nav";
 import { ordersNav } from "@/modules/orders/nav";
 import { planningNav } from "@/modules/planning/nav";
 import { reportsNav } from "@/modules/reports/nav";
@@ -47,13 +48,15 @@ const REP = ctx({
   "perf.kpi.read": "own",
   "perf.commission.read": "own",
   "catalog.product.read": "all",
+  "crm.lead.read": "own",
+  "crm.lead.work": "own",
 });
 
-/** Every module nav array: the pre-Phase-P layout's list plus modules added in Phase P (maps). */
+/** Every module nav array: the pre-Phase-P layout's list plus modules added in Phase P (maps, offers, leads). */
 const LAYOUT_NAVS: readonly (readonly NavItem[])[] = [
   dashboardsNav, fieldNav, trackingNav, crmNav, ordersNav, financeNav, approvalsNav, inventoryNav, catalogNav,
   planningNav, returnsNav, commissionsNav, reportsNav, importsNav, workflowNav, auditNav, securityNav, adminNav,
-  mapsNav, offersNav,
+  mapsNav, offersNav, leadsNav,
 ];
 
 describe("department groups", () => {
@@ -78,6 +81,8 @@ describe("department groups", () => {
     expect(groupOf("/today")).toBe("field");
     expect(groupOf("/tracking")).toBe("field");
     expect(groupOf("/map")).toBe("field");
+    expect(groupOf("/leads")).toBe("field");
+    expect(groupOf("/leads/team")).toBe("field");
     expect(groupOf("/planning")).toBe("field");
     expect(groupOf("/orders")).toBe("orders");
     expect(groupOf("/returns")).toBe("orders");
@@ -97,6 +102,8 @@ describe("department groups", () => {
     expect(hrefs).toContain("/today");
     expect(hrefs).toContain("/finance/payments/new");
     expect(hrefs).not.toContain("/tracking"); // field.tracking.read
+    expect(hrefs).toContain("/leads"); // crm.lead.read (own)
+    expect(hrefs).not.toContain("/leads/team"); // crm.lead.assign
     expect(hrefs).not.toContain("/finance/aging");
     expect(hrefs).not.toContain("/approvals"); // wf.approval.read
     expect(hrefs).not.toContain("/reports"); // no export permission
