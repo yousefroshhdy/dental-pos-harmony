@@ -23,6 +23,8 @@
     "e2e:local:up": "bash scripts/e2e-local/up.sh",
     "e2e:local:down": "bash scripts/e2e-local/down.sh",
     "e2e:local:shots": "playwright test --config playwright.local.config.ts",
+    "e2e:local:verify": "playwright test --config playwright.verify.config.ts",
+    "verify:preview": "VERIFY_EXPECT_PREVIEW=1 playwright test --config playwright.verify.config.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {

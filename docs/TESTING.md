@@ -1,11 +1,16 @@
 # Testing Plan — Honest OS
 
-> Status: **In use** · Last updated: 2026-10-30
+> Status: **In use** · Last updated: 2026-11-24 (Phase P step 8)
 >
-> **Current suite (all passing locally; run by the lead on `0ba1acf`, 2026-10-30):**
-> - Database: **2737 assertions in 53 pgTAP-format suites, 0 failing files** locally after the per-kind export permissions and the duplicate-index guard (2026-10-31; `pnpm test:db`; list in §5). Before that change, all 52 suites (2687 assertions) also passed on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
-> - Unit: **1476 Vitest tests** (`pnpm test`; 1442 before the per-kind export permissions)
-> - End-to-end: **318 Playwright tests** (159 specs × 2 Chromium projects; `pnpm e2e:chromium`; set `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). The WebKit project has not been run yet.
+> **Current suite (Phase P step 8, local run, 2026-11-24):**
+> - Database: **3431 assertions in 61 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). DB suites no longer run on staging since it holds real data (DECISIONS 2026-11-25).
+> - Unit: **1937 Vitest tests in 127 files** (`pnpm test`).
+> - Local signed-in stack (§7, §8): **77 verification lines passed** (`pnpm e2e:local:verify`) and **348 screenshots** (87 screens × ar/en × 390/1440, `pnpm e2e:local:shots`). Mock auth: Tested, not Verified.
+>
+> Earlier totals, kept for history (run by the lead on `0ba1acf`, 2026-10-30):
+> - Database: 2737 assertions in 53 pgTAP-format suites, 0 failing files locally after the per-kind export permissions and the duplicate-index guard (2026-10-31). Before that change, all 52 suites (2687 assertions) also passed on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
+> - Unit: 1476 Vitest tests (1442 before the per-kind export permissions)
+> - End-to-end: 318 Playwright tests (159 specs × 2 Chromium projects; `pnpm e2e:chromium`; set `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). The WebKit project has not been run yet.
 > - Android JVM: `mobile/android/app/src/test/java/eg/honest/os/BridgePolicyTest.java` (6 tests), run by `.github/workflows/android.yml` (`testDebugUnitTest`). Locally it passed with javac 21 and JUnit 4.13.2; it has not yet run in CI with the new workflow.
 > - CI (`.github/workflows/ci.yml`) has not run on GitHub yet.
 
@@ -270,9 +275,11 @@ down), `psql`, `curl`, `openssl` and Node. It then:
    status, invoices, payments (verified, allocated, a cheque waiting), today's shifts, route points,
    planned / in-progress / completed visits, location proposals, base locations and fake-place-id
    leads, the activated STD-2026 plan with a calculated month, KPI targets, tasks, activities,
-   opportunities, a transfer, and approvals waiting (discounts, return, reassignment, inventory
-   adjustment, visit exception, write-off). Business rows go through `api.*` commands as the
-   fixture users; dates are relative to today (Cairo);
+   opportunities, a transfer, a quarantine warehouse `WH-QRN`, and approvals waiting (discounts,
+   return, reassignment, inventory adjustment, visit exception, write-off). Business rows go
+   through `api.*` commands as the fixture users; dates are relative to today (Cairo). Last, the
+   owner switches `sales.discount.limit_mode` to `tiered` (decision B, as on staging; the seed
+   pins `per_role` for the older suites);
 2. downloads the pinned PostgREST static binary (SHA-256 checked) into `.cache/e2e-local/`;
 3. writes `.cache/e2e-local/env.local` (git-ignored, mode 600): random HS256 secret, anon and
    service-role keys signed with it, a random shared demo password, an `authenticator` password;
@@ -285,8 +292,10 @@ Sign in as any fixture user (`owner@honest.test` at aal2, `sd@`, `am.cairo@`, `r
 `rep.delta@`, `finance@`, `admin@`, `inventory@honest.test`) with `E2E_LOCAL_PASSWORD` from the env
 file.
 
-**Screenshots** (`playwright.local.config.ts`, `tests/e2e-local/`): every persona signs in once
-through the real login form; each screen in `tests/e2e-local/screens.ts` is captured full-page in
+**Screenshots** (`playwright.local.config.ts`, `tests/e2e-local/screens.spec.ts`): every persona
+signs in once through the real login form; each screen in `tests/e2e-local/screens.ts` (87,
+including `/admin/setup/legacy-import` with the synthetic workbook checked, so the reconciliation
+shows; a screen's `prepare` step runs before the shot) is captured full-page in
 ar and en at 390 × 844 and 1440 × 900 (`deviceScaleFactor` 1) as
 `NN-screen-persona-locale-width.png`. Checks per shot, listed in `index.md`: horizontal scroll at
 390 px, visible links/buttons in `<main>` under 44 px, text shaped like a message key, console
@@ -304,3 +313,20 @@ screenshots.
 | The production build, proxy, CSP (its `connect-src` already derives from `NEXT_PUBLIC_SUPABASE_URL`) and security headers | No Storage, Realtime, Edge Functions, pg_cron or `pg_net`; the outbox is never dispatched |
 | | Google Maps and Places keys are empty: lead names never load, maps show "not configured" |
 
+## 8. Verification walkthrough (Phase P step 8)
+
+`docs/VERIFICATION.md` is the click-through per role (owner, sales director, area manager, sales
+rep, finance officer, inventory manager, admin): 84 lines, each with its URL, clicks (English
+labels with the Arabic in brackets, from `messages/`), expected result and status. 77 lines are
+automated, one Playwright test per line titled with the line id, in
+`tests/e2e-local/verification.spec.ts` (helpers in `tests/e2e-local/verify/`, config
+`playwright.verify.config.ts`); 7 are Planned (Google keys, the phone, the auth admin API, print
+and Excel checks). Only the owner sets a line to Verified.
+
+| Mode | Command | Runs |
+|------|---------|------|
+| Local | `pnpm e2e:local:up`, then `PW_CHROMIUM_PATH=… pnpm e2e:local:verify` | All 77 automated lines against the local stack; the writing flows (old-system workbook, decision-B approvals, order → invoice → payment → commission → return, lead → prospect → pin, customer without a phone) run in order and create their own records, so the run repeats on the same database. Passing is **Tested (local)**, never Verified (mock auth). |
+| Preview | `VERIFY_BASE_URL=… VERIFY_EMAIL=… VERIFY_PASSWORD=… VERIFY_ROLE=<owner\|sd\|am\|rep\|finance\|inventory\|admin> pnpm verify:preview` | The 38 read-only lines of that role against a Vercel preview or staging, signed in with a real password (a test account the owner creates). Staging holds real data (decision A): writing lines and lines that need the local demo records are skipped with the reason; no screenshot, trace, video or failure page snapshot is kept; the session and Playwright's output live in a temporary folder deleted at the end. Not run yet (no test account). |
+
+Local result on the step-8 commit: 77 passed, 0 failed, 0 skipped. Preview mode exercised against
+the local stack for all seven roles: 38 passed, the rest skipped, nothing left on disk.

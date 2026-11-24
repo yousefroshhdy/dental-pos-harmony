@@ -73,7 +73,7 @@
   "counts": {
     "title": "What each step will load",
     "rows": "{count, plural, =0 {nothing} one {# row} other {# rows}}",
-    "barcodes": "{count, plural, one {# barcode} other {# barcodes}} read from the PDF are not imported; check them with a scanner."
+    "barcodes": "{count, plural, one {# barcode read from the PDF is not imported; check it with a scanner.} other {# barcodes read from the PDF are not imported; check them with a scanner.}}"
   },
   "negative": {
     "title": "Items with negative stock",

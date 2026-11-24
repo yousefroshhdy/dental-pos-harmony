@@ -392,6 +392,8 @@ select api.request_inventory_adjustment(:wh, '53000000-0000-0000-0000-0000000000
   (select id from inventory.lots where lot_no = 'DEMO-B856'), -6, 'Damaged in storage (demo count)', 'demo-adj-1');
 select tests.authenticate_as_aal2(:owner);
 select api.create_warehouse('60000000-0000-0000-0000-0000000000d2', 'WH-DLT', 'Delta demo store', 'branch');
+-- Returned goods are received into a quarantine warehouse (docs/VERIFICATION.md, returns lines).
+select api.create_warehouse('60000000-0000-0000-0000-0000000000d3', 'WH-QRN', 'Quarantine demo store', 'quarantine');
 select tests.authenticate_as(:inv);
 select api.create_transfer(:wh, '60000000-0000-0000-0000-0000000000d2', jsonb_build_array(jsonb_build_object(
   'variant_id', '53000000-0000-0000-0000-0000000000d6', 'lot_id', (select id from inventory.lots where lot_no = 'DEMO-B881'), 'quantity', 20)));
@@ -399,6 +401,16 @@ select api.create_transfer(:wh, '60000000-0000-0000-0000-0000000000d2', jsonb_bu
 select tests.authenticate_as(:fin);
 select api.request_invoice_write_off((select id from finance.invoices where order_id = 'd1000000-0000-0000-0000-000000000002'),
   25, 'Rounding difference (demo)', 'demo-wo-1');
+select tests.clear_authentication();
+
+-- -----------------------------------------------------------------------------
+-- 10. Decision B as on the hosted projects (20261125000290): tiered manual-discount limits
+--     (rep 0 %, sales manager up to 25 %, owner above). supabase/seed.sql pins "per_role" for the
+--     older suites, and the demo orders above were priced under it; from here on the local stack
+--     behaves like staging (docs/VERIFICATION.md, decision-B lines).
+-- -----------------------------------------------------------------------------
+select tests.authenticate_as_aal2(:owner);
+select api.update_setting('sales.discount.limit_mode', '"tiered"', 'Local stack mirrors staging (decision B)');
 select tests.clear_authentication();
 
 commit;
