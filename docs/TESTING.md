@@ -161,6 +161,7 @@ Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **27
 | 52_audit4_audit_exports | audit 4 A-LM2, A-L4 | 66 |
 | 53_audit4_planning | audit 4 F2, F5, F6, F9 | 51 |
 | 54_export_permissions | per-kind export permissions: catalogue, same roles and scopes as before (user by user), refusal per kind without its export permission, MFA at aal1/aal2, whitelist | 49 |
+| 57_phase_p_maps | Phase P step 3: `v_customer_map` scope (rep, area manager, sales director, owner, other rep), overdue flag and last visit; pin on first visit (check-in at an unpinned customer proposes the fix, replay, no proposal without a fix or at a pinned customer, rep and other rep refused, out-of-scope verifier refused, inaccurate fix refused, reason required, approve pins and supersedes, replay, decided proposals immutable, timeline, notification, outbox, audit, a direct set supersedes); team map only during open shifts (not before the start, not after the end, not past the 10-hour cap, scope per role); visit fixes for the day map (scope, field.location.read) | 77 |
 
 **Pinned sets:** suites 39 and 48 compare the exact MFA-gated permission set; flagging a permission means updating both.
 

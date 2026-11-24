@@ -197,6 +197,26 @@ Views: `v_workflow_definitions`, `v_workflow_rules`, `v_workflow_stages`, `v_del
 
 **New outbox events:** `import.committed`; `return.requested`, `return.approved`, `return.rejected`, `return.received`, `return.credited`, `return.cancelled`; `commission.period_closed`, `commission.adjusted`; `invoice.written_off`; `setting.updated`; `employee.updated`, `employee.status_changed`, `employee.territory_assigned`, `employee.territory_ended`; `territory.created`, `.renamed`, `.moved`, `.deactivated`, `.reactivated`, `.coverage_changed`; `field.visits_planned`, `field.visit_unplanned`; `approval.escalated`. `credit_note.issued` gains `customer_credit` and `applied_to_invoice`.
 
+### 1c. Phase P step 3: Google Maps (migrations `20261125000300`, `…000310`; suite 57)
+
+Implemented and Tested (DB suite 57, unit tests); nothing Verified. Same conventions as 1b.
+
+| Command | Permission | Answer | Errors / notes |
+|---------|------------|--------|----------------|
+| `decide_customer_location_proposal(p_proposal_id uuid, p_approve boolean, p_note text = null)` | `crm.customer_location.verify` with the customer in scope (`authz.customer_in_scope`) | `{proposal_id, customer_id, status: approved\|rejected, latitude, longitude (approve only), replayed}` | Approve: the proposal becomes the clinic's verified location (`crm.customers.latitude/longitude`, `location_verified = true`, version + 1); every other pending proposal for the customer becomes `superseded`. `ALREADY_PINNED` (customer has a location: set it directly), `LOCATION_INACCURATE` (accuracy missing or worse than `field.max_accuracy_m`), `INVALID_STATE` (archived customer, or the proposal is decided/superseded). Reject: `REASON_REQUIRED`. The same decision again replays. Timeline note, rep notified (`customer.location_proposal_decided`), event `customer.location_proposal_decided`. |
+| `tracking_day_visit_fixes(p_employee_id uuid, p_day date)` | the day's tracking scope, as `tracking_day` (own, or `field.tracking.read` covering the rep); rows only with `field.location.read` covering the rep (or own), otherwise an empty set | `visit_id, customer_id, event_type, latitude, longitude, accuracy_m, captured_at` for the Cairo day | `PERMISSION_DENIED`, `VALIDATION`. Read-only (stable). |
+
+Unchanged commands, new behaviour:
+- `visit_check_in` at a customer with no location (still allowed, `verification_status = 'no_customer_location'`): when the check-in has a fix inside Egypt, a trigger on `field.location_events` records a **pending location proposal** (one per visit; a replay adds nothing), a timeline note and event `customer.location_proposed`. The visit verdict is unchanged; the proposal never pins the clinic by itself.
+- `set_customer_location` (office users: address search or a dropped pin on the customer map) supersedes the customer's pending proposals.
+
+Views (all `security_invoker`):
+- `v_customer_map`: live customers (`archived_at is null`) with `latitude, longitude, location_verified, lifecycle_stage, territory_*, primary_rep_*`, `is_overdue`, `overdue_amount`, `max_days_overdue` (NULL = masked without `crm.customer_balance.read`, like `v_customers.balance`) and `last_visit_at/_on` (visits the caller may read). Customer RLS applies.
+- `v_team_last_location`: one row per rep on an **open** shift that is not past `tracking.max_shift_hours`: the latest usable ping (not `low_accuracy`, `impossible_travel`, `duplicate_fix`), else the start-of-day fix (`point_source`). Tracking RLS applies (own, or `field.tracking.read` scope). Nothing outside an open shift (D-14).
+- `v_customer_location_proposals`: proposals with customer, proposer and decider names. RLS: the proposer, or `crm.customer_location.verify` covering the customer.
+
+**New error codes:** `ALREADY_PINNED`, `LOCATION_INACCURATE`. **New outbox events:** `customer.location_proposed` `{proposal_id, customer_id, visit_id, employee_id, accuracy_m}` and `customer.location_proposal_decided` `{proposal_id, customer_id, visit_id, employee_id, decision}` (no coordinates, rule 1 of §5).
+
 ## 2. Commands (MVP)
 
 | Command | Permission | Input (beyond ids) | Output | Notable errors |

@@ -319,6 +319,15 @@ erDiagram
 | `audit.row_image_masks` (+ `container_only`) | Mask rules for row images: schema/table/key LIKE patterns (matched case-insensitively), category, unmask permission, `requires_reveal`; `container_only` rules mask a key only when its value is an object or array | Changed by migration only; readable by row-image readers; no client writes |
 | `authz.permissions.requires_mfa` | MFA step-up flag (AUTHORIZATION §6.7) | `not null default false` |
 
+**Added by Phase P step 3, Google Maps (`20261125000300`, `…000310`, 2026-11-24):**
+
+| Table / object | Purpose | Rules |
+|----------------|---------|-------|
+| `crm.customer_location_proposals` | A rep's check-in fix at a customer with no location, proposed as the clinic pin: `customer_id`, `visit_id` (unique), `proposed_by`, `latitude/longitude` (Egypt box), `accuracy_m`, `captured_at`, the visit's `anomaly_flags`, `status pending → approved \| rejected \| superseded`, `decided_by/_at`, `decision_note` (required to reject) | Written only by the `field.location_events` trigger and `api.decide_customer_location_proposal`; no client writes. Audited. RLS: the proposer, or `crm.customer_location.verify` covering the customer. FK indexes `(customer_id, status)`, `proposed_by`, `decided_by`. |
+| Trigger `trg_location_events_propose` on `field.location_events` | After a `check_in` row with a fix: proposal when the visit is `no_customer_location` and the customer is still unpinned and live | `field.propose_location_from_check_in()`, definer, not client-callable |
+| Trigger `trg_customers_location_supersede` on `crm.customers` | When a location is set by any path, the other pending proposals become `superseded` | `crm.supersede_location_proposals()`, definer, not client-callable |
+| `crm.customer_overdue_in_scope()`, `field.open_shift_max_interval()` | Definer helpers used by `api.v_customer_map` / `api.v_team_last_location` (balance scope; shift cap setting) | Executable by `authenticated` only because a view references them (suite 17 sweep) |
+
 **Not yet modelled (Phase 7):** QMS (`qms.complaints`, `qms.capa`, `qms.recalls` → lot links), Academy (`academy.courses`, `academy.sessions`, `academy.enrollments`, `academy.certificates` → customer links), Documents (`docs.documents`, `docs.versions` → Storage paths, permissioned). Suppliers/purchase orders depend on U-13.
 
 ## 4. Key constraints and invariants (all enforced in the DB)

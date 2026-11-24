@@ -27,6 +27,10 @@ describe.each([
   { label: "production over http", opts: { nonce: NONCE, supabaseUrl: "https://abcd.supabase.co" } },
   { label: "development", opts: { nonce: NONCE, supabaseUrl: "http://127.0.0.1:54321", isDev: true } },
   { label: "no supabase url", opts: { nonce: NONCE } },
+  {
+    label: "with Google Maps",
+    opts: { nonce: NONCE, supabaseUrl: "https://abcd.supabase.co", upgradeInsecureRequests: true, googleMaps: true },
+  },
 ])("meta policy = header policy minus meta-invalid directives ($label)", ({ opts }) => {
   const header = buildContentSecurityPolicy(opts);
   const meta = buildContentSecurityPolicy({ ...opts, delivery: "meta" });

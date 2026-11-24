@@ -12,6 +12,7 @@ import { getUserContext } from "@/lib/authz/context";
 import { LocationForm } from "@/modules/crm/components/location-form";
 import { LogActivityForm } from "@/modules/crm/components/log-activity-form";
 import { ReassignForm } from "@/modules/crm/components/reassign-form";
+import { CustomerMapPanel } from "@/modules/maps/components/customer-map-panel";
 import { Timeline } from "@/modules/crm/components/timeline";
 import { CAIRO_DATE, EGP } from "@/modules/crm/format";
 import {
@@ -250,6 +251,7 @@ export default async function CustomerPage({ params, searchParams }: Props) {
             )}
             {canLocate ? <LocationForm customerId={c.id} hasLocation={lat !== null} /> : null}
           </Card>
+          <CustomerMapPanel customer={c} locale={locale} />
 
           {showOpportunities ? (
             <Card className="space-y-3">

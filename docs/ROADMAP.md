@@ -24,6 +24,19 @@ Definitions are in `docs/TESTING.md` §4.
 | 7 Advanced modules | ✅ | — | — | — | — |
 | 8 Production hardening | ✅ | 🟡 CSP and security headers, MFA step-up (enforcement off), FK and hot-filter indexes, audit-4 fixes | 🟡 DB + unit | — | — |
 
+### Phase P — Make it usable (2026-11-24)
+
+| Step | Item | Status | Evidence |
+|------|------|--------|----------|
+| 3 Google Maps | Shared map component (`src/components/map/`): official loader, lazy, ar/en, region EG, markers, grid clusters, polylines, info windows, "Map key not configured" state with no network | Implemented, Tested (unit) | `tests/unit/maps-no-key.test.ts`, `maps-logic.test.ts` |
+| 3 Google Maps | CSP: Google Maps sources behind `googleMaps: true`, script-src unchanged (nonce + strict-dynamic); meta copy from the same builder | Implemented, Tested (unit) | `tests/unit/security-headers-maps.test.ts`, meta parity case. Needs the one-line proxy switch (lead) |
+| 3 Google Maps | Customers map `/map` with rep, territory, stage, overdue AR and last-visit filters (`api.v_customer_map`) | Implemented, Tested (DB scope) | suite 57 |
+| 3 Google Maps | Customer detail map card: pin, opt-in distance, directions link; office users set the location by Places Autocomplete or a dropped pin (`api.set_customer_location`) | Implemented | e2e not run |
+| 3 Google Maps | Pin on first visit: check-in proposal, verifier approves or rejects, `/map/proposals` list | Implemented, Tested (DB) | suite 57 |
+| 3 Google Maps | Rep day map on the tracking day page: route, numbered stops and check-ins, gaps | Implemented, Tested (unit + DB scope) | `maps-logic.test.ts`, suite 57 |
+| 3 Google Maps | Team map `/map/team`: last point per rep during an open shift only (D-14) | Implemented, Tested (DB) | suite 57 |
+| 3 Google Maps | Live map on staging with the owner's browser key | Planned (owner: key + APIs) | — |
+
 ### Detail (as of 2026-10-30)
 
 | Item | Status | Evidence |

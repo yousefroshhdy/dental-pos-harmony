@@ -35,6 +35,13 @@ export type CspOptions = {
    */
   upgradeInsecureRequests?: boolean;
   /**
+   * Adds the Google Maps JavaScript API sources (GOOGLE_MAPS_CSP_SOURCES). The proxy turns it
+   * on when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set, so a deployment without a key keeps the
+   * policy as tight as before. script-src is never widened: the loader's script is created by
+   * our own nonce'd bundle, which 'strict-dynamic' already trusts.
+   */
+  googleMaps?: boolean;
+  /**
    * "header" (default): the `Content-Security-Policy` response header.
    * "meta": the `<meta http-equiv>` copy, without META_UNSUPPORTED_DIRECTIVES.
    */
@@ -73,6 +80,31 @@ export function supabaseConnectSources(url: string | undefined): string[] {
 }
 
 /**
+ * Extra sources for the Google Maps JavaScript API, from Google's published CSP guidance for
+ * Maps JS ("Content Security Policy (CSP) guide", strict nonce-based variant):
+ * - img-src: map tiles, markers and logos (*.googleapis.com, *.gstatic.com, *.google.com,
+ *   *.googleusercontent.com).
+ * - connect-src: tile, Places and other API requests, plus the data:/blob: URLs the API reads.
+ * - font-src / style-src: Google Fonts (Roboto) used by the map controls and info windows.
+ * - worker-src blob:: the API runs some rendering in blob: workers.
+ * - frame-src *.google.com: the API may embed a google.com frame (Google lists it; replaces 'none').
+ * Not added: Google's example also lists `https:`, `blob:` and `'unsafe-eval'` in script-src.
+ * Under 'strict-dynamic' CSP3 browsers ignore host and scheme sources (the loader script runs
+ * because our nonce'd bundle creates it), and 'unsafe-eval' stays off (tests pin this). If a
+ * staging check shows a script-src violation from the Maps API, record it and decide then.
+ */
+export const GOOGLE_MAPS_CSP_SOURCES = {
+  "img-src": ["https://*.googleapis.com", "https://*.gstatic.com", "https://*.google.com", "https://*.googleusercontent.com"],
+  "connect-src": ["https://*.googleapis.com", "https://*.google.com", "https://*.gstatic.com", "data:", "blob:"],
+  "font-src": ["https://fonts.gstatic.com"],
+  "style-src": ["https://fonts.googleapis.com"],
+  "worker-src": ["blob:"],
+  "frame-src": ["https://*.google.com"],
+} as const satisfies Record<string, readonly string[]>;
+
+type MapsDirective = keyof typeof GOOGLE_MAPS_CSP_SOURCES;
+
+/**
  * The page CSP. Notes per directive:
  * - script-src: only scripts carrying this request's nonce run; 'strict-dynamic'
  *   lets those load their own chunks. 'self' is ignored by CSP3 browsers (because
@@ -88,19 +120,20 @@ export function supabaseConnectSources(url: string | undefined): string[] {
  * - frame-ancestors 'none': never embedded (clickjacking); X-Frame-Options DENY mirrors it for old browsers.
  */
 export function buildContentSecurityPolicy(options: CspOptions): string {
-  const { nonce, supabaseUrl, isDev = false, upgradeInsecureRequests = false, delivery = "header" } = options;
+  const { nonce, supabaseUrl, isDev = false, upgradeInsecureRequests = false, googleMaps = false, delivery = "header" } = options;
   if (!NONCE_PATTERN.test(nonce)) throw new Error("CSP nonce must be base64");
+  const maps = (name: MapsDirective): readonly string[] => (googleMaps ? GOOGLE_MAPS_CSP_SOURCES[name] : []);
 
   const directives: [string, string[]][] = [
     ["default-src", ["'self'"]],
     ["script-src", ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", ...(isDev ? ["'unsafe-eval'"] : [])]],
-    ["style-src", ["'self'", "'unsafe-inline'"]],
-    ["img-src", ["'self'", "data:", "blob:"]],
-    ["font-src", ["'self'"]],
-    ["connect-src", ["'self'", ...supabaseConnectSources(supabaseUrl)]],
-    ["worker-src", ["'self'"]],
+    ["style-src", ["'self'", "'unsafe-inline'", ...maps("style-src")]],
+    ["img-src", ["'self'", "data:", "blob:", ...maps("img-src")]],
+    ["font-src", ["'self'", ...maps("font-src")]],
+    ["connect-src", ["'self'", ...supabaseConnectSources(supabaseUrl), ...maps("connect-src")]],
+    ["worker-src", ["'self'", ...maps("worker-src")]],
     ["manifest-src", ["'self'"]],
-    ["frame-src", ["'none'"]],
+    ["frame-src", googleMaps ? [...GOOGLE_MAPS_CSP_SOURCES["frame-src"]] : ["'none'"]],
     ["object-src", ["'none'"]],
     ["base-uri", ["'self'"]],
     ["form-action", ["'self'"]],

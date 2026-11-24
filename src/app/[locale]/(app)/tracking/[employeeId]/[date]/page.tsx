@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
 import { cn } from "@/lib/utils";
 import { Empty, PageBody, Section } from "@/modules/field/components/layout-bits";
+import { TrackingDayMap } from "@/modules/maps/components/tracking-day-map";
 import { localizedName } from "@/modules/field/logic";
 import { CAIRO_DATE_LONG, CAIRO_TIME, dayAsDate, formatDuration, formatKm } from "@/modules/tracking/format";
 import { addDays, cairoToday, canOpenDay, canReadTracking, dayView, mapsUrl, trackingErrorCode, type TimelineEntry } from "@/modules/tracking/logic";
@@ -191,6 +192,8 @@ export default async function TrackingDayPage({ params }: { params: Params }) {
           </Card>
         ))}
       </dl>
+
+      <TrackingDayMap day={data} locale={lang} />
 
       <Section title={t("day.timeline")} count={timeline.length}>
         <p className="text-sm text-muted-foreground">{t("day.explain")}</p>
