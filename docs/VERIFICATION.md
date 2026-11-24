@@ -158,6 +158,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 | OWN-17 | `/ar/leads/team` | With the Places key set: **Search now** for the test rep | A discovery run is listed under **Recent searches** with requests and estimated cost; leads appear for the rep. | Planned (needs `GOOGLE_MAPS_SERVER_KEY`) |
 | OWN-18 | `/ar/map` | With the browser key set: open the map, click a pin | Google map in Arabic, clusters, info window with the clinic link; no CSP error in the console. | Planned (needs `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`) |
 | OWN-19 | `/ar/commissions/plans` › STD-2026 | **Activate STD-2026** with "Assign every sales rep…" ticked | Status **Active**, reps assigned from the chosen day. | Planned (owner action on staging; the local seed activates it) |
+| OWN-20 | `/ar/inventory/stock/<item>` (an item from **Items without cost** on the workbook import's **3. Data to complete**, or one you imported with an unknown cost) | On a lot marked **Cost unknown** (التكلفة غير معروفة): **Set cost** (تحديد التكلفة) › **Unit cost (EGP)** (تكلفة الوحدة (ج.م)) › **Reason** (السبب) › **Save cost** (حفظ التكلفة) | "Cost saved: … per unit." (حُفظت التكلفة: … للوحدة.); the lot now shows its cost in **Unit cost** (تكلفة الوحدة) and no **Set cost** button: a saved cost is never changed (a second try says "This lot's cost is already recorded…"). With MFA enforcement on and the session at aal1, the sheet first says it needs a code and links to **Verify on My security**. Once every unknown lot of an item has a cost, the item leaves **Items without cost**. Only the owner sees **Set cost**; the inventory manager sees the status only. | Tested (local, verification.spec.ts › OWN-20: imports its own one-line synthetic opening stock with an unknown cost, then sets it); on staging: Planned (yours) |
 
 ## 2. Sales director (about 25 minutes)
 
@@ -258,14 +259,14 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 
 | Role | Lines | Tested (local) | Planned | Read-only (preview) |
 |------|------:|---------------:|--------:|--------------------:|
-| Owner | 19 | 16 | 3 | 6 |
+| Owner | 20 | 17 | 3 | 6 |
 | Sales director | 8 | 8 | 0 | 5 |
 | Area manager | 10 | 10 | 0 | 6 |
 | Sales rep | 24 | 22 | 2 | 9 |
 | Finance officer | 9 | 8 | 1 | 2 |
 | Inventory manager | 6 | 6 | 0 | 3 |
 | Admin | 8 | 7 | 1 | 7 |
-| **Total** | **84** | **77** | **7** | **38** |
+| **Total** | **85** | **78** | **7** | **38** |
 
 The 30-minute staging run (section 0) has 11 steps built from these lines: 4 rely only on lines
 Tested (local) (S-02 with the synthetic workbook, S-07 to S-09); 7 also need something only

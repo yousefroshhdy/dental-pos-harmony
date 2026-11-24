@@ -10,7 +10,7 @@ import { localizedName } from "@/modules/admin/logic";
 import { listGovernorates } from "@/modules/admin/queries";
 import { MANSOURA } from "@/modules/admin/setup";
 import { getSetupOverview, listWarehouses } from "@/modules/admin/setup-queries";
-import { allStepsDone, stepGates, type StepGate, type StepState } from "@/modules/imports/legacy/flow";
+import { allStepsDone, qualityHref, stepGates, type StepGate, type StepState } from "@/modules/imports/legacy/flow";
 import { LegacyError } from "@/modules/imports/legacy/components/legacy-error";
 import { Reconciliation } from "@/modules/imports/legacy/components/reconciliation";
 import { AbandonForm, RestageForm, StepActions } from "@/modules/imports/legacy/components/step-actions";
@@ -310,7 +310,7 @@ function QualityGroup({ title, rows, openLabel }: { title: string; rows: Quality
               <bdi className="break-words">{q.label}</bdi>
             </span>
             <Link
-              href={q.entity_type === "customer" ? `/customers/${q.customer_id}` : `/catalog/products/${q.product_id}`}
+              href={qualityHref(q)}
               className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline"
             >
               {openLabel}

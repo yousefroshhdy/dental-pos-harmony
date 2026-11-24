@@ -13,15 +13,17 @@ import {
   createTransferSchema,
   formLines,
   formToObject,
+  lotCostInvalidField,
   RECEIPT_LINE_FIELDS,
   receiptIdSchema,
+  setLotCostSchema,
   toReceiptItems,
   toTransferItems,
   TRANSFER_LINE_FIELDS,
   transferIdSchema,
   validationCode,
 } from "./schemas";
-import type { ActionFailure, ActionResult, ActionState, AdjustmentState } from "./types";
+import type { ActionFailure, ActionResult, ActionState, AdjustmentState, SetLotCostState } from "./types";
 
 /**
  * Inventory mutations. Each action validates FormData and calls api.* commands
@@ -142,4 +144,33 @@ export async function requestAdjustment(_prev: AdjustmentState, form: FormData):
 
   refresh();
   return { ok: true, ...parseAdjustmentResult(result.data), nextKey: randomUUID() };
+}
+
+// ---------------------------------------------------------------------------
+// Lot cost: the owner sets an unknown purchase cost once (owner decision 2026-11-24).
+// Postgres checks the owner, MFA, the amount, the reason and that the cost is still unknown;
+// the page-generated key makes a retry replay instead of failing as "already set".
+// ---------------------------------------------------------------------------
+
+export async function setLotCost(_prev: SetLotCostState, form: FormData): Promise<SetLotCostState> {
+  const raw = formToObject(form);
+  const submittedKey = raw.idempotency_key ?? "";
+  const keyOnFailure = /^[0-9a-fA-F-]{36}$/.test(submittedKey) ? submittedKey : randomUUID();
+  const parsed = setLotCostSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, code: "VALIDATION", messageKey: "VALIDATION", idempotencyKey: keyOnFailure, field: lotCostInvalidField(parsed.error) };
+  }
+
+  const { lot_id, unit_cost, reason, idempotency_key } = parsed.data;
+  const result = await callCommand<{ unit_cost: number | string; replayed: boolean }>("set_lot_cost", {
+    p_lot_id: lot_id,
+    p_unit_cost: unit_cost,
+    p_reason: reason,
+    p_idempotency_key: idempotency_key,
+  });
+  if (!result.ok) return { ...failed(result.error), idempotencyKey: idempotency_key };
+
+  revalidatePath(PAGES.stockDetail, "page");
+  revalidatePath("/[locale]/admin/setup/legacy-import", "page"); // its "items without cost" list
+  return { ok: true, unitCost: Number(result.data.unit_cost), replayed: result.data.replayed === true, nextKey: randomUUID() };
 }

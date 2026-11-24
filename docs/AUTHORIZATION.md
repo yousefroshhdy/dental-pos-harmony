@@ -68,6 +68,7 @@ flowchart LR
 |--------|------------|--------|:---------:|-----------------|-----------|
 | admin | `admin.import.run` (MFA) | all | ✅ | owner only (implicit) | `20261103000100` |
 | inventory | `inventory.warehouse.manage` | all | — | owner only (implicit); not MFA-gated, so suites 39/48 are unchanged | `20261125000100` |
+| inventory | `inventory.lot.set_cost` (MFA) | all | ✅ | owner only: granted to no role, and `api.set_lot_cost` also checks the owner role (`OWNER_ONLY` for a non-owner given it) | `20261126000400` |
 | audit | `audit.row_image.read` | all | ✅ | owner only (implicit); only an owner can delegate it | `20261103001100` |
 | audit | `audit.row_image.unmask` (MFA) | all | ✅ | owner only (implicit) | `20261103001100` |
 | field | `field.visit.plan` | own, team, territory, all | — | rep own; area manager team; sales director team | `20261103000900` |
@@ -131,6 +132,7 @@ Legend:
 | wf.delegation.manage | A | — | T | O | — | O | O | — | — | — |
 | perf.commission.calculate | A | — | — | — | — | — | A | — | — | — |
 | admin.import.run | A | — | — | — | — | — | — | — | — | — |
+| inventory.lot.set_cost (MFA) | A | — | — | — | — | — | — | — | — | — |
 | audit.row_image.read / unmask | A | — | — | — | — | — | — | — | — | — |
 | crm.customer.export (MFA) | A | — | A | — | — | — | — | — | — | A |
 | sales.order.export (MFA) | A | — | A | — | — | — | — | — | — | — |
@@ -189,14 +191,14 @@ The rep restrictions requested in the brief map as follows:
 - `api.my_mfa_status()` returns `{enforced, aal, required_permissions}` for the caller; `api.v_permissions.requires_mfa` exposes the flag.
 - Service-role jobs (the commission cron, the escalation job) never pass through `authz.require` and are unaffected.
 
-**Gated set** (24 codes; suites 39 and 48 pin it exactly):
+**Gated set** (25 codes; suites 39 and 48 pin it exactly):
 
 | Area | Codes |
 |------|-------|
 | Access administration | `admin.role.assign`, `admin.role.manage`, `admin.override.manage`, `admin.user.suspend` |
 | Configuration | `admin.settings.manage`, `admin.workflow.manage`, `admin.import.run` |
 | Money | `finance.payment.reverse` (reversal, bounce, allocation reversal), `finance.credit_limit.change` (no command yet), `catalog.price.manage`, `wf.decide.write_off`, `sales.return.credit`, `perf.commission.calculate`, `perf.commission_plan.manage` (the rate editor, `20261125000400`) |
-| Stock | `inventory.quarantine.release` |
+| Stock | `inventory.quarantine.release`, `inventory.lot.set_cost` (the owner sets an unknown lot cost once, `20261126000400`) |
 | Data | `audit.row_image.unmask`; every export permission: `crm.customer.export`, `sales.order.export`, `finance.invoice.export`, `finance.payment.export`, `finance.aging.export`, `field.visit.export`, `inventory.stock.export`, `field.tracking.export` (`20261104001100`) |
 
 **Paths that call `authz.require_mfa` themselves**, because they use a gated permission without `authz.require` on it, or change access without checking the flagged permission:
@@ -290,6 +292,7 @@ Approval limits are **data**, not code:
 | `api.create_brand`, `api.create_category` | `catalog.product.manage` at scope all | `PERMISSION_DENIED` |
 | `api.setup_overview` | owner only | `OWNER_ONLY` |
 | `api.legacy_import_check`, `_start`, `_restage`, `_abandon`; views `api.v_legacy_import_*` | `admin.import.run` at scope all (MFA-gated, checked first) **and** the owner role; the steps' dry run and commit are the existing `api.import_validate` / `api.import_commit` (+ the kind's permission), refused out of order (`LEGACY_ORDER`). No new permission, so suites 39/48 are unchanged. `authz.is_owner()` is now executable by `authenticated` because the session tables' RLS calls it (rule (e) of 2026-10-29) | `PERMISSION_DENIED`, `MFA_REQUIRED`, `OWNER_ONLY`; views return no rows |
+| `api.set_lot_cost`; view `api.v_lot_costs` | `inventory.lot.set_cost` (MFA-gated, checked first) **and** the owner role; the lot's cost must still be unknown (`COST_ALREADY_SET` otherwise; a set cost is never changed). The view returns rows only to `catalog.cost.read` holders with company-wide `inventory.movement.read` (owner, inventory manager); reps and finance see none. The page shows **Set cost** to the owner only (UX) | `PERMISSION_DENIED`, `MFA_REQUIRED`, `OWNER_ONLY`, `COST_ALREADY_SET`; view returns no rows |
 | `api.authorize_sign_in_link` | `admin.user.create` **and** owner; never for an owner login, a suspended login, yourself or an employee who is not active; logs `sign_in_link_issued` (warning) before the server mints the link with the service role | `OWNER_ONLY`, `PERMISSION_DENIED`, `INVALID_STATE`, `VALIDATION` |
 
 ## 9. Admin console (owner/admin capabilities)

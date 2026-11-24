@@ -17,6 +17,7 @@
     "finance_invoice_export": "Export invoices",
     "finance_payment_export": "Export payments",
     "finance_payment_reverse": "Reverse payments",
+    "inventory_lot_set_cost": "Set an unknown lot cost",
     "inventory_quarantine_release": "Release stock from quarantine",
     "inventory_stock_export": "Export stock",
     "perf_commission_calculate": "Calculate commissions",

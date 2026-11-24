@@ -187,6 +187,36 @@ test.describe("owner", () => {
     await expect(page.getByRole("button", { name: ar("reports.page.download") })).toHaveCount(9);
   });
 
+  line("OWN-20", "set an unknown lot cost once", { as: "owner", writes: true, demoData: true }, async ({ page, ids }) => {
+    // Its own unknown-cost lot on every run: one synthetic opening-stock line with cost_unknown = yes.
+    const lot = `OWN20-${unique().toUpperCase()}`;
+    await visit(page, "/imports?kind=opening_stock");
+    await page.getByLabel(ar("imports.upload.file")).setInputFiles({
+      name: "opening-stock-synthetic.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from(`warehouse_code,sku,lot_no,expiry_date,quantity,unit_cost,cost_unknown\nWH-CAI,BIO-TOP-4110,${lot},,1,,yes\n`),
+    });
+    await button(page, ar("imports.upload.submit")).click();
+    await page.waitForURL(/\/imports\/[0-9a-f-]{36}/);
+    await button(page, ar("imports.batch.validate")).click();
+    await expect(txt(page, ar("imports.batch.outcome.validated"))).toBeVisible();
+    await page.getByLabel(arRe("imports.batch.commitCheckbox")).check();
+    page.once("dialog", (d) => void d.accept());
+    await button(page, ar("imports.batch.commit")).click();
+    await expect(heading(page, ar("imports.batch.resultTitle"))).toBeVisible();
+
+    await visit(page, `/inventory/stock/${ids.variant}`);
+    const row = page.getByRole("row").filter({ hasText: lot });
+    await expect(row.getByText(ar("inventory.lotCost.unknown"))).toBeVisible();
+    await row.getByRole("button", { name: ar("inventory.lotCost.open") }).click();
+    await page.getByLabel(ar("inventory.lotCost.unitCost")).fill("1234.50");
+    await page.getByLabel(ar("inventory.lotCost.reason")).fill(`Synthetic supplier invoice ${unique()}`);
+    await button(page, ar("inventory.lotCost.submit")).click();
+    await expect(row.getByText(/1,234\.50/)).toBeVisible();
+    await expect(row.getByRole("button", { name: ar("inventory.lotCost.open") })).toHaveCount(0);
+    await expect(row.getByText(ar("inventory.lotCost.unknown"))).toHaveCount(0);
+  });
+
   line("OWN-16", "account security: verified session", { as: "owner" }, async ({ page, local }) => {
     await visit(page, "/account/security");
     await expect(heading(page, ar("security.title"))).toBeVisible();

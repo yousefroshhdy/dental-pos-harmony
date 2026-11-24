@@ -17,6 +17,7 @@
     "finance_invoice_export": "تصدير الفواتير",
     "finance_payment_export": "تصدير المدفوعات",
     "finance_payment_reverse": "عكس المدفوعات",
+    "inventory_lot_set_cost": "تحديد تكلفة تشغيلة غير معروفة",
     "inventory_quarantine_release": "الإفراج عن المخزون من الحجر",
     "inventory_stock_export": "تصدير المخزون",
     "perf_commission_calculate": "حساب العمولات",

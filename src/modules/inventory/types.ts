@@ -130,6 +130,35 @@ export interface StockDetailRow {
   updated_at: string;
 }
 
+export const LOT_COST_STATUSES = ["unknown", "known", "set"] as const;
+export type LotCostStatus = (typeof LOT_COST_STATUSES)[number];
+
+/**
+ * api.v_lot_costs: the purchase-cost status of each received lot. Rows only for cost readers with
+ * company-wide stock access (owner, inventory manager); reps get none.
+ */
+export interface LotCostRow {
+  lot_id: string;
+  variant_id: string;
+  lot_no: string;
+  /** unknown: received without a cost and not set yet · set: the owner's cost · known: every receipt had a cost. */
+  cost_status: LotCostStatus;
+  /** numeric(14,2) from PostgREST; NULL while unknown. */
+  unit_cost: number | string | null;
+  cost_set_at: string | null;
+}
+
+/** The owner's "Set cost" form (api.set_lot_cost). */
+export type SetLotCostState =
+  | null
+  | { ok: true; unitCost: number; replayed: boolean; nextKey: string }
+  | (ActionFailure & {
+      /** The key to keep: a retry of the same cost replays instead of failing as already set. */
+      idempotencyKey: string;
+      /** Field the form check refused (shown next to it). */
+      field?: "unit_cost" | "reason";
+    });
+
 /** api.v_movements (unit_cost masked unless catalog.cost.read) */
 export interface MovementRow {
   id: string;

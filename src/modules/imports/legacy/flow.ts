@@ -2,6 +2,7 @@ import type { ImportKind } from "../kinds";
 import { buildRows, type StagedRow } from "../logic";
 import type { BatchStatus } from "../types";
 import type { ConvertResult, NegativeStockItem, ReconLine } from "./convert";
+import type { QualityRow } from "./schemas";
 
 /**
  * The browser import of the old-system workbook (/admin/setup/legacy-import), pure parts:
@@ -259,4 +260,15 @@ export function stepGates(steps: readonly StepRow[], sessionOpen: boolean): Step
 /** True once every step is committed or had nothing to import. */
 export function allStepsDone(steps: readonly StepRow[]): boolean {
   return steps.length === LEGACY_STEPS.length && steps.every((s) => done(stateOf(s)));
+}
+
+/**
+ * Where a "data to complete" row opens (path without the locale): the customer page for a missing
+ * phone or pin; for an item without cost (entity_id = the SKU), its stock-by-lot page, where the
+ * owner sets each unknown lot cost once (api.set_lot_cost).
+ */
+export function qualityHref(q: Pick<QualityRow, "issue" | "entity_type" | "entity_id" | "customer_id" | "product_id">): string {
+  if (q.entity_type === "customer") return `/customers/${q.customer_id ?? q.entity_id}`;
+  if (q.issue === "cost_unknown") return `/inventory/stock/${q.entity_id}`;
+  return `/catalog/products/${q.product_id ?? ""}`;
 }

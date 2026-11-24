@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -15,9 +16,23 @@ import { cn } from "@/lib/utils";
 import { ExpiryBadge, WarehouseKindBadge } from "@/modules/inventory/components/badges";
 import { FilterSelect } from "@/modules/orders/kit/url-filters";
 import { InventoryError } from "@/modules/inventory/components/inventory-error";
+import { LotCost } from "@/modules/inventory/components/lot-cost";
 import { QTY } from "@/modules/inventory/format";
-import { expiryStatus, localizedName, lotsFefo, parseStockFilters, stockLineValue, toQuery, type SearchParams } from "@/modules/inventory/logic";
-import { getVariant, listStockDetail, listWarehouses } from "@/modules/inventory/queries";
+import {
+  canSetLotCost,
+  expiryStatus,
+  localizedName,
+  lotCostDisplay,
+  lotCostsByLot,
+  lotsFefo,
+  parseStockFilters,
+  stockLineValue,
+  toQuery,
+  type SearchParams,
+} from "@/modules/inventory/logic";
+import { getVariant, listLotCosts, listStockDetail, listWarehouses } from "@/modules/inventory/queries";
+import type { StockDetailRow } from "@/modules/inventory/types";
+import { getMfaStatus } from "@/modules/security/queries";
 
 type Params = Promise<{ locale: string; variantId: string }>;
 
@@ -27,7 +42,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title: t("metaTitle") };
 }
 
-/** Lot-level drill-down for one SKU: lots and expiry per warehouse, FEFO order. */
+/**
+ * Lot-level drill-down for one SKU: lots and expiry per warehouse, FEFO order. Cost readers also see
+ * each lot's purchase cost or "Cost unknown"; the owner can set an unknown cost once (decision
+ * 2026-11-24, api.set_lot_cost).
+ */
 export default async function StockDetailPage({ params, searchParams }: { params: Params; searchParams: Promise<SearchParams> }) {
   const { locale, variantId } = await params;
   setRequestLocale(locale);
@@ -41,7 +60,13 @@ export default async function StockDetailPage({ params, searchParams }: { params
   const tc = await getTranslations("inventory.common");
   const format = await getFormatter();
 
-  const [variant, lots, warehouses] = await Promise.all([getVariant(variantId), listStockDetail({ variant: variantId, warehouse }), listWarehouses()]);
+  const showCost = can(ctx, "catalog.cost.read");
+  const [variant, lots, warehouses, lotCosts] = await Promise.all([
+    getVariant(variantId),
+    listStockDetail({ variant: variantId, warehouse }),
+    listWarehouses(),
+    showCost ? listLotCosts(variantId) : null,
+  ]);
   if (!variant.ok) return <InventoryError code={variant.error.code} messageKey={variant.error.messageKey} requestId={variant.error.requestId} />;
   if (!variant.data) notFound();
   if (!lots.ok) return <InventoryError code={lots.error.code} messageKey={lots.error.messageKey} requestId={lots.error.requestId} />;
@@ -60,6 +85,33 @@ export default async function StockDetailPage({ params, searchParams }: { params
   );
   const mayAdjust = can(ctx, "inventory.adjustment.post");
   const mayTransfer = can(ctx, "inventory.transfer.create");
+
+  // Lot costs: no rows (not a cost reader with stock access, or a failed read) hides the column.
+  const costByLot = lotCostsByLot(lotCosts?.ok ? lotCosts.data : []);
+  const costColumn = costByLot.size > 0;
+  const maySetCost = canSetLotCost(ctx);
+  const unknownLots = [...costByLot.values()].filter((c) => c.cost_status === "unknown").map((c) => c.lot_id);
+  const mfa = maySetCost && unknownLots.length > 0 ? await getMfaStatus() : null;
+  const stepUpFirst = mfa?.ok === true && mfa.data.enforced && mfa.data.aal !== "aal2";
+  // One key per unknown lot, generated with the page: a retried submit replays instead of failing.
+  const costKeys = new Map(unknownLots.map((id) => [id, randomUUID()]));
+  const costCell = (r: StockDetailRow, className?: string) => {
+    const display = lotCostDisplay(costByLot.get(r.lot_id));
+    if (!display) return <span className={className}>—</span>;
+    const key = costKeys.get(r.lot_id);
+    return (
+      <LotCost
+        status={display.status}
+        amount={display.amount}
+        className={className}
+        setCost={
+          maySetCost && key
+            ? { lotId: r.lot_id, variantId: r.variant_id, lotLabel: `${v.sku} · ${r.lot_no}`, initialKey: key, stepUpFirst }
+            : undefined
+        }
+      />
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -112,6 +164,10 @@ export default async function StockDetailPage({ params, searchParams }: { params
         />
       </div>
 
+      {lotCosts && !lotCosts.ok ? (
+        <InventoryError code={lotCosts.error.code} messageKey={lotCosts.error.messageKey} requestId={lotCosts.error.requestId} />
+      ) : null}
+
       {rows.length === 0 ? (
         <EmptyState icon={<BoxesIcon aria-hidden="true" />} title={t("empty")} />
       ) : (
@@ -148,6 +204,12 @@ export default async function StockDetailPage({ params, searchParams }: { params
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {tc("onHand")} {format.number(r.on_hand, QTY)} · {tc("reserved")} {format.number(r.reserved, QTY)}
                 </p>
+                {costColumn ? (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-xs text-muted-foreground">{t("unitCost")}</span>
+                    {costCell(r, "tabular-nums")}
+                  </div>
+                ) : null}
                 {mayAdjust || (mayTransfer && r.available > 0) ? (
                   <div className="flex flex-wrap gap-2">
                     {mayAdjust ? (
@@ -175,6 +237,7 @@ export default async function StockDetailPage({ params, searchParams }: { params
               <Th className="text-end">{tc("onHand")}</Th>
               <Th className="text-end">{tc("reserved")}</Th>
               <Th className="text-end">{tc("available")}</Th>
+              {costColumn ? <Th>{t("unitCost")}</Th> : null}
               {mayAdjust || mayTransfer ? <Th>{tc("actions")}</Th> : null}
             </tr>
           </thead>
@@ -204,6 +267,7 @@ export default async function StockDetailPage({ params, searchParams }: { params
                   <Td className="text-end tabular-nums">{format.number(r.on_hand, QTY)}</Td>
                   <Td className="text-end tabular-nums">{format.number(r.reserved, QTY)}</Td>
                   <Td className="text-end tabular-nums">{format.number(r.available, QTY)}</Td>
+                  {costColumn ? <Td className="min-w-36 tabular-nums">{costCell(r)}</Td> : null}
                   {mayAdjust || mayTransfer ? (
                     <Td>
                       <div className="flex flex-col items-start gap-1 sm:flex-row">
