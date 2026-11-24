@@ -19,8 +19,8 @@
     automated here").
   - `Tested (local, verification.spec.ts › ID)`: the Playwright test with that id passed on the
     local signed-in stack (synthetic data, mock sign-in; `docs/TESTING.md` §7).
-  - `Verified`: **only the owner sets this**, after doing the line himself (or the person he
-    names) on staging and filling in the record table at the end. Nobody else changes a line to
+  - `Verified`: **only the owner sets this**, after doing the line themselves (or the person they
+    name) on staging and filling in the record table at the end. Nobody else changes a line to
     Verified.
 - Line ids are stable: the automated test for a line carries the same id
   (`tests/e2e-local/verification.spec.ts`).
