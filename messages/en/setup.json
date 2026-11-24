@@ -1,0 +1,156 @@
+{
+  "nav": {
+    "setup": "Setup"
+  },
+  "title": "Owner setup",
+  "intro": "Everything Honest OS needs before the team starts: the main warehouse, territories, people with roles and logins, each rep's base address, then the data from the old system. Work down the list; every step can be repeated.",
+  "saved": "Saved.",
+  "optional": "optional",
+  "progress": {
+    "title": "Progress",
+    "steps": {
+      "warehouse": "Main warehouse",
+      "territories": "Territories with coverage",
+      "people": "People",
+      "logins": "Logins",
+      "baseLocations": "Reps' base addresses",
+      "catalog": "Brands and category for old items",
+      "products": "Products",
+      "prices": "Base prices",
+      "stock": "Opening stock",
+      "customers": "Customers",
+      "openingAr": "Opening balances"
+    },
+    "count": "{count}",
+    "countOf": "{count} of {total}",
+    "done": "Done",
+    "todo": "To do"
+  },
+  "warehouse": {
+    "title": "1. Main warehouse",
+    "intro": "Opening stock is received into this warehouse. Negative stock stays off.",
+    "empty": "No warehouse yet.",
+    "kinds": {
+      "main": "Main",
+      "branch": "Branch",
+      "rep_stock": "Rep stock",
+      "quarantine": "Quarantine",
+      "transit": "Transit"
+    },
+    "create": "Create the main warehouse",
+    "code": "Warehouse code",
+    "codeHint": "The opening-stock file uses WH-MAIN; keep it unless you change the file too.",
+    "name": "Name",
+    "defaultName": "Main warehouse"
+  },
+  "territories": {
+    "title": "2. Territories",
+    "intro": "A territory's coverage (governorate, optionally a city) decides where new customers belong. Start with Mansoura.",
+    "empty": "No active territories.",
+    "noCoverage": "no coverage yet",
+    "mansouraHint": "Mansoura is in Dakahlia (EG-DK). Cover the whole governorate with the Mansoura territory so imported customers land there.",
+    "coverMansoura": "Cover Dakahlia with Mansoura",
+    "add": "Add a territory",
+    "create": "Create territory",
+    "code": "Code",
+    "nameEn": "Name (English)",
+    "nameAr": "Name (Arabic)",
+    "manage": "All territories and coverage →"
+  },
+  "people": {
+    "title": "3. People, roles and logins",
+    "intro": "Add each person, then give them a login with a role: sales manager, reps, finance. Reps also need a base address: leads are searched around it.",
+    "add": "Add a person",
+    "create": "Add person",
+    "employeeNo": "Employee no.",
+    "jobTitle": "Job title",
+    "jobTitleHint": "A job title grants nothing; the role chosen with the login does.",
+    "nameEn": "Name (English)",
+    "nameAr": "Name (Arabic)",
+    "email": "E-mail",
+    "emailHint": "Needed for a login.",
+    "phone": "Phone",
+    "empty": "No people yet.",
+    "hasLogin": "Has a login",
+    "noLogin": "No login",
+    "hasBase": "Base set · {km} km",
+    "noBase": "No base address",
+    "sources": {
+      "geocoded": "found on the map",
+      "manual": "typed by hand"
+    },
+    "loginLink": "Sign-in link and role",
+    "createLogin": "Create login and role",
+    "needsEmail": "Add an e-mail on the employee's page first (Admin → Employees).",
+    "baseAddress": "Base address",
+    "salesManager": "sales manager"
+  },
+  "imports": {
+    "title": "4. Data from the old system",
+    "intro": "Convert the workbook with pnpm legacy:convert (files go to private/import), then upload each file on Data import in this order: upload, check the preview, validate, commit.",
+    "files": {
+      "products": "Products: one per old item.",
+      "prices": "Base price list (DEFAULT). Needs the products.",
+      "stock": "Opening stock in WH-MAIN. Needs the products and the main warehouse. Unknown costs stay unknown.",
+      "customers": "Customers. Pick the governorate for rows without one (Mansoura = Dakahlia). Customers without a phone are marked to complete.",
+      "openingAr": "Opening balances owed to HONEST. Needs the customers.",
+      "credits": "Credit balances. Import only after you have confirmed them."
+    },
+    "phoneMissing": "{count} customers have no phone yet: reps complete them on their next visit.",
+    "catalogHint": "Before the products file: add the brands and category the old system's items use ({codes}).",
+    "catalogAdd": "Add brands STEP, GENERIC and category IMPLANT_PARTS",
+    "catalogReady": "The brands and category the old items use exist."
+  },
+  "base": {
+    "address": "Base address",
+    "addressHint": "Where the rep starts the day, in Arabic or English. Find on map looks it up with Google.",
+    "point": "Point on the map",
+    "paste": "Paste “lat, lng” from Google Maps",
+    "lat": "Latitude",
+    "lng": "Longitude",
+    "typePoint": "Type the point instead",
+    "radius": "Lead radius (km)",
+    "radiusHint": "Default 5 km. Leads are searched within this distance of the base point.",
+    "savePoint": "Save the point",
+    "geocode": "Find on map and save",
+    "clear": "Remove the base point",
+    "cleared": "The base point was removed.",
+    "savedGeocoded": "Saved. Google found: {address}",
+    "savedManual": "Saved the point you typed.",
+    "approximate": "Google's match is approximate: check the point on the map.",
+    "problems": {
+      "not_configured": "Map search is not configured (no Google server key yet). Type the point, or skip for now.",
+      "not_found": "Google found no place for this address. Make it more precise, or type the point.",
+      "outside_egypt": "Google placed this address outside Egypt. Type the point instead.",
+      "error": "Map search is not available right now. Type the point, or try again later."
+    }
+  },
+  "login": {
+    "role": "Role",
+    "noRole": "No role yet",
+    "noNewRole": "Keep the current roles",
+    "territory": "Territory",
+    "noTerritory": "No territory",
+    "language": "Language",
+    "submitInvite": "Create login and link",
+    "submitLink": "New sign-in link",
+    "smtpNote": "E-mail invites need SMTP in Supabase (Authentication → SMTP), which is not set up yet. Until then you get a one-time link to send to the person yourself.",
+    "linkInvite": "Login created for {email}. Send this link privately:",
+    "linkSignIn": "One-time sign-in link for {email}. Send it privately:",
+    "linkLabel": "Sign-in link",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "linkWarning": "Anyone with this link signs in as this person. Send it only to them (WhatsApp or SMS), never in a group. It works once and expires after the project's e-mail link lifetime (Supabase default: 1 hour). Make a new one any time.",
+    "steps": {
+      "register": "Login linked to the employee",
+      "territory": "Territory",
+      "role": "Role"
+    },
+    "stepStatus": {
+      "done": "done",
+      "skipped": "skipped",
+      "failed": "failed"
+    },
+    "partial": "The link works, but one step failed. Fix it on Admin → Users or Employees."
+  }
+}

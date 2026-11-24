@@ -52,11 +52,23 @@ export type BuildError =
 export type BuildResult = { ok: true; headers: string[]; rows: StagedRow[] } | { ok: false; error: BuildError };
 
 /**
+ * Batch defaults the owner picks on the upload screen. Only these columns may be defaulted,
+ * and only for these kinds: a default fills empty cells (and a missing column) before the
+ * rows are staged, so the database validates the value like any other cell.
+ */
+export const DEFAULTABLE_COLUMNS: Partial<Record<ImportKind, readonly string[]>> = {
+  customers: ["governorate_code"],
+};
+
+export type BatchDefaults = Record<string, string>;
+
+/**
  * CSV text → staging rows for `kind`: header row first, one object per data record with
  * every header as a key (empty cells → null). Blank records are skipped. Values are kept
- * as text; the database normalises and validates them.
+ * as text; the database normalises and validates them. `defaults` (see DEFAULTABLE_COLUMNS)
+ * fill empty cells; a defaulted column may be absent from the file.
  */
-export function buildRows(kind: ImportKind, text: string): BuildResult {
+export function buildRows(kind: ImportKind, text: string, defaults: BatchDefaults = {}): BuildResult {
   const parsed = parseCsv(text);
   if (!parsed.ok) return { ok: false, error: { code: "csv", csv: parsed.error } };
   const records = parsed.records.filter((r) => r.some((cell) => cell.trim() !== ""));
@@ -73,7 +85,9 @@ export function buildRows(kind: ImportKind, text: string): BuildResult {
   const spec = KIND_SPECS[kind];
   const unknown = headers.filter((h) => !spec.columns.includes(h));
   if (unknown.length > 0) return { ok: false, error: { code: "unknown_columns", columns: unknown } };
-  const missing = spec.required.filter((c) => !headers.includes(c));
+  const allowed = DEFAULTABLE_COLUMNS[kind] ?? [];
+  const fill = Object.entries(defaults).filter(([c, v]) => allowed.includes(c) && v.trim() !== "");
+  const missing = spec.required.filter((c) => !headers.includes(c) && !fill.some(([f]) => f === c));
   if (missing.length > 0) return { ok: false, error: { code: "missing_columns", columns: missing } };
 
   const data = records.slice(1);
@@ -90,9 +104,11 @@ export function buildRows(kind: ImportKind, text: string): BuildResult {
       const value = (record[j] ?? "").trim();
       row[h] = value === "" ? null : value;
     });
+    for (const [column, value] of fill) if (row[column] === null || row[column] === undefined) row[column] = value.trim();
     rows.push(row);
   }
-  return { ok: true, headers, rows };
+  const allHeaders = [...headers, ...fill.map(([c]) => c).filter((c) => !headers.includes(c))];
+  return { ok: true, headers: allHeaders, rows };
 }
 
 /** The downloadable template: English headers plus synthetic example rows. */

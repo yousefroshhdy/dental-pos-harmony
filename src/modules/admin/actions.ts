@@ -57,11 +57,13 @@ const PAGES = {
   employees: "/[locale]/admin/employees",
   employee: "/[locale]/admin/employees/[employeeId]",
   territories: "/[locale]/admin/territories",
+  setup: "/[locale]/admin/setup",
 } as const;
 
 function refresh(...pages: (keyof typeof PAGES)[]) {
-  // Every admin command writes a security event, so the security page is always stale too.
-  for (const page of new Set([...pages, "security" as const])) revalidatePath(PAGES[page], "page");
+  // Every admin command writes a security event, so the security page is always stale too; the
+  // owner setup screen (/admin/setup) shows counts of most admin records.
+  for (const page of new Set([...pages, "security" as const, "setup" as const])) revalidatePath(PAGES[page], "page");
 }
 
 const failed = (error: AppError): ActionResult => failedResult(error);

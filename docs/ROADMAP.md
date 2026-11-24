@@ -90,6 +90,17 @@ Definitions are in `docs/TESTING.md` §4.
 | Audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, planner rule, fast coverage | Tested | suite 53, unit `planning-audit4` |
 | **Staging deploy of wave 2 and audit 4** | **Database done; owner steps pending** | All 66 migrations are on staging and all 52 suites pass there (2026-10-31). Still needed before anything is Verified: the runbook owner steps (§2 secrets, exposed schemas, OTP, template, rate limit, TOTP, owner login) and a human click-through |
 
+## Phase P — Make it usable
+
+Owner build prompt of 2026-11-24 (decisions A–F in `docs/DECISIONS.md` Part C). Status words per `docs/TESTING.md` §4.
+
+| Step | Item | Status | Evidence |
+|------|------|--------|----------|
+| 1 | Old-system workbook → import CSVs (`pnpm legacy:convert`), reconciliation vs the Checks sheet; real files in `private/import/` | Implemented, Tested | `tests/unit/legacy-convert.test.ts` (synthetic workbook); run once on the owner's workbook: customers 58, debit 5,265,439.70 and credit 1,500,000.00 match; stock units 12,146 vs 12,139 (2 negative rows left out) |
+| 1 | Imports accept the old data: customers without a phone, old account numbers, base (DEFAULT) prices, unknown cost, governorate batch default | Implemented, Tested | suite 55 (converter output end to end), suites 34/47 unchanged |
+| 1 | Owner setup screen `/admin/setup`: warehouse, legacy brands/category, territories (Mansoura → Dakahlia), people, logins with roles (one-time link, no SMTP), reps' base address (Google geocoding or typed), import order | Implemented, Tested (DB + unit) | suite 55, `tests/unit/admin-setup.test.ts`; no live click-through yet |
+| 1 | Load the files on staging (owner) | Planned | owner steps in the step-1 report |
+
 ## 2. MVP scope (prioritised)
 
 **MVP goal:** reps and managers run daily field sales in Honest OS, and every order, stock movement and collection is recorded and controlled. **MVP = Phases 2 + 3 + the "AR core" of Phase 4 + basic dashboards from Phase 5.**

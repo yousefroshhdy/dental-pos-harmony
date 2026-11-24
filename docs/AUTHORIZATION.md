@@ -67,6 +67,7 @@ flowchart LR
 | Module | Permission | Scopes | Sensitive | Default holders | Migration |
 |--------|------------|--------|:---------:|-----------------|-----------|
 | admin | `admin.import.run` (MFA) | all | ✅ | owner only (implicit) | `20261103000100` |
+| inventory | `inventory.warehouse.manage` | all | — | owner only (implicit); not MFA-gated, so suites 39/48 are unchanged | `20261125000100` |
 | audit | `audit.row_image.read` | all | ✅ | owner only (implicit); only an owner can delegate it | `20261103001100` |
 | audit | `audit.row_image.unmask` (MFA) | all | ✅ | owner only (implicit) | `20261103001100` |
 | field | `field.visit.plan` | own, team, territory, all | — | rep own; area manager team; sales director team | `20261103000900` |
@@ -275,6 +276,12 @@ Approval limits are **data**, not code:
 | `api.request_invoice_write_off` | `finance.collection.manage` with the customer in scope; decided through `finance.write_off` by `wf.decide.write_off` (no self-approval) | `WRITE_OFF_PENDING`, `EXCEEDS_INVOICE_OPEN_AMOUNT` |
 | `api.adjust_commission` | `perf.commission.adjust` with scope over the employee; never for yourself; decided through `perf.commission_adjustment` | `SELF_ADJUSTMENT` |
 | `api.import_*` | `admin.import.run` at scope all plus the posting permission of the kind (customers `crm.customer.create`, products `catalog.product.manage`, customer prices `catalog.price.manage`, opening stock `inventory.receipt.post`, opening AR none) at scope all | `PERMISSION_DENIED` |
+| `api.create_goods_receipt` item `cost_unknown` | an unknown (NULL) cost only with `admin.import.run` at scope all (opening stock); supplier receipts keep needing a cost | `VALIDATION` |
+| `api.set_employee_base_location` | `core.employee.manage` with the employee in scope; an owner's record only by an owner; nobody but an owner changes their own base (it decides which leads they get) | `PERMISSION_DENIED`, `OWNER_ONLY`, `SELF_GRANT_FORBIDDEN` |
+| `api.create_warehouse` | `inventory.warehouse.manage` at scope all; `allow_negative` always false | `PERMISSION_DENIED` |
+| `api.create_brand`, `api.create_category` | `catalog.product.manage` at scope all | `PERMISSION_DENIED` |
+| `api.setup_overview` | owner only | `OWNER_ONLY` |
+| `api.authorize_sign_in_link` | `admin.user.create` **and** owner; never for an owner login, a suspended login, yourself or an employee who is not active; logs `sign_in_link_issued` (warning) before the server mints the link with the service role | `OWNER_ONLY`, `PERMISSION_DENIED`, `INVALID_STATE`, `VALIDATION` |
 
 ## 9. Admin console (owner/admin capabilities)
 
@@ -290,6 +297,7 @@ Approval limits are **data**, not code:
 | Territory tree and coverage | Admin → Territories | `api.create_territory`, `api.rename_territory`, `api.move_territory`, `api.set_territory_active`, `api.set_territory_coverage`, `api.remove_territory_coverage` (`core.territory.manage`; a region, a move to the top level or coverage taken from outside your scope needs scope `all`) |
 | System settings | Admin → Settings | `api.update_setting` (`admin.settings.manage`; whitelisted keys only; owner-only families, §7) |
 | Data import | Imports | `api.import_*` (`admin.import.run`, owner only by default) |
+| Owner setup: main warehouse, legacy brands/category, territories, people, logins with roles, reps' base addresses, import order | Admin → Setup (`/admin/setup`, owner only) | `api.setup_overview`, `api.create_warehouse`, `api.create_brand`, `api.create_category`, `api.create_territory`, `api.set_territory_coverage`, `api.create_employee`, `api.authorize_sign_in_link` + Auth `generateLink`, `api.register_user`, `api.assign_employee_territory`, `api.grant_role`, `api.set_employee_base_location`. Decision B's "sales manager" is the seeded role `sales_director`. |
 | Read row-image diffs | Audit (`/audit`) | `api.audit_search`, `api.audit_record_history` (`audit.row_image.read`; reveal needs `audit.row_image.unmask`); every read is logged |
 | Restrict modules | Roles (module permissions) | — |
 | Review access history | Access review | reads `audit.security_events`, `audit.audit_log` (authz tables) |

@@ -25,6 +25,11 @@ export const uploadSchema = z.object({
   /** Device-generated per attempt: a retried upload replays the same batch. */
   idempotency_key: z.string().min(8).max(200),
   locale,
+  /** Batch default for customers without a governorate (the database checks the code exists). */
+  default_governorate_code: z
+    .string()
+    .regex(/^EG-[A-Z]{1,4}$/)
+    .optional(),
 });
 
 export const batchActionSchema = z.object({

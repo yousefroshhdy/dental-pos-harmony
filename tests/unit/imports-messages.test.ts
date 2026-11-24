@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { IMPORT_KINDS, KIND_SPECS } from "@/modules/imports/kinds";
@@ -9,11 +9,27 @@ type Tree = Record<string, unknown>;
 const load = (locale: string) => JSON.parse(readFileSync(join(__dirname, "../../messages", locale, "imports.json"), "utf8")) as Tree;
 const at = (tree: Tree, path: string): unknown => path.split(".").reduce<unknown>((n, k) => (n as Tree | undefined)?.[k], tree);
 
-const migration = readFileSync(join(__dirname, "../../supabase/migrations/20261103000110_import_commands.sql"), "utf8");
+const MIGRATIONS_DIR = join(__dirname, "../../supabase/migrations");
+/** Every migration that touches the import schema, oldest first. */
+const importMigrations = readdirSync(MIGRATIONS_DIR)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => readFileSync(join(MIGRATIONS_DIR, f), "utf8"))
+  .filter((sql) => sql.includes("create or replace function import."));
+const migration = importMigrations.join("\n");
+
+/** The body of the LATEST definition of an import.* function (later migrations restate them). */
+function latestBody(fn: string): string {
+  for (const sql of [...importMigrations].reverse()) {
+    const parts = sql.split(`create or replace function import.${fn}(`);
+    if (parts.length > 1) return parts[parts.length - 1]?.split("$$;")[0] ?? "";
+  }
+  return "";
+}
 
 /** Arrays per kind from a `case p_kind when '<kind>' then array[...]` SQL function. */
 function sqlArrays(fn: string): Record<string, string[]> {
-  const body = migration.split(`create or replace function import.${fn}(`)[1]?.split("$$;")[0] ?? "";
+  const body = latestBody(fn);
   const out: Record<string, string[]> = {};
   for (const [, kind = "", list = ""] of body.matchAll(/when '([a-z_]+)' then array\[([^\]]*)\]/g)) {
     out[kind] = [...list.matchAll(/'([a-z_]+)'/g)].map((x) => x[1] ?? "");
@@ -34,7 +50,7 @@ describe("import kinds match the database", () => {
   });
 
   it("the kind permission is the one import._kind_permission requires", () => {
-    const body = migration.split("create or replace function import._kind_permission(")[1]?.split("$$;")[0] ?? "";
+    const body = latestBody("_kind_permission");
     for (const kind of IMPORT_KINDS) {
       const perm = KIND_SPECS[kind].permission;
       if (perm) expect(body).toContain(`when '${kind}' then '${perm}'`);
@@ -73,21 +89,21 @@ describe("imports messages", () => {
 
   it.each(["ar", "en"])("%s has a label for every commit result the database returns", (locale) => {
     const m = load(locale);
-    // The keys returned by import._commit_<kind>().
-    const keys = migration
-      .split(/create or replace function import\._commit_[a-z_]+\(/)
-      .slice(1)
-      .flatMap((fn) => {
-        const ret = /return jsonb_build_object\(([^;]*)\);\s*end \$\$;/.exec(fn)?.[1] ?? "";
-        return [...ret.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]);
-      });
-    expect(keys.length).toBe(11);
+    // The keys returned by the latest import._commit_<kind>() definitions.
+    const keys = IMPORT_KINDS.flatMap((kind) => {
+      const fn = latestBody(`_commit_${kind}`);
+      const ret = /return (?:jsonb_strip_nulls\()?jsonb_build_object\(([\s\S]*?)\);\s*end\s*$/.exec(fn)?.[1] ?? "";
+      return [...ret.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]);
+    });
+    expect(keys.length).toBe(14);
     for (const k of keys) expect(typeof at(m, `result.${k}`), k).toBe("string");
   });
 
-  it("warns about synthetic data in both languages (D-03)", () => {
-    expect(String(at(load("en"), "synthetic.title"))).toMatch(/synthetic/i);
-    expect(String(at(load("ar"), "synthetic.title"))).toContain("تجريبية");
+  it("says real data is for staging only, in both languages (decision A, D-03)", () => {
+    expect(String(at(load("en"), "synthetic.title"))).toMatch(/staging only/i);
+    expect(String(at(load("en"), "synthetic.body"))).toContain("D-03");
+    expect(String(at(load("ar"), "synthetic.title"))).toContain("التجربة");
+    expect(String(at(load("ar"), "synthetic.body"))).toContain("D-03");
     expect(String(at(load("en"), "upload.fileHint"))).toContain("CSV (UTF-8)");
   });
 

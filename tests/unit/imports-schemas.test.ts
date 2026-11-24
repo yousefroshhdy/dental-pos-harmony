@@ -20,6 +20,14 @@ describe("imports schemas", () => {
     expect(uploadSchema.safeParse({ kind: "customers", idempotency_key: "2b0c9a3e-0000-4000-8000-000000000001", locale: "fr" }).success).toBe(false);
   });
 
+  it("the batch default governorate is an EG- code", () => {
+    const base = { kind: "customers", idempotency_key: "2b0c9a3e-0000-4000-8000-000000000001", locale: "ar" };
+    expect(uploadSchema.safeParse({ ...base, default_governorate_code: "EG-DK" }).success).toBe(true);
+    expect(uploadSchema.safeParse(base).success).toBe(true);
+    expect(uploadSchema.safeParse({ ...base, default_governorate_code: "Dakahlia" }).success).toBe(false);
+    expect(uploadSchema.safeParse({ ...base, default_governorate_code: "EG-DK'; --" }).success).toBe(false);
+  });
+
   it("batch actions need a batch id; commit also needs the confirmation tick", () => {
     const id = "f8000000-0000-0000-0000-000000000001";
     expect(batchActionSchema.safeParse({ batch_id: id }).success).toBe(true);

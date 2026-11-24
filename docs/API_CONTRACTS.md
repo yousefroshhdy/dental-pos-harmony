@@ -197,6 +197,32 @@ Views: `v_workflow_definitions`, `v_workflow_rules`, `v_workflow_stages`, `v_del
 
 **New outbox events:** `import.committed`; `return.requested`, `return.approved`, `return.rejected`, `return.received`, `return.credited`, `return.cancelled`; `commission.period_closed`, `commission.adjusted`; `invoice.written_off`; `setting.updated`; `employee.updated`, `employee.status_changed`, `employee.territory_assigned`, `employee.territory_ended`; `territory.created`, `.renamed`, `.moved`, `.deactivated`, `.reactivated`, `.coverage_changed`; `field.visits_planned`, `field.visit_unplanned`; `approval.escalated`. `credit_note.issued` gains `customer_credit` and `applied_to_invoice`.
 
+### 1c. Phase P step 1: setup and real data (migrations `20261125000100`, `…000110`, 2026-11-25)
+
+Implemented and Tested (suite 55; suites 34 and 47 unchanged and passing); nothing Verified.
+
+| Command | Permission | Answer | Errors / notes |
+|---------|------------|--------|----------------|
+| `create_customer(…)` (same signature) | `crm.customer.create` + scope (unchanged) | as before; `warnings` gains `{code:'PHONE_MISSING'}` when created without a phone | `p_phone_primary` is now **optional** (decision A: 45 of 58 migrated customers have none). A phone that is given must still be valid; the duplicate-phone rule applies only to a phone. `customer.created` payload gains `phone_missing`. |
+| `set_employee_base_location(p_employee_id uuid, p_address text, p_lat numeric, p_lng numeric, p_source text = 'manual', p_lead_radius_km numeric = null)` | `core.employee.manage` + employee scope; only an owner edits an owner's record; nobody but an owner changes their own base (`SELF_GRANT_FORBIDDEN`) | `{employee_id, has_base_location, source, lead_radius_km, changed}` | point inside Egypt (21.5–32 N, 24.5–37.5 E), lat and lng together, source `geocoded` / `manual`, radius 0.5–50 km (default 5, decision E). All null = clear. A real change writes `employee.base_location_changed` `{employee_id, has_base_location, lead_radius_km, source}` (no coordinates, no address). Audited by `trg_audit` on `core.employees`. |
+| `create_warehouse(p_warehouse_id uuid, p_code text, p_name text, p_kind text = 'main')` | `inventory.warehouse.manage` at `all` (new; owner only by default) | `{warehouse_id, code, kind, created}` | client-generated id: same id + code replays (`created:false`); `DUPLICATE_CODE`, `CONFLICT` (id reused for another code), `VALIDATION`. `allow_negative` is always false. Event `inventory.warehouse_created`. |
+| `setup_overview()` | owner only (`OWNER_ONLY`, 42501) | counts for the /admin/setup checklist: warehouses, territories with coverage, employees and logins, role holders, reps with a base point, customers and `customers_phone_missing`, variants, DEFAULT prices, stock units, opening AR entries, committed imports per kind | no names, phones or amounts |
+| `authorize_sign_in_link(p_employee_id uuid)` | `admin.user.create` **and** owner (`OWNER_ONLY`) | `{employee_id, user_id, email, mode}`; `mode` = `invite` (no login yet) or `magiclink` | the database check before the server asks Supabase Auth (service role) for a one-time link. Refuses: no e-mail (`VALIDATION`), employee not active / login not active / yourself (`INVALID_STATE`), an owner login (`PERMISSION_DENIED`). Writes security event `sign_in_link_issued` (warning). The link is never stored or logged. |
+
+**Imports.** New optional columns (appended; required columns unchanged): customers `legacy_ref` (old-system account number, kept in `integration.external_refs`, provider `legacy_pos`); customer_prices and opening_ar `customer_legacy_ref`; opening_stock `cost_unknown` (yes/no).
+- customers: an empty `phone_primary` is no longer an error; the row is created "phone missing". New row errors `invalid:legacy_ref`, `exists:legacy_ref`, `duplicate_in_file:legacy_ref`. Result gains `phone_missing`, `legacy_refs` (only when non-zero).
+- customer_prices: a row with no customer (customer_no, customer_phone, customer_legacy_ref all empty) prices a **standard** list such as `DEFAULT` (the base list of `sales.resolve_list_price`); a new code becomes a standard list and nobody is assigned. New row errors `inconsistent:price_list_code` (one code with and without a customer), `wrong_kind:price_list_code` (a customer row on DEFAULT or a standard list; a base row on a customer list), `invalid:valid_from` (a new DEFAULT list starting in the future). Result shape unchanged.
+- opening_stock: `cost_unknown = yes` stores the cost as NULL (never 0); `inconsistent:unit_cost` if a cost is also given; `invalid:cost_unknown`. An empty cost without the flag is still `required:unit_cost` when the catalogue has none. Result gains `cost_unknown_lines` (only when non-zero).
+- opening_ar: customers can be named by `customer_legacy_ref`; `unknown:` / `invalid:` / `mismatch:customer_legacy_ref`.
+- `create_goods_receipt`: item key `cost_unknown` (boolean). `true` = NULL cost, allowed only for a caller with `admin.import.run` company-wide (opening stock); with a `unit_cost` too it is `VALIDATION`. `inventory.goods_receipt_items.unit_cost` is nullable.
+- The upload screen can fill a batch default for empty `governorate_code` cells (customers only) before staging.
+
+**Views:** `v_customer_data_gaps` (customer_id, customer_no, display_name, lifecycle_stage, source, governorate_code, city, territory_id, `phone_missing`, `location_missing`, primary_rep_employee_id, created_at; only customers with a gap; caller's CRM RLS), `v_employee_base_locations` (employee base point and lead radius; own row or `core.employee.read` scope).
+
+**New outbox events:** `employee.base_location_changed`, `inventory.warehouse_created`.
+
+**Server side (no DB command):** `src/lib/maps/geocode.ts` (server-only) calls the Google Geocoding API with `GOOGLE_MAPS_SERVER_KEY` (region `eg`, `components=country:EG`, language `ar`); without a key it answers `not_configured`. Logins on /admin/setup: `authorize_sign_in_link` → Auth admin `generateLink` (`invite` or `magiclink`) → `register_user` → `assign_employee_territory` → `grant_role`; the owner copies the link `/<locale>/auth/confirm?token_hash=…&type=…`.
+
 ## 2. Commands (MVP)
 
 | Command | Permission | Input (beyond ids) | Output | Notable errors |

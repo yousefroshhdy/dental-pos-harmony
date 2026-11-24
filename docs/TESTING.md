@@ -161,6 +161,7 @@ Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **27
 | 52_audit4_audit_exports | audit 4 A-LM2, A-L4 | 66 |
 | 53_audit4_planning | audit 4 F2, F5, F6, F9 | 51 |
 | 54_export_permissions | per-kind export permissions: catalogue, same roles and scopes as before (user by user), refusal per kind without its export permission, MFA at aal1/aal2, whitelist | 49 |
+| 55_phase_p_setup | Phase P step 1: customers without a phone (+ `api.v_customer_data_gaps`), employee base location and lead radius, `api.create_warehouse`, `api.setup_overview`, `api.authorize_sign_in_link`; the legacy converter's synthetic output loaded end to end through the import commands (products → DEFAULT prices → opening stock with unknown cost → customers by old account number → opening AR and credits); rejects for the new columns. The embedded files are checked against the converter by `tests/unit/legacy-convert.test.ts` | 107 |
 
 **Pinned sets:** suites 39 and 48 compare the exact MFA-gated permission set; flagging a permission means updating both.
 
