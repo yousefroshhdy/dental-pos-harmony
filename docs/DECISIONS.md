@@ -64,6 +64,7 @@ Details of each decision (options considered and the recommendation's reasoning)
   - No minimum-achievement threshold unless you set one.
   - Implants 5%, burs and instruments 1.5%, other categories at a plan default you choose.
 - **Needed from you:** confirm or correct each point (U-10).
+- **2026-11-24:** confirmed by owner decision D (Part C). Bone grafts and membranes: the owner sets the rate in the rate editor; no plan default is set.
 
 ### D-06 · Do reps carry stock (van or consignment stock)?
 - **If yes:** each rep becomes a `rep_stock` warehouse, with transfers to and from the main warehouse, and sales are issued from the rep's stock.
@@ -208,3 +209,4 @@ Details of each decision (options considered and the recommendation's reasoning)
 | 2026-11-24 | **Phase P owner decision E, leads:** discovery radius 5 km around the rep's base address (owner can change per rep); clinic types dentist and dental clinic. | Owner |
 | 2026-11-24 | **Phase P owner decision F, maps:** Google Maps Platform. Browser key `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (HTTP-referrer restricted); server key `GOOGLE_MAPS_SERVER_KEY` (server-only; Places and Geocoding). Without a key, maps show a clear "key not configured" state. | Owner |
 | 2026-11-24 | **Next.js 16.4.6:** upgraded from 16.4.3, which carries a published security advisory that stops `next build`. | Tech lead |
+| 2026-11-24 | **Commissions on (Phase P step 7, decision D):** STD-2026 gets brand rates Bioner 5 %, Derby 1.5 %, RDT 1.5 % next to the seeded category rates (implants 5 %, burs and instruments 1.5 %; category beats brand). Bone grafts and membranes (categories GRAFT/MEMBRANE, brand STEP) have no rate: they earn 0 and show on the editor's "no rate" list until the owner sets one. Collected basis, VAT exclusion and the 90-day clawback were already the engine's rules. **Activation is the owner's step in the editor, not a migration:** a migration has no actor, cannot be MFA-gated, and would choose the start date for him. Activating assigns every active `sales_rep` to the plan from that day; employees without an assignment still earn on the default plan (`commission.default_plan_code`). Rates are append-only (a change closes the previous rate the day before; a not-yet-started rate is voided), never inside a closed month. A retired plan keeps applying to the days it covered. `perf.commission_plan.manage` now requires MFA. | Tech lead (delegated) |

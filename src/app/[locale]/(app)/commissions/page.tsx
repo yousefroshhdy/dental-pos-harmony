@@ -12,7 +12,8 @@ import { MonthPicker } from "@/modules/commissions/components/month-picker";
 import { StatementLines, StatementTotals } from "@/modules/commissions/components/statement";
 import { CAIRO_DATE_TIME, formatMonth } from "@/modules/commissions/format";
 import { cairoToday, commissionErrorCode, displayStatus, recentMonths, resolveMonth, statusTone } from "@/modules/commissions/logic";
-import { getPeriod, getStatement, getSummary, STATEMENT_LIMIT } from "@/modules/commissions/queries";
+import { StatementFunnel } from "@/modules/commissions/components/plan-parts";
+import { getPeriod, getStatement, getStatementTotals, getSummary, STATEMENT_LIMIT } from "@/modules/commissions/queries";
 import { parseEmployeeParam } from "@/modules/commissions/schemas";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -68,7 +69,13 @@ export default async function CommissionStatementPage({ params, searchParams }: 
     );
   }
 
-  const [lines, summary, period] = await Promise.all([getStatement(month, employeeId), getSummary(month, employeeId), getPeriod(month)]);
+  const [lines, summary, period, totals] = await Promise.all([
+    getStatement(month, employeeId),
+    getSummary(month, employeeId),
+    getPeriod(month),
+    getStatementTotals(month, employeeId),
+  ]);
+  const printHref = `/commissions/print?period=${month}${requested ? `&employee=${requested}` : ""}`;
   const row = summary.ok ? (summary.data[0] ?? null) : null;
   const name = row ? ((lang === "ar" ? row.employee_name_ar : null) ?? row.employee_name_en) : null;
   const status = period.ok ? (period.data?.status ?? null) : null;
@@ -98,6 +105,21 @@ export default async function CommissionStatementPage({ params, searchParams }: 
           <p className="text-xs text-muted-foreground">{t("period.notCalculated")}</p>
         )}
         {summary.ok ? <StatementTotals summary={row} /> : <CommissionError code={commissionErrorCode(summary.error)} requestId={summary.error.requestId} />}
+      </Card>
+
+      <Card className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle>{t("statement.funnelTitle")}</CardTitle>
+          <Link href={printHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "min-h-11")}>
+            {t("statement.print")}
+          </Link>
+        </div>
+        {totals.ok ? (
+          <StatementFunnel totals={totals.data} />
+        ) : (
+          <CommissionError code={commissionErrorCode(totals.error)} requestId={totals.error.requestId} />
+        )}
+        <p className="text-xs text-muted-foreground">{t("statement.funnelHint")}</p>
       </Card>
 
       <section className="space-y-3" aria-labelledby="commission-lines">

@@ -161,6 +161,7 @@ Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **27
 | 52_audit4_audit_exports | audit 4 A-LM2, A-L4 | 66 |
 | 53_audit4_planning | audit 4 F2, F5, F6, F9 | 51 |
 | 54_export_permissions | per-kind export permissions: catalogue, same roles and scopes as before (user by user), refusal per kind without its export permission, MFA at aal1/aal2, whitelist | 49 |
+| 58_phase_p_commissions | Phase P step 7: decision D configuration, owner-only rate editor (permission matrix, MFA at aal1/aal2), activation and rep assignment, append-only effective-dated rates and plan guards, synthetic invoices: partial payments, bonus (zero) lines, an all-free invoice, return within 90 days (clawback) and after 90 days (none), mid-month rate edit, unset STEP rate (0 and on the no-rate list), rep statement totals and their scope, deactivation | 104 |
 
 **Pinned sets:** suites 39 and 48 compare the exact MFA-gated permission set; flagging a permission means updating both.
 

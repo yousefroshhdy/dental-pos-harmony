@@ -90,6 +90,12 @@ Definitions are in `docs/TESTING.md` §4.
 | Audit 4 F2, F5, F6, F9: daily cap, linear generator, read scope, planner rule, fast coverage | Tested | suite 53, unit `planning-audit4` |
 | **Staging deploy of wave 2 and audit 4** | **Database done; owner steps pending** | All 66 migrations are on staging and all 52 suites pass there (2026-10-31). Still needed before anything is Verified: the runbook owner steps (§2 secrets, exposed schemas, OTP, template, rate limit, TOTP, owner login) and a human click-through |
 
+### Phase P — Make it usable (owner prompt 2026-11-24)
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Step 7 commissions switched on: owner-only MFA rate editor (`/commissions/plans`), STD-2026 configured with decision D (brand rates; grafts/membranes unset and on the "no rate" list), activation with rep assignment from the editor, printable rep statement (collected cash → commissionable → commission → clawbacks → net) | Tested (DB + unit); STD-2026 stays a draft until the owner activates it in the editor; not Verified | suite 58, suites 37/46 unchanged, unit `commissions-editor`, `commissions-messages` |
+
 ## 2. MVP scope (prioritised)
 
 **MVP goal:** reps and managers run daily field sales in Honest OS, and every order, stock movement and collection is recorded and controlled. **MVP = Phases 2 + 3 + the "AR core" of Phase 4 + basic dashboards from Phase 5.**

@@ -76,6 +76,7 @@
 | `20261104000900_import_fk_indexes` | covering indexes for `import.batches.committed_by` / `discarded_by` (Supabase performance advisor); suite 40 now sweeps the `import` schema |
 | `20261104001000_drop_duplicate_indexes` | drops four duplicate indexes left by `20261103000700` (owner-approved); suite 40 now fails on any duplicate index |
 | `20261104001100_export_permissions` | owner decision 2026-10-31: one sensitive, MFA-gated `<module>.<resource>.export` permission per export kind (invoice, payment, aging, visit, stock, tracking), granted to the holders of the paired read permission at the same scope; `audit.export_kinds()` requires read + export per kind; suite 54 |
+| `20261125000400_commissions_on` | Phase P step 7 (decision D): owner-only, MFA-gated rate editor (`create_commission_plan`, `set_commission_rate`, `activate_commission_plan`, `deactivate_commission_plan`), append-only rate rows and plan lifecycle guards, retired plans keep applying to their days, `commission_entries.gross_amount`, rep statement totals view, "no rate" list, STD-2026 brand rates (draft); suite 58 |
 
 **Local test harness.** This build environment has no Docker and cannot install pgTAP, so `scripts/db-test.sh` runs the migrations on plain PostgreSQL 16 with two test-only files:
 - `scripts/db/local_supabase_stub.sql` provides the Supabase roles, `auth.users` and `auth.uid()`.
@@ -310,6 +311,7 @@ erDiagram
 | `finance.invoice_write_offs` | Approved write-offs, `WO-YYYY-nnnnnn`, VAT-inclusive amount | Append-only, audited; RLS follows the invoice |
 | `finance.payment_allocations.credit_note_id` | Marks the reversal and re-allocation rows a return credit releases (audit 4 M-1) | Not a commission event |
 | `perf.commission_plan_rules` + `effective_from/_to`; `perf.commission_entries` + `entry_kind`, `event_at`, `event_date`, `invoice_id`, `customer_id`, `snapshot`; `perf.commission_adjustments.idempotency_key`; `perf.commission_periods.last_run_id` | Effective-dated rates; entries that stay readable after a reassignment | Entries never updated; nothing in a closed period inserted or deleted; adjustments append-only; periods only move forward. New select policies on periods and adjustments. |
+| `perf.commission_plans` + `created_at`, `activated_at/_by`, `retired_at/_by`, `retire_reason`; `perf.commission_plan_rules` + `created_at/_by`, `voided_at/_by`, `note`, `idempotency_key`; `perf.employee_commission_plans` + `id`, `created_at/_by`, `cancelled_at/_by`; `perf.commission_entries.gross_amount` (`20261125000400`) | Rate editor history; who activated or retired a plan; the gross money each entry moved (rep statement) | Plans move draft → active → retired; an active plan's code, basis and start never change; only drafts are deleted. Rate rows are never edited: only `effective_to` (closing) and voiding, never touching a day of a closed month; no insert or delete reaching a closed month. Assignments audited. Select policies for `perf.commission_plan.read`/`.manage` on plans and assignments. |
 | `core.setting_definitions` | Whitelist of changeable settings: type, min/max, allowed values, default, `owner_only`, ar/en label and description | CHECKs make the owner-only families owner-only (`setting_definitions_wf_owner_only` for `wf.*`). Only `api.update_setting` writes settings. |
 | `field.visit_frequencies` | One visit class (A/B/C) per customer | Audited; RLS follows customer visibility |
 | `field.visit_plan_batches` | Each `plan_visits` client_ref and its answer | Append-only; no client read |
@@ -350,6 +352,7 @@ erDiagram
 | A return never credits more than was invoiced, and an open return holds its quantity | `api.v_returnable_lines`; ordinary credit notes cannot take held units (`CREDIT_QTY_EXCEEDED`) | ✅ suites 35, 46 |
 | At most `planning.daily_visit_cap` planned visits per employee per day through `plan_visits`; one planned row per employee, customer and day | count under the employee lock (`DAILY_CAP`); partial unique index `uq_visits_one_plan_per_day` | ✅ suites 42, 53 |
 | Commission entries immutable; closed periods frozen | guard triggers (`COMMISSION_ENTRY_IMMUTABLE`, `PERIOD_CLOSED`) | ✅ suite 37 |
+| Commission rates append-only and effective-dated; an activated plan's closed months never change | guard triggers on rules and plans (`COMMISSION_RULE_IMMUTABLE`, `COMMISSION_PLAN_IMMUTABLE`, `PERIOD_CLOSED`) | ✅ suite 58 |
 | Every foreign key has a covering index | suite 40 lists offenders with a ready `create index` | ✅ suite 40 |
 
 ## 5. Indexing strategy
