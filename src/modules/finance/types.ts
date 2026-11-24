@@ -127,6 +127,8 @@ export interface InvoiceLineRow {
   line_total: Numeric;
   credited_qty: number;
   credited_amount: Numeric;
+  /** Free (bonus) line: price 0 (api.v_invoice_lines, 20261125000210). */
+  is_bonus?: boolean;
 }
 
 export interface CreditNoteRow {

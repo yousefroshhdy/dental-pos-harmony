@@ -8,16 +8,18 @@ import { amountInWords } from "@/modules/finance/amount-words";
 import { FinanceError } from "@/modules/finance/components/finance-error";
 import {
   AmountWords,
+  BonusMark,
   CompanyBlock,
   DocField,
   PrintSheet,
   PrintStyles,
   PrintToolbar,
   TotalRow,
+  VatBasisNote,
 } from "@/modules/finance/components/print-document";
 import { CAIRO_DATE, CAIRO_DATE_TIME, dateOnly, PERCENT, QUANTITY } from "@/modules/finance/format";
 import { financeErrorCode, isUuid, toNumber } from "@/modules/finance/logic";
-import { companyHeader, nonZero, parseDocLang, vatSummary } from "@/modules/finance/print";
+import { companyHeader, isBonusLine, nonZero, parseDocLang, vatBasisKey, vatSummary } from "@/modules/finance/print";
 import { getCompanyProfile, getInvoice, getInvoicePrintParty, listInvoiceLines } from "@/modules/finance/queries";
 
 type Params = Promise<{ locale: string; invoiceId: string }>;
@@ -135,6 +137,7 @@ export default async function InvoicePrintPage({ params, searchParams }: { param
                         {l.sku ?? "—"}
                       </span>
                       <span className="block text-xs text-neutral-600">{l.description}</span>
+                      {isBonusLine(l) ? <BonusMark label={t("bonus")} /> : null}
                     </td>
                     <td className="p-1 text-end">{format.number(l.quantity, QUANTITY)}</td>
                     <td className="p-1 text-end whitespace-nowrap">{money(l.unit_price)}</td>
@@ -172,6 +175,7 @@ export default async function InvoicePrintPage({ params, searchParams }: { param
                 ))}
               </tbody>
             </table>
+            <VatBasisNote text={t(vatBasisKey())} />
           </section>
           <section className="space-y-1 sm:w-5/12" aria-label={t("totals")}>
             <TotalRow label={t("subtotal")} value={money(inv.subtotal)} />

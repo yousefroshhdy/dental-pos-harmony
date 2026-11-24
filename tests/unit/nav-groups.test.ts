@@ -21,6 +21,7 @@ import { returnsNav } from "@/modules/returns/nav";
 import { securityNav } from "@/modules/security/nav";
 import { trackingNav } from "@/modules/tracking/nav";
 import { mapsNav } from "@/modules/maps/nav";
+import { offersNav } from "@/modules/offers/nav";
 import { workflowNav } from "@/modules/workflow/nav";
 
 function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}): UserContext {
@@ -52,7 +53,7 @@ const REP = ctx({
 const LAYOUT_NAVS: readonly (readonly NavItem[])[] = [
   dashboardsNav, fieldNav, trackingNav, crmNav, ordersNav, financeNav, approvalsNav, inventoryNav, catalogNav,
   planningNav, returnsNav, commissionsNav, reportsNav, importsNav, workflowNav, auditNav, securityNav, adminNav,
-  mapsNav,
+  mapsNav, offersNav,
 ];
 
 describe("department groups", () => {

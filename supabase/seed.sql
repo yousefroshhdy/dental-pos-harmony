@@ -125,3 +125,7 @@ begin
   insert into inventory.lots (id, variant_id, lot_no, expiry_date) values
     ('61000000-0000-0000-0000-000000000001','53000000-0000-0000-0000-000000000001','L2026A','2030-12-31');
 end $$;
+
+-- Test fixture only (never run against hosted projects): the older suites assert each role's own
+-- discount limit, so the fixture runs with the pre-decision-B mode. Suite 56 tests "tiered".
+update core.system_settings set value = '"per_role"' where key = 'sales.discount.limit_mode';

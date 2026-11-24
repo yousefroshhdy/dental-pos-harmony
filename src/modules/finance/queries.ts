@@ -98,7 +98,7 @@ export async function listInvoiceLines(invoiceId: string): Promise<Result<Invoic
       .from("v_invoice_lines")
       .select(
         "invoice_item_id, invoice_id, order_item_id, variant_id, sku, description, quantity, unit_price, line_subtotal, " +
-          "discount, tax_rate_pct, tax_amount, line_total, credited_qty, credited_amount",
+          "discount, tax_rate_pct, tax_amount, line_total, credited_qty, credited_amount, is_bonus",
       )
       .eq("invoice_id", invoiceId)
       .order("sku"),

@@ -11,6 +11,7 @@ import { financeNav } from "@/modules/finance/nav";
 import { importsNav } from "@/modules/imports/nav";
 import { inventoryNav } from "@/modules/inventory/nav";
 import { mapsNav } from "@/modules/maps/nav";
+import { offersNav } from "@/modules/offers/nav";
 import { ordersNav } from "@/modules/orders/nav";
 import { planningNav } from "@/modules/planning/nav";
 import { reportsNav } from "@/modules/reports/nav";
@@ -64,6 +65,7 @@ export const NAV_SOURCES: readonly { group: NavGroupId; items: readonly NavItem[
   { group: "field", items: trackingNav },
   { group: "field", items: mapsNav },
   { group: "orders", items: ordersNav },
+  { group: "orders", items: offersNav },
   { group: "orders", items: returnsNav },
   { group: "finance", items: financeNav },
   { group: "inventory", items: inventoryNav },
@@ -226,6 +228,8 @@ const ICONS: Record<string, NavIconKey> = {
   "/leads": "leads",
   "/orders": "orders",
   "/orders/new": "newOrder",
+  "/offers": "orders",
+  "/offers/vat": "settings",
   "/returns": "returns",
   "/finance/invoices": "invoices",
   "/finance/payments": "payments",
@@ -244,6 +248,7 @@ const ICONS: Record<string, NavIconKey> = {
   "/admin/territories": "territories",
   "/admin/roles": "roles",
   "/admin/settings": "settings",
+  "/admin/setup": "settings",
   "/admin/security": "security",
   "/workflow/delegations": "workflow",
   "/workflow/escalations": "workflow",

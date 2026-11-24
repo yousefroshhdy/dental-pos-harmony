@@ -4,14 +4,15 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Forbidden } from "@/components/forbidden";
 import { buttonVariants } from "@/components/ui/button";
-import { Alert, Badge, Card, CardTitle, Table, Td, Th } from "@/components/ui/primitives";
+import { Alert, Badge, Card, CardTitle } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
 import { approveOrder, cancelOrder, fulfilOrder, rejectOrder, reserveOrder, submitOrder } from "@/modules/orders/actions";
 import { CommandForm, FulfilForm, OnlineOnlyCommandForm, ReasonForm, ReserveForm } from "@/modules/orders/components/order-action-forms";
 import { OrderError } from "@/modules/orders/components/order-error";
-import { CAIRO_DATE_TIME, PERCENT, QUANTITY } from "@/modules/orders/format";
+import { PricedLinesTable, PricedTotals } from "@/modules/orders/components/order-pricing";
+import { CAIRO_DATE_TIME } from "@/modules/orders/format";
 import {
   approvalReasons,
   availableActions,
@@ -56,7 +57,6 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   const reasons = o.status === "pending_approval" ? approvalReasons(historyRows) : [];
   const isDraft = o.status === "draft";
   const showStock = lines.data.some((l) => l.reserved_qty > 0 || l.fulfilled_qty > 0);
-  const money = (v: number | string) => format.number(toNumber(v), "egp");
 
   const warehouses = actions.reserve
     ? await stockForVariants([...new Set(lines.data.map((l) => l.variant_id))]).then((r) =>
@@ -142,48 +142,38 @@ export default async function OrderDetailPage({ params, searchParams }: { params
         {lines.data.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("detail.noLines")}</p>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>{t("detail.product")}</Th>
-                <Th className="text-end">{t("detail.quantity")}</Th>
-                <Th className="text-end">{t("detail.unitPrice")}</Th>
-                <Th className="text-end">{t("detail.discount")}</Th>
-                <Th className="text-end">{t("detail.lineTotal")}</Th>
-                {showStock ? <Th className="text-end">{t("detail.reserved")}</Th> : null}
-                {showStock ? <Th className="text-end">{t("detail.fulfilled")}</Th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {lines.data.map((l) => (
-                <tr key={l.order_item_id}>
-                  <Td className="min-w-40">
-                    {l.variant_name ?? "—"}
-                    <span dir="ltr" className="block text-xs text-muted-foreground">
-                      {l.sku}
-                    </span>
-                  </Td>
-                  <Td className="text-end">{format.number(l.quantity, QUANTITY)}</Td>
-                  <Td className="text-end whitespace-nowrap">{money(l.list_price)}</Td>
-                  <Td className="text-end whitespace-nowrap">
-                    {toNumber(l.applied_discount_pct) > 0 ? `${format.number(toNumber(l.applied_discount_pct), PERCENT)}%` : "—"}
-                  </Td>
-                  <Td className="text-end whitespace-nowrap">{money(l.line_total)}</Td>
-                  {showStock ? <Td className="text-end">{format.number(l.reserved_qty, QUANTITY)}</Td> : null}
-                  {showStock ? <Td className="text-end">{format.number(l.fulfilled_qty, QUANTITY)}</Td> : null}
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <PricedLinesTable
+            lines={lines.data.map((l) => ({
+              key: l.order_item_id,
+              sku: l.sku,
+              name: l.variant_name,
+              quantity: l.quantity,
+              is_bonus: l.is_bonus,
+              offer_code: l.offer_code,
+              list_price: l.list_price,
+              applied_discount_pct: l.applied_discount_pct,
+              line_subtotal: l.line_subtotal,
+              line_discount: l.line_discount,
+              invoice_discount_share: l.invoice_discount_share,
+              requested_net_price: l.requested_net_price,
+              tax_rate_pct: l.tax_rate_pct,
+              line_tax: l.line_tax,
+              line_total: l.line_total,
+              extra: showStock ? [l.reserved_qty, l.fulfilled_qty] : undefined,
+            }))}
+            extraHeads={showStock ? [t("detail.reserved"), t("detail.fulfilled")] : []}
+          />
         )}
 
-        <Card className="ms-auto max-w-sm space-y-1 text-sm">
-          <Total label={t("detail.subtotal")} value={money(o.subtotal)} />
-          <Total label={t("detail.discountTotal")} value={money(o.discount_total)} />
-          <Total label={t("detail.tax")} value={money(o.tax_total)} />
-          <Total label={t("detail.total")} value={money(o.total)} strong />
-          <p className="pt-1 text-xs text-muted-foreground">{isDraft ? t("detail.indicativeHint") : t("detail.serverPricedHint")}</p>
-        </Card>
+        <PricedTotals
+          subtotal={o.subtotal}
+          discountTotal={o.discount_total}
+          taxTotal={o.tax_total}
+          total={o.total}
+          invoiceDiscount={lines.data.reduce((sum, l) => sum + toNumber(l.invoice_discount_share), 0)}
+          lines={lines.data}
+          hint={isDraft ? t("detail.indicativeHint") : t("detail.serverPricedHint")}
+        />
       </section>
 
       {["fulfilled", "partially_fulfilled", "invoiced"].includes(o.status) && can(ctx, "finance.invoice.issue") ? (
@@ -313,15 +303,6 @@ function Field({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="break-words">{value}</p>
-    </div>
-  );
-}
-
-function Total({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className={strong ? "flex justify-between gap-4 border-t pt-1 font-semibold" : "flex justify-between gap-4"}>
-      <span>{label}</span>
-      <span className="whitespace-nowrap">{value}</span>
     </div>
   );
 }
