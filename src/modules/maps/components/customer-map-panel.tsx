@@ -2,6 +2,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { Card, CardTitle } from "@/components/ui/primitives";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import { toLatLng } from "@/lib/maps/geo";
 import { localizedName, MAX_LOCATION_ACCURACY_M } from "@/modules/crm/logic";
 import { listCustomerProposals, mapsBrowserKey } from "../queries";
@@ -41,6 +42,7 @@ export async function CustomerMapPanel({
       <CardTitle>{t("title")}</CardTitle>
       <CustomerMapClient
         apiKey={mapsBrowserKey()}
+        setupHint={seesSetupDetails(ctx)}
         locale={lang}
         customerId={customer.id}
         name={customer.display_name}

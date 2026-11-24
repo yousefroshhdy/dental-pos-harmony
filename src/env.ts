@@ -14,7 +14,7 @@ const publicSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20),
   NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
   // Google Maps browser key (owner decision F), restricted by HTTP referrer in Google Cloud.
-  // Optional: without it every map shows "Map key not configured". A malformed value counts as
+  // Optional: without it every map shows "The map is not available yet". A malformed value counts as
   // missing instead of failing the whole environment.
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z
     .string()

@@ -29,15 +29,20 @@ describe("map without NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", () => {
   const marker = { id: "m1", lat: 30.05, lng: 31.24, title: "Synthetic Clinic" };
 
   it.each([
-    ["en", null, "Map key not configured"],
-    ["ar", null, "مفتاح الخريطة غير مُعَدّ"],
-    ["en", "", "Map key not configured"],
-    ["en", "  not a key  ", "Map key not configured"],
-  ] as const)("%s, key %j: shows the clear state", (locale, apiKey, text) => {
+    ["en", null, "The map is not available yet"],
+    ["ar", null, "الخريطة غير متاحة بعد"],
+    ["en", "", "The map is not available yet"],
+    ["en", "  not a key  ", "The map is not available yet"],
+  ] as const)("%s, key %j: shows the plain state, without developer detail", (locale, apiKey, text) => {
     const html = render(locale, createElement(MapView, { apiKey, locale, label: "Map", markers: [marker] }));
     expect(html).toContain(text);
-    expect(html).toContain("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
+    expect(html).not.toContain("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
     expect(html).toContain('role="status"');
+  });
+
+  it.each(["ar", "en"] as const)("%s: the owner/admin (setupHint) also reads which env var to set", (locale) => {
+    const html = render(locale, createElement(MapView, { apiKey: null, setupHint: true, locale, label: "Map", markers: [marker] }));
+    expect(html).toContain("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
   });
 
   it("makes no network call: the loader module is never imported", () => {

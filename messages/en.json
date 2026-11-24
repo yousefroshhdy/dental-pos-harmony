@@ -75,7 +75,7 @@
     "otpVerify": "Sign in with the code",
     "otpInvalid": "The code is wrong or has expired. Check it, or ask for a new one.",
     "contextErrorTitle": "We couldn't load your account",
-    "contextErrorBody": "Your sign-in is fine, but your access could not be loaded just now (a network or server problem). Check your connection and try again.",
+    "contextErrorBody": "Your sign-in is fine, but your access could not be loaded just now. Check your connection and try again.",
     "contextErrorRetry": "Try again"
   },
   "admin": {

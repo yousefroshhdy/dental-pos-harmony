@@ -46,8 +46,11 @@ describe.each(["ar", "en"])("maps messages (%s)", (locale) => {
     for (const item of mapsNav) expect(typeof nav[item.labelKey.replace("maps.nav.", "")]).toBe("string");
   });
 
-  it("names the missing key in the no-key state", () => {
-    expect((m.map as Record<string, string>).noKeyBody).toContain("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
+  it("names the missing key only in the owner/admin setup line, never in the general no-key text", () => {
+    const map = m.map as Record<string, string>;
+    expect(map.noKeySetupHint).toContain("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
+    expect(map.noKeyBody).not.toContain("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
+    expect(map.noKeyTitle).not.toContain("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
   });
 
   it("uses Western digits only (D-11)", () => {

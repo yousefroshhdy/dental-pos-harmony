@@ -15,7 +15,7 @@ export interface ProposalPin {
 }
 
 /** Pending pin proposals on one map, numbered like the list below it. */
-export function ProposalsMap({ apiKey, locale, pins }: { apiKey: string | null; locale: "ar" | "en"; pins: ProposalPin[] }) {
+export function ProposalsMap({ apiKey, setupHint, locale, pins }: { apiKey: string | null; setupHint?: boolean; locale: "ar" | "en"; pins: ProposalPin[] }) {
   const t = useTranslations("maps.proposals");
   const markers = useMemo<MapMarker[]>(
     () =>
@@ -34,5 +34,5 @@ export function ProposalsMap({ apiKey, locale, pins }: { apiKey: string | null; 
       })),
     [pins, t],
   );
-  return <MapView apiKey={apiKey} locale={locale} label={t("mapLabel")} markers={markers} cluster className="h-[45vh] min-h-64 w-full" />;
+  return <MapView apiKey={apiKey} setupHint={setupHint} locale={locale} label={t("mapLabel")} markers={markers} cluster className="h-[45vh] min-h-64 w-full" />;
 }

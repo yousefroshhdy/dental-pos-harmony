@@ -8,6 +8,7 @@ import { Alert, Badge } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import { placeUrl, toLatLng } from "@/lib/maps/geo";
 import { localizedName, MAX_LOCATION_ACCURACY_M } from "@/modules/crm/logic";
 import { chipClass, Item, ItemList, PageBody } from "@/modules/field/components/layout-bits";
@@ -78,7 +79,7 @@ export default async function LocationProposalsPage({ params, searchParams }: Pr
         <EmptyState icon={<MapPinIcon aria-hidden="true" />} title={view === "pending" ? t("emptyPending") : t("emptyDecided")} />
       ) : (
         <>
-          {view === "pending" && pins.length > 0 ? <ProposalsMap apiKey={mapsBrowserKey()} locale={lang} pins={pins} /> : null}
+          {view === "pending" && pins.length > 0 ? <ProposalsMap apiKey={mapsBrowserKey()} setupHint={seesSetupDetails(ctx)} locale={lang} pins={pins} /> : null}
           <ItemList>
             {rows.map((r, i) => {
               const accuracy = r.accuracy_m === null ? null : Math.round(Number(r.accuracy_m));

@@ -22,7 +22,19 @@ export interface LeadPin {
  * is the attribution Places requires there). The points come from live Place Details and live
  * only in this page; nothing is stored.
  */
-export function LeadsMap({ apiKey, locale, pins, base }: { apiKey: string | null; locale: "ar" | "en"; pins: LeadPin[]; base: LatLng | null }) {
+export function LeadsMap({
+  apiKey,
+  setupHint,
+  locale,
+  pins,
+  base,
+}: {
+  apiKey: string | null;
+  setupHint?: boolean;
+  locale: "ar" | "en";
+  pins: LeadPin[];
+  base: LatLng | null;
+}) {
   const t = useTranslations("leads.map");
   const markers = useMemo<MapMarker[]>(() => {
     const out: MapMarker[] = pins.map((p, i) => ({
@@ -45,5 +57,5 @@ export function LeadsMap({ apiKey, locale, pins, base }: { apiKey: string | null
     return out;
   }, [pins, base, locale, t]);
 
-  return <MapView apiKey={apiKey} locale={locale} label={t("label")} markers={markers} />;
+  return <MapView apiKey={apiKey} setupHint={setupHint} locale={locale} label={t("label")} markers={markers} />;
 }

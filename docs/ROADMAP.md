@@ -28,7 +28,7 @@ Definitions are in `docs/TESTING.md` §4.
 
 | Step | Item | Status | Evidence |
 |------|------|--------|----------|
-| 3 Google Maps | Shared map component (`src/components/map/`): official loader, lazy, ar/en, region EG, markers, grid clusters, polylines, info windows, "Map key not configured" state with no network | Implemented, Tested (unit) | `tests/unit/maps-no-key.test.ts`, `maps-logic.test.ts` |
+| 3 Google Maps | Shared map component (`src/components/map/`): official loader, lazy, ar/en, region EG, markers, grid clusters, polylines, info windows, "The map is not available yet" state with no network | Implemented, Tested (unit) | `tests/unit/maps-no-key.test.ts`, `maps-logic.test.ts` |
 | 3 Google Maps | CSP: Google Maps sources behind `googleMaps: true`, script-src unchanged (nonce + strict-dynamic); meta copy from the same builder | Implemented, Tested (unit) | `tests/unit/security-headers-maps.test.ts`, meta parity case. Needs the one-line proxy switch (lead) |
 | 3 Google Maps | Customers map `/map` with rep, territory, stage, overdue AR and last-visit filters (`api.v_customer_map`) | Implemented, Tested (DB scope) | suite 57 |
 | 3 Google Maps | Customer detail map card: pin, opt-in distance, directions link; office users set the location by Places Autocomplete or a dropped pin (`api.set_customer_location`) | Implemented | e2e not run |
@@ -156,6 +156,7 @@ Definitions are in `docs/TESTING.md` §4.
 | 2b | Review on `d4f3077`, desktop sidebar: the dark column spans the full page height; its content sticks to the viewport and the menu scrolls on its own | Implemented, Tested (local screenshots: new "sidebar shorter than the page" check, 0 of 174 desktop shots) | — |
 | 8 | Review on `d4f3077`, owner's 30-minute staging run: section 0 of `docs/VERIFICATION.md`, 11 steps in business order (setup → workbook import → rep invite and login → leads → visit with check-in → order with offer and free item → approval → invoice → payment → commission statement → map and tracking day), each with URL, clicks, expected result and the per-role lines it relies on; a record table for the owner | Implemented; 4 steps rely only on lines Tested (local), 7 have a Planned part; nothing Verified | `docs/VERIFICATION.md` §0 |
 | 2b | Review on `d4f3077`, tap targets: 0 under 44 px at 390 px (was 55); home "Open" links, filter chips and sortable headers 44 px; text links use `tap-link` (44 px below `md`). Desktop text links under 24 px in table cells and sentences accepted (`docs/TESTING.md` §7) | Implemented, Tested (local screenshots 348/348, verification 77/77) | replaces the earlier "small text links need a design decision" note |
+| review | Plain language on field and finance screens (review of `d4f3077`, item 3): no "server", API, key, env var names, status codes or SQL words in strings reps, managers, finance and inventory read ("Update prices" / «تحديث الأسعار», "Prices are worked out when you save", "Clinic names are not available yet. Ask the owner to finish the Google Maps setup."); the env var name and the Google Cloud check show only to the owner and `admin.settings.manage` holders (`seesSetupDetails`) on the map and leads notices | Implemented, Tested (unit) | unit `user-facing-wording` (scans every `messages/{ar,en}` string; allow-list of owner/admin keys with reasons), `maps-no-key` |
 
 ## 2. MVP scope (prioritised)
 

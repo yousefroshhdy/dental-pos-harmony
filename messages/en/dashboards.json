@@ -176,7 +176,7 @@
     "NOT_FOUND": "That record no longer exists.",
     "INVALID_STATE": "This KPI is not active, so it cannot take a target.",
     "CONFLICT": "That form was already used by someone else. Reload the page and try again.",
-    "UNAVAILABLE": "The server is not reachable right now. Try again in a moment.",
+    "UNAVAILABLE": "Could not connect right now. Try again in a moment.",
     "UNKNOWN": "Something went wrong (reference {requestId})."
   },
   "targets": {

@@ -38,7 +38,7 @@
     "other": "Other"
   },
   "anomaly": {
-    "clock_skew": "Device clock differs from server",
+    "clock_skew": "Device clock differs from the real time",
     "late_sync": "Sent late (offline)",
     "duplicate_fix": "Same coordinates as the previous fix",
     "impossible_travel": "Implausible travel speed"
@@ -67,7 +67,7 @@
     "intro": "To confirm that a visit took place at the clinic, Honest OS reads your location once when you check in and once when you check out.",
     "what": "What is collected: one GPS position (latitude, longitude and its accuracy) and the time on your phone, at the moment you tap the button.",
     "when": "When: check-in and check-out each take one location fix when you tap them. Separately, during your working day (Start my day → End my day) your location is recorded about every 5 minutes; see the tracking notice.",
-    "why": "Why: the server compares the position with the clinic's location and marks the visit verified, out of range or low accuracy.",
+    "why": "Why: the system compares the position with the clinic's location and marks the visit verified, out of range or low accuracy.",
     "retention": "Retention: raw positions are kept for 12 months and then deleted automatically. The visit result (verified or not) is kept as a work record.",
     "access": "Who can see it: you can see your own data; your managers see their team's visits.",
     "without": "You can check in without location. The visit then needs a manager's approval to count.",
@@ -121,7 +121,7 @@
       "exception_approved": "A manager approved the exception. The visit counts.",
       "exception_rejected": "A manager rejected the exception. The visit does not count."
     },
-    "replayed": "This check-in had already reached the server; this is its saved result.",
+    "replayed": "This check-in had already been received; this is its saved result.",
     "openVisit": "Open visit"
   },
   "checkOut": {
@@ -255,7 +255,7 @@
     "capturedAt": "Recorded at {time}.",
     "sending": "Sending now…",
     "followSync": "You can follow it with the sync icon at the top of the screen.",
-    "attention": "The server did not accept this saved item. Open pending sync (the sync icon at the top) to retry or discard it.",
+    "attention": "This saved item was not accepted. Open pending sync (the sync icon at the top) to retry or discard it.",
     "stale": "This was saved more than 7 days ago, so it is not sent automatically. Review it in pending sync (the sync icon at the top).",
     "checkOutNow": "Check out",
     "taskDone": "Marked as done.",

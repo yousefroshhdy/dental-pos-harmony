@@ -36,7 +36,7 @@ async function rows<T>(name: string, query: PromiseLike<QueryResult>, empty: T):
   return r.ok ? ok(r.data.rows) : r;
 }
 
-/** The browser key for the map component, or null ("Map key not configured"). */
+/** The browser key for the map component, or null ("The map is not available yet"). */
 export function mapsBrowserKey(): string | null {
   return normalizeMapsKey(publicEnv().NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 }

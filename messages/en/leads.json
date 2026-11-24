@@ -6,7 +6,8 @@
   "list": {
     "title": "Leads near me",
     "intro": "Dental clinics Google Maps lists around your base, nearest first. Visit one, record the clinic's details, and it becomes a prospect.",
-    "notConfigured": "Google Places key not configured: discovery does not run and clinic names cannot be loaded. The owner adds GOOGLE_MAPS_SERVER_KEY.",
+    "notConfigured": "Clinic names are not available yet. Ask the owner to finish the Google Maps setup.",
+    "notConfiguredSetupHint": "Setup detail (owner and admins only): the Google Maps server key GOOGLE_MAPS_SERVER_KEY is not set, so the daily clinic search does not run and clinic names cannot be loaded.",
     "budgetReached": "This month's Google budget is used up: some clinic names are not shown. The owner can raise the budget.",
     "noBase": "Your base location is not set yet, so no leads have been searched for you. Ask the office to set it.",
     "filterLabel": "Show",
@@ -120,7 +121,7 @@
     "NO_BASE_LOCATION": "Set the rep's base location first (Admin → Setup).",
     "ALREADY_CUSTOMER": "This clinic is already a customer.",
     "DUPLICATE_CUSTOMER": "This phone number already belongs to a customer.",
-    "NOT_CONFIGURED": "The Google Places key is not configured, so the search did not run.",
+    "NOT_CONFIGURED": "The Google Maps setup is not finished, so the search did not run.",
     "CAP_REACHED": "Today's Google request limit is reached. The search waits for tomorrow, or raise the limit.",
     "BUDGET_REACHED": "This month's Google budget is reached. The search waits, or raise the budget."
   },
@@ -134,7 +135,7 @@
     "running": "Running",
     "done": "Done",
     "failed": "Failed",
-    "not_configured": "Key not configured",
+    "not_configured": "Google Maps not set up",
     "cancelled": "Cancelled"
   },
   "team": {
@@ -186,7 +187,8 @@
         "monthly_budget": "Waiting: monthly budget"
       },
       "line": "{when} · {trigger} · {radius} km · {requests} requests ≈ {cost} USD · {found} found, {added} new, {excluded} already customers",
-      "error": "Google answered: {code}",
+      "error": "The Google search failed.",
+      "errorDetail": "Google's answer: {code}",
       "trigger": {
         "base_location": "base changed",
         "owner": "owner",

@@ -30,7 +30,7 @@
     "VALIDATION": "Please check the values you entered.",
     "DUPLICATE": "This already exists.",
     "CONFLICT": "Someone else changed this record. Reload and try again.",
-    "UNAVAILABLE": "The server could not be reached. Nothing was saved twice; you can safely try again.",
+    "UNAVAILABLE": "Could not connect. Nothing was saved twice; you can safely try again.",
     "MFA_REQUIRED": "This action needs a code from your authenticator app. Open My security (Account security), verify this session, then try again.",
     "UNKNOWN": "Something went wrong (reference {requestId})."
   },
@@ -149,7 +149,7 @@
     "fulfilled": "Fulfilled",
     "alreadyInvoiced": "Invoiced",
     "toInvoice": "To invoice",
-    "serverComputes": "Prices, discounts and 14% VAT come from the order; the server computes every amount and the invoice number when you issue it. An issued invoice cannot be edited — corrections are credit notes.",
+    "serverComputes": "Prices, discounts and 14% VAT come from the order; every amount and the invoice number are worked out when you issue it. An issued invoice cannot be edited — corrections are credit notes.",
     "previous": "Invoices already issued for this order"
   },
   "lines": {
@@ -208,7 +208,7 @@
   },
   "credit": {
     "title": "Request a credit note",
-    "help": "Credit returned or damaged quantities, or a goodwill amount. The server computes the credit with its VAT; a second person approves it before it reaches the customer's account.",
+    "help": "Credit returned or damaged quantities, or a goodwill amount. The credit and its VAT are worked out for you; a second person approves it before it reaches the customer's account.",
     "mode": "Credit by",
     "modes": {
       "lines": "Quantities",
@@ -442,7 +442,7 @@
     "dueDate": "Due date",
     "orderNo": "Order no.",
     "status": "Status",
-    "etaUuid": "E-invoice UUID",
+    "etaUuid": "E-invoice ID",
     "billTo": "Bill to",
     "customerNo": "Customer no.",
     "item": "Item",

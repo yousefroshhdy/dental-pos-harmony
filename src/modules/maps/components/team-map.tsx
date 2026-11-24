@@ -9,7 +9,7 @@ import { freshnessTone, minutesSince, type TeamPoint } from "../logic";
 const CAIRO_TIME = { timeStyle: "short", timeZone: "Africa/Cairo", numberingSystem: "latn" } as const;
 
 /** Managers' team map: the last point of each rep on an open shift (D-14). */
-export function TeamMap({ apiKey, locale, points, day }: { apiKey: string | null; locale: "ar" | "en"; points: TeamPoint[]; day: string }) {
+export function TeamMap({ apiKey, setupHint, locale, points, day }: { apiKey: string | null; setupHint?: boolean; locale: "ar" | "en"; points: TeamPoint[]; day: string }) {
   const t = useTranslations("maps.team");
   const format = useFormatter();
 
@@ -37,5 +37,5 @@ export function TeamMap({ apiKey, locale, points, day }: { apiKey: string | null
     });
   }, [points, locale, day, t, format]);
 
-  return <MapView apiKey={apiKey} locale={locale} label={t("mapLabel")} markers={markers} />;
+  return <MapView apiKey={apiKey} setupHint={setupHint} locale={locale} label={t("mapLabel")} markers={markers} />;
 }

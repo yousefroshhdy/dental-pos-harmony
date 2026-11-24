@@ -10,8 +10,10 @@ import { Table, Td, Th } from "@/components/ui/table";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
+import { seesSetupDetails } from "@/lib/maps/config";
 import { localizedName } from "@/modules/crm/logic";
 import { Empty, PageBody } from "@/modules/field/components/layout-bits";
+import { NotConfiguredNotice } from "@/modules/leads/components/not-configured-notice";
 import { BulkReassignForm, RadiusForm, RunNowForm } from "@/modules/leads/components/team-forms";
 import { percent } from "@/modules/leads/logic";
 import { getLeadUsage, listBaseLocations, listLeadStats, listRuns, placesConfigured } from "@/modules/leads/queries";
@@ -43,6 +45,7 @@ export default async function LeadsTeamPage({ params }: Props) {
   const tErrors = await getTranslations("errors");
   const format = await getFormatter();
   const owner = ctx.is_owner;
+  const setupHint = seesSetupDetails(ctx);
   const [stats, runs, bases, usage] = await Promise.all([
     listLeadStats(),
     listRuns(20),
@@ -65,7 +68,7 @@ export default async function LeadsTeamPage({ params }: Props) {
         }
       />
 
-      {!configured ? <Alert tone="warning">{t("list.notConfigured")}</Alert> : null}
+      {!configured ? <NotConfiguredNotice setupHint={setupHint} /> : null}
 
       {owner && usage ? (
         <Card>
@@ -223,7 +226,12 @@ export default async function LeadsTeamPage({ params }: Props) {
                       excluded: String(r.excluded_customers),
                     })}
                   </p>
-                  {r.error_code ? <p className="text-xs text-destructive">{t("team.runs.error", { code: r.error_code })}</p> : null}
+                  {r.error_code ? (
+                    <p className="text-xs text-destructive">
+                      {t("team.runs.error")}
+                      {setupHint ? ` ${t("team.runs.errorDetail", { code: r.error_code })}` : null}
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>

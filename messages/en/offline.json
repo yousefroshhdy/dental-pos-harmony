@@ -14,7 +14,7 @@
   },
   "page": {
     "title": "Pending sync",
-    "description": "Work saved on this device that the server has not confirmed yet. It is sent in the order you did it.",
+    "description": "Work saved on this device that is not confirmed yet. It is sent in the order you did it.",
     "offlineNotice": "You're offline. Saved work will be sent automatically when the connection returns.",
     "memoryOnly": "This browser can't keep offline work after a reload. Stay online until everything is synced.",
     "loading": "Loading saved work…",
@@ -41,7 +41,7 @@
     "reference": "Reference: {requestId}",
     "staleHelp": "This was saved more than 7 days ago, so it is not sent automatically. Check it is still correct, then send it or discard it.",
     "lastError": "Last attempt: {reason}",
-    "replayed": "The server already had this; nothing was applied twice."
+    "replayed": "This was already received; nothing was applied twice."
   },
   "actions": {
     "syncNow": "Sync now",
@@ -52,7 +52,7 @@
     "confirmDiscard": "Discard this item? It will not be sent and can't be recovered.",
     "confirm": "Yes, discard",
     "cancel": "Cancel",
-    "keepMine": "Send mine over the server's",
+    "keepMine": "Send mine instead",
     "discardMine": "Discard mine"
   },
   "report": {
@@ -65,13 +65,13 @@
   },
   "conflict": {
     "title": "Someone else changed this record",
-    "help": "Compare the server's values with yours. Send yours to overwrite the server, or discard yours.",
-    "caption": "Server values compared with yours",
+    "help": "Compare the current values with yours. Send yours to replace them, or discard yours.",
+    "caption": "Current values compared with yours",
     "field": "Field",
-    "server": "Server",
+    "server": "Current",
     "yours": "Yours",
     "differs": "Different",
-    "noDetails": "The server didn't send details. Reload the record to see its latest values, then retry or discard."
+    "noDetails": "No details came back. Reload the record to see its latest values, then retry or discard."
   },
   "codes": {
     "NO_SENDER": "This version of the app can't send this item. Reload the app while online.",
