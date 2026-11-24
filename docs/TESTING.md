@@ -242,3 +242,62 @@ maps step changes. Run those steps once that work is on staging, and the rest no
 | Date | Phone, Android version | Workflow run | Steps passed | Steps failed (what was seen) | By |
 |---|---|---|---|---|---|
 | | | | | | |
+
+## 7. Local signed-in stack (Phase P D1)
+
+A way to run the real app **signed in**, on a machine without Docker, against synthetic data, and
+to screenshot every screen. A review aid: nothing here runs in CI, and passing it is **Tested**,
+never **Verified** (auth is mocked).
+
+**Run**
+
+```bash
+pnpm e2e:local:up                    # setup + start (idempotent); --keep-db reuses the database
+PW_CHROMIUM_PATH=… pnpm e2e:local:shots   # screenshots + checks → $SHOTS_DIR (PNG + index.md)
+pnpm e2e:local:down                  # stop app, gateway and PostgREST; forget the per-run secret
+```
+
+`up` needs PostgreSQL 16 at `PGHOST`/`PGPORT` (default `/var/tmp/honestpg:54329`, started if it is
+down), `psql`, `curl`, `openssl` and Node. It then:
+
+1. builds the database `honest_e2e_local` like `scripts/db-test.sh` (stub, shim, migrations,
+   `seed.sql`, `tests.load_fixture()`) plus `scripts/e2e-local/demo-seed.sql`: 26 synthetic
+   clinics ("Clinic Demo 3", "د. تجربة ٣", phones `+2010000000NN`, some without phone or pin),
+   products, prices and a volume tier, stock and a draft receipt, three offers, orders in every
+   status, invoices, payments (verified, allocated, a cheque waiting), today's shifts, route points,
+   planned / in-progress / completed visits, location proposals, base locations and fake-place-id
+   leads, the activated STD-2026 plan with a calculated month, KPI targets, tasks, activities,
+   opportunities, a transfer, and approvals waiting (discounts, return, reassignment, inventory
+   adjustment, visit exception, write-off). Business rows go through `api.*` commands as the
+   fixture users; dates are relative to today (Cairo);
+2. downloads the pinned PostgREST static binary (SHA-256 checked) into `.cache/e2e-local/`;
+3. writes `.cache/e2e-local/env.local` (git-ignored, mode 600): random HS256 secret, anon and
+   service-role keys signed with it, a random shared demo password, an `authenticator` password;
+4. starts PostgREST (:54322, schemas `api,service`, anon role `anon`, login role `authenticator`)
+   and `scripts/e2e-local/mock-auth.mjs` (:54321: `/rest/v1` → PostgREST, `/auth/v1` → mock auth);
+5. runs `pnpm build` and `pnpm start` (:3210) with that env and empty Google keys, so maps and leads
+   show their "not configured" states.
+
+Sign in as any fixture user (`owner@honest.test` at aal2, `sd@`, `am.cairo@`, `rep.cairo@`,
+`rep.delta@`, `finance@`, `admin@`, `inventory@honest.test`) with `E2E_LOCAL_PASSWORD` from the env
+file.
+
+**Screenshots** (`playwright.local.config.ts`, `tests/e2e-local/`): every persona signs in once
+through the real login form; each screen in `tests/e2e-local/screens.ts` is captured full-page in
+ar and en at 390 × 844 and 1440 × 900 (`deviceScaleFactor` 1) as
+`NN-screen-persona-locale-width.png`. Checks per shot, listed in `index.md`: horizontal scroll at
+390 px, visible links/buttons in `<main>` under 44 px, text shaped like a message key, console
+errors, failed requests (cancelled prefetches ignored), `role=alert` texts, error-boundary text,
+404/500. Knobs: `SHOTS_DIR`, `SHOTS_ONLY`, `SHOTS_LOCALES`, `SHOTS_WIDTHS`, `PW_CHROMIUM_PATH`.
+Full-page phone shots show the fixed bottom bar where the first viewport ends. Never commit
+screenshots.
+
+**What is real and what is mocked**
+
+| Real | Mocked or missing |
+|------|-------------------|
+| All migrations, RLS, `api.*` commands, authz, audit, workflow, notifications and outbox rows | GoTrue: password sign-in, refresh, `getUser`, sign-out and the factor list only. No email (magic links and codes are accepted and dropped), no MFA enrolment or verification, no admin API (invites, bans fail with 501) |
+| PostgREST (same major version family as Supabase) with JWT role switching and `request.jwt.claims` | `auth.users` is the test stub (id, email); the aal comes from the mock token (owner aal2, others aal1) |
+| The production build, proxy, CSP (its `connect-src` already derives from `NEXT_PUBLIC_SUPABASE_URL`) and security headers | No Storage, Realtime, Edge Functions, pg_cron or `pg_net`; the outbox is never dispatched |
+| | Google Maps and Places keys are empty: lead names never load, maps show "not configured" |
+

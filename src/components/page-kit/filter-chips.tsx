@@ -46,7 +46,7 @@ export function FilterChips({
                 aria-current={active ? "page" : undefined}
                 scroll={false}
                 className={cn(
-                  "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
+                  "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
                   active ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent",
                 )}
               >

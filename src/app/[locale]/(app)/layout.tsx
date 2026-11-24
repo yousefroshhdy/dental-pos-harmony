@@ -114,9 +114,12 @@ export default async function AppLayout({ children, params }: { children: ReactN
                 }}
               />
               {/* On phones the wordmark takes the free space and is clipped first, so the
-                  indicators (tracking chip during a shift) never push the page sideways at 360 px. */}
+                  indicators (tracking chip during a shift) never push the page sideways at 360 px.
+                  Below `sm` it is the compact "HONEST" only: with the tracking chip the full mark
+                  did not fit at 390 px, and in RTL the clip cut the leading "H". */}
               <Link href="/" aria-label={tShell("homeLink")} className="inline-flex min-h-11 min-w-0 flex-1 items-center overflow-hidden rounded-md px-1 md:hidden">
-                <Brand />
+                <Brand compact className="sm:hidden" />
+                <Brand className="hidden sm:inline-flex" />
               </Link>
               <div className="hidden flex-1 md:block" />
               <TrackingIndicator userId={ctx.user_id} enabled={can(ctx, "field.shift.start") && ctx.employee !== null} />

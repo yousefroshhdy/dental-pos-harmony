@@ -585,7 +585,8 @@ export function OrderBuilder({
             </p>
           ) : null}
         </div>
-        <div className="flex w-full gap-2 sm:w-auto">
+        {/* Wraps on narrow phones: the two English labels do not fit side by side in 390 px. */}
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <Button
             type="button"
             variant="outline"
