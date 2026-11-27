@@ -33,6 +33,6 @@ What each script step does:
 
 4. **MFA:** sign in at `/ar` → `/ar/account/security` → **إعداد تطبيق المصادقة** (Set up authenticator app) → scan → enter the code.
 5. **Setup** on `/ar/admin/setup`: **إنشاء المخزن الرئيسي** (main warehouse, code `WH-MAIN`); **تغطية الدقهلية بمنطقة المنصورة**; **إنشاء مخزن الحجر** (code `WH-QRN`); per person **إضافة شخص** → **إنشاء حساب دخول ودور** → **إنشاء الحساب والرابط** (send the link privately); per rep **عنوان الانطلاق** → **البحث على الخريطة والحفظ**, radius 5 km.
-6. **Import** on `/ar/admin/setup/legacy-import`: upload → **رفع ومراجعة** → decide each negative item → **بدء الاستيراد** → per step **تجربة** then commit, in order. Then each "cost unknown" item → **تحديد التكلفة** per lot. Then `/ar/commissions/plans` → STD-2026 → **تفعيل هذه الخطة**.
+6. **Import** on `/ar/admin/setup/legacy-import`: upload → **رفع ومراجعة** → decide each negative item → **بدء الاستيراد** → per step **تجربة** then commit, in order. Then each "cost unknown" item → **تحديد التكلفة** per lot. Then `/ar/commissions/plans` → STD-2026 → section **تفعيل هذه الخطة** (Activate this plan) → button **تفعيل STD-2026** (Activate STD-2026).
 7. **APK:** `mobile/README.md` → "Install the pilot app, step by step"; then the one-phone test day (`docs/TESTING.md` §6.1).
 8. **Sign-off:** `docs/VERIFICATION.md` §0 (S-01 to S-11) with test records only; fill in the record table; only you set Verified.
