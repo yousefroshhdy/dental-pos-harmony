@@ -40,6 +40,13 @@ async function uploadSyntheticWorkbook(page: Page, locale: "ar" | "en"): Promise
 export const SCREENS: readonly Screen[] = [
   { slug: "today", persona: "rep", path: () => "/today" },
   { slug: "home", persona: "owner", path: () => "/" },
+  // The role homes of the other personas (H1 UI pass): each role's "what do I do now?" page.
+  { slug: "home-sd", persona: "sd", path: () => "/" },
+  { slug: "home-am", persona: "am", path: () => "/" },
+  { slug: "home-rep", persona: "rep", path: () => "/" },
+  { slug: "home-finance", persona: "finance", path: () => "/" },
+  { slug: "home-inventory", persona: "inventory", path: () => "/" },
+  { slug: "home-admin", persona: "admin", path: () => "/" },
   { slug: "leads", persona: "rep", path: () => "/leads" },
   { slug: "leads-team", persona: "am", path: () => "/leads/team" },
   { slug: "lead-detail", persona: "rep", path: (ids) => `/leads/${ids.lead}` },

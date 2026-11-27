@@ -5,17 +5,18 @@ import { can, type UserContext } from "@/lib/authz/can";
  * tests/unit/ui-home-role.test.ts. The home is a layout choice only; every number
  * on it comes from api.* views and functions that apply the caller's own scope.
  */
-export const HOME_ROLES = ["owner", "finance", "manager", "rep", "general"] as const;
+export const HOME_ROLES = ["owner", "finance", "manager", "rep", "inventory", "general"] as const;
 export type HomeRole = (typeof HOME_ROLES)[number];
 
 /**
  * Which home to show, by the user's grants, in the owner's priority order
- * owner > finance > manager > rep:
+ * owner > finance > manager > rep > inventory:
  * - owner: the owner flag (every permission implicitly);
  * - finance: may open the receivables aging page (finance and collection officers);
  * - manager: reads KPIs at team scope or wider (area managers, the sales director);
  * - rep: may check in at a clinic;
- * - general: none of these (admin, inventory, …): the access summary.
+ * - inventory: may fulfil orders or work in the warehouse (inventory managers, H1 UI pass);
+ * - general: none of these (admin, …): their screens as shortcuts.
  */
 export function selectHome(ctx: UserContext): HomeRole {
   if (!ctx.active) return "general";
@@ -23,6 +24,7 @@ export function selectHome(ctx: UserContext): HomeRole {
   if (can(ctx, "finance.page.aging")) return "finance";
   if (can(ctx, "perf.kpi.read", "team")) return "manager";
   if (can(ctx, "field.visit.create")) return "rep";
+  if (can(ctx, "sales.order.fulfil") || can(ctx, "inventory.module.access")) return "inventory";
   return "general";
 }
 

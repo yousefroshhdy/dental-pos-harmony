@@ -1,5 +1,5 @@
 import type { AppError } from "@/lib/errors";
-import type { Grant, UserContext } from "@/lib/authz/can";
+import { canAny, type Grant, type UserContext } from "@/lib/authz/can";
 import type {
   BreakdownRow,
   DashboardScope,
@@ -234,6 +234,43 @@ export const KPI_LINKS: Partial<Record<KpiCode, string>> = {
   STOCK_ALERTS: "/inventory",
   PENDING_APPROVALS: "/approvals",
 };
+
+/**
+ * Who may open each drill-down list (the page's own gate, as permissions; UX only). A tile
+ * links only where the viewer would not land on "Access denied" (H1 UI pass).
+ */
+const LINK_ACCESS: Record<string, readonly string[]> = {
+  "/visits": ["field.visit.read"],
+  "/customers": ["crm.customer.read"],
+  "/orders": ["sales.order.read"],
+  "/finance/invoices": ["finance.invoice.read"],
+  "/finance/payments": ["finance.payment.read"],
+  "/finance/aging": ["finance.page.aging", "finance.ledger.read"],
+  "/inventory": ["inventory.stock.read"],
+  // The approvals page serves "My requests" to everyone.
+  "/approvals": [],
+};
+
+/** Where a money tile points when the viewer cannot open the aging page (reps, managers). */
+const KPI_FALLBACK_LINKS: Partial<Record<KpiCode, string>> = {
+  CASH_COLLECTED: "/finance/payments",
+  AR_OPEN: "/finance/invoices?status=open",
+  AR_OVERDUE: "/finance/invoices?status=overdue",
+};
+
+function mayOpen(ctx: UserContext, href: string): boolean {
+  const need = LINK_ACCESS[href.split("?")[0] ?? href];
+  if (need === undefined || !ctx.active) return false;
+  return need.length === 0 || canAny(ctx, need);
+}
+
+/** The tile's drill-down link for this viewer, or null (the tile then renders without a link). */
+export function kpiHref(ctx: UserContext, code: KpiCode): string | null {
+  for (const href of [KPI_LINKS[code], KPI_FALLBACK_LINKS[code]]) {
+    if (href && mayOpen(ctx, href)) return href;
+  }
+  return null;
+}
 
 /** Units as registered in perf.kpi_definitions (for tables that carry no unit column). */
 export const KPI_UNIT: Record<KpiCode, KpiUnit> = {

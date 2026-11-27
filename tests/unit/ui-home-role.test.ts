@@ -16,7 +16,9 @@ const SALES_DIRECTOR = { "field.visit.create": "own", "perf.kpi.read": "all", "w
 const FINANCE_OFFICER = { "finance.page.aging": "all", "finance.payment.read": "all", "wf.approval.read": "all" } as const;
 const COLLECTION_OFFICER = { "finance.page.aging": "all", "field.visit.create": "own" } as const;
 
-describe("selectHome: owner > finance > manager > rep", () => {
+const INVENTORY_MANAGER = { "inventory.module.access": "all", "sales.order.fulfil": "all", "wf.approval.read": "all" } as const;
+
+describe("selectHome: owner > finance > manager > rep > inventory", () => {
   it.each([
     ["owner", ctx({}, { is_owner: true }), "owner"],
     ["owner even with field rights", ctx(SALES_REP, { is_owner: true }), "owner"],
@@ -28,6 +30,9 @@ describe("selectHome: owner > finance > manager > rep", () => {
     ["sales rep", ctx(SALES_REP), "rep"],
     ["rep without KPIs", ctx({ "field.visit.create": "own" }), "rep"],
     ["own-scope KPI reader is not a manager", ctx({ "perf.kpi.read": "own" }), "general"],
+    ["inventory manager", ctx(INVENTORY_MANAGER), "inventory"],
+    ["fulfilment only", ctx({ "sales.order.fulfil": "all" }), "inventory"],
+    ["rep beats inventory", ctx({ ...SALES_REP, ...INVENTORY_MANAGER }), "rep"],
     ["admin", ctx({ "admin.user.read": "all", "admin.role.read": "all" }), "general"],
     ["no roles", ctx(), "general"],
     ["inactive owner", ctx({}, { is_owner: true, active: false }), "general"],

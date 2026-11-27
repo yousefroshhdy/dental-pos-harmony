@@ -33,11 +33,25 @@ export interface NavItem {
   permission: string | null;
   /** Optional: the entry also needs at least one of these (e.g. any export permission). */
   anyPermission?: readonly string[];
+  /**
+   * Optional label for users who hold `permission` at `own` scope only, so the menu speaks
+   * their language ("My commission" for a rep, "Commissions" for finance and managers).
+   */
+  ownLabelKey?: string;
+  /** Optional extra condition (UX only), e.g. "can decide some approval". */
+  when?: (ctx: UserContext) => boolean;
+}
+
+/** The message key to show for `item` to this user (H1 UI pass; display only). */
+export function navLabelKey(ctx: UserContext, item: NavItem): string {
+  if (item.ownLabelKey && item.permission !== null && !ctx.is_owner && ctx.permissions[item.permission]?.scope === "own") return item.ownLabelKey;
+  return item.labelKey;
 }
 
 /** Whether the shell shows `item` to this user (UX only). */
 export function navVisible(ctx: UserContext, item: NavItem): boolean {
   if (item.permission !== null && !can(ctx, item.permission)) return false;
+  if (item.when && !item.when(ctx)) return false;
   return item.anyPermission === undefined || canAny(ctx, item.anyPermission);
 }
 

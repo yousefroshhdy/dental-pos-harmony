@@ -1,6 +1,7 @@
 {
   "nav": {
     "approvals": "Approvals",
+    "myRequests": "My requests",
     "notifications": "Notifications"
   },
   "loading": "Loading…",

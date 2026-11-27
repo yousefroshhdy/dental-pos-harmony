@@ -1,6 +1,7 @@
 {
   "nav": {
     "statement": "My commission",
+    "statements": "Commissions",
     "periods": "Commission periods",
     "adjustments": "Commission adjustments",
     "plans": "Commission rates"

@@ -139,7 +139,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
-| OWN-01 | `/ar` | Sign in › lands on **Home** (الرئيسية) | Greeting with your name; cards **Company this month** (الشركة هذا الشهر) and **Waiting for your approval** (بانتظار موافقتك) show figures, an empty state or an error state, never a silent zero. | Tested (local, verification.spec.ts › OWN-01) |
+| OWN-01 | `/ar` | Sign in › lands on **Home** (الرئيسية) | Greeting with your name; until setup is complete, **Setup progress** (تقدّم الإعداد) with the next steps and **Continue setup** (أكمِل الإعداد); **To do now** (المطلوب الآن): requests waiting for your approval, overdue invoices, reps whose location stopped arriving; cards **Company this month** (الشركة هذا الشهر) and **Waiting for your approval** (بانتظار موافقتك) show figures, an empty state or an error state, never a silent zero. | Tested (local, verification.spec.ts › OWN-01) |
 | OWN-02 | `/ar/admin/setup` | Read the page › **Open the workbook import** (فتح استيراد الملف) | **Owner setup** (إعداد المالك) with **Progress** (التقدم): warehouse, territories, people, logins, reps' base addresses, old-system data. The link opens **Import the old-system workbook** (استيراد ملف النظام القديم). | Tested (local, verification.spec.ts › OWN-02) |
 | OWN-03 | `/ar/admin/setup/legacy-import` | **Workbook (.xlsx)** (الملف (.xlsx)): choose any `.csv` › **Upload and check** (رفع ومراجعة) | Refused: "This is not an .xlsx workbook…" (هذا ليس ملف Excel بصيغة .xlsx…). Nothing is stored. | Tested (local, verification.spec.ts › OWN-03) |
 | OWN-04 | same | Choose the **synthetic** workbook (see "Before you start"; never the real one) › **Upload and check** | **Reconciliation with the Checks sheet** (المطابقة مع ورقة المراجعة) cards with Match / Mismatch / For information; **What each step will load**; **Items with negative stock** (أصناف رصيدها سالب) lists "Synthetic flat end taper 882-14-10"; **Start the import** (بدء الاستيراد) is disabled with "Choose "fix to 0" or "skip" for every item with negative stock." | Tested (local, verification.spec.ts › OWN-04) |
@@ -164,7 +164,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
-| SD-01 | `/ar` | Sign in | Greeting; **Team activity today** (نشاط الفريق اليوم); **Waiting for your approval** (بانتظار موافقتك) lists requests. | Tested (local, verification.spec.ts › SD-01) |
+| SD-01 | `/ar` | Sign in | Greeting; **To do now** (المطلوب الآن) lists the role's open work with counts, open work first; each row opens the list that holds it. **Team activity today** (نشاط الفريق اليوم); **Waiting for your approval** (بانتظار موافقتك) lists requests. | Tested (local, verification.spec.ts › SD-01) |
 | SD-02 | `/ar/approvals` | Tabs **To decide** (بانتظار قرارك), **My requests** (طلباتي) | **Approvals** (الموافقات) inbox; each row opens its request. | Tested (local, verification.spec.ts › SD-02) |
 | SD-03 | `/ar/orders/new` | Customer › a product › **Discount %** 20 › **Update prices** › **Save and review prices** › **Submit order** | Preview: no approval needed; status **Submitted**: a sales manager may give up to 25 % (decision B). | Tested (local, verification.spec.ts › SD-03) |
 | SD-04 | the rep's 20 % order (REP-12) | **Open the approval request** › **Approve** | "This request was approved…"; the order is **Approved**; the rep is notified (REP-20). | Tested (local, verification.spec.ts › SD-04) |
@@ -177,7 +177,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
-| AM-01 | `/ar` | Sign in | **Team activity today**, **Team this month** (الفريق هذا الشهر). | Tested (local, verification.spec.ts › AM-01) |
+| AM-01 | `/ar` | Sign in | **To do now** (المطلوب الآن: requests waiting for your approval, reps whose location stopped arriving), **Team activity today**, **Team this month** (الفريق هذا الشهر). | Tested (local, verification.spec.ts › AM-01) |
 | AM-02 | `/ar/tracking` | Section **Tracking health now** (حالة التتبع الآن) | Only your team's reps; day open/closed, last point and age, collector, permission, app version; **Needs attention** after 15 minutes without a point. The real-phone check is `docs/TESTING.md` §6.1 steps 2 and 8. | Tested (local, verification.spec.ts › AM-02) |
 | AM-03 | `/ar/tracking` › a rep's name | Read the day page | Day summary and, without the browser key, **The map is not available yet** (الخريطة غير متاحة بعد) instead of the route map. | Tested (local, verification.spec.ts › AM-03) |
 | AM-04 | `/ar/map/team` | Read the page | **Team map** (خريطة الفريق); without a key the no-key notice; reps with an open shift listed with **Open the day**. | Tested (local, verification.spec.ts › AM-04) |
@@ -192,9 +192,9 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
-| REP-01 | `/ar` (phone) | Sign in | Rep home with **Start my day** (ابدأ يومي); the bottom bar **Field shortcuts** (اختصارات الميدان) has 5 items: Today, Map, Leads, Visits, Orders. | Tested (local, verification.spec.ts › REP-01) |
+| REP-01 | `/ar` (phone) | Sign in | Rep home with **Start my day** (ابدأ يومي) and **To do now** (المطلوب الآن): visits planned today, new clinics near you, orders to finish (drafts), follow-ups and tasks due; the bottom bar **Field shortcuts** (اختصارات الميدان) has 5 items: Today, Map, Leads, Visits, Orders. | Tested (local, verification.spec.ts › REP-01) |
 | REP-02 | `/ar/today` (phone) | Read the page | **My day** (يومي): **My working day** (يوم عملي) shift card, **Visits in progress** (زيارات جارية), **Today's plan** (خطة اليوم), **Leads near me** card, **Follow-ups**, **Tasks**. | Tested (local, verification.spec.ts › REP-02) |
-| REP-03 | `/ar/leads` | Read the list | **Leads near me** (عملاء محتملون قريبون), nearest first. Without the server key: "Clinic names are not available yet. Ask the owner to finish the Google Maps setup." (أسماء العيادات غير متاحة بعد…) and each lead as **Clinic (name not loaded)** (عيادة (لم يُحمَّل الاسم)); Google Terms and Privacy links shown. | Tested (local, verification.spec.ts › REP-03) |
+| REP-03 | `/ar/leads` | Read the list | **Leads near me** (عيادات قريبة), nearest first. Without the server key: "Clinic names are not available yet. Ask the owner to finish the Google Maps setup." (أسماء العيادات غير متاحة بعد…) and each lead as **Clinic (name not loaded)** (عيادة (لم يُحمَّل الاسم)); Google Terms and Privacy links shown. | Tested (local, verification.spec.ts › REP-03) |
 | REP-04 | `/ar/leads/<id>` | Open a lead | **First visit** (أول زيارة) form and **Save and check in** (حفظ وتسجيل الوصول). | Tested (local, verification.spec.ts › REP-04) |
 | REP-05 | `/ar/leads` › a lead | **Clinic name** (اسم العيادة), **Doctor's name** (اسم الطبيب), **Governorate** (المحافظة) › **Save and check in** › **Check in at …** (تسجيل الوصول عند …) › first time: **I understand, use my location** (فهمت، استخدم موقعي) | The lead becomes a CRM **prospect**; the check-in shows "This clinic has no verified location yet…" and the fix is proposed as the clinic pin (AM-10). The full day on a real phone is §6.1 steps 3–5. | Tested (local, verification.spec.ts › REP-05) |
 | REP-06 | `/ar/customers` | Chip **Phone missing** (بدون هاتف) | The chip is pressed, the URL keeps `phone=missing`, only customers without a phone remain. | Tested (local, verification.spec.ts › REP-06) |
@@ -221,7 +221,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
-| FIN-01 | `/ar` | Sign in | **Receipts today** (تحصيلات اليوم) and **Receivables aging** (أعمار المديونيات). | Tested (local, verification.spec.ts › FIN-01) |
+| FIN-01 | `/ar` | Sign in | **To do now** (المطلوب الآن): payments waiting for verification, orders ready to invoice, overdue invoices, received returns to credit, requests waiting for your approval; **Receipts today** (تحصيلات اليوم) and **Receivables aging** (أعمار المديونيات). | Tested (local, verification.spec.ts › FIN-01) |
 | FIN-02 | `/ar/finance/invoices` | Open an invoice | **Invoices** list; the invoice shows its lines and **VAT summary** (ملخص الضريبة) per rate. | Tested (local, verification.spec.ts › FIN-02) |
 | FIN-03 | the order of REP-09 (after INV-03) | **Issue invoice** (إصدار فاتورة) › **Issue invoice** (إصدار الفاتورة) | Invoice `INV-…` with **VAT summary** and **Print invoice** (طباعة الفاتورة). The printed A4 page is FIN-09. | Tested (local, verification.spec.ts › FIN-03) |
 | FIN-04 | `/ar/finance/payments` › REP-14's payment | **Confirm payment** (تأكيد الدفعة) › **Choose amounts** (تحديد المبالغ): 1000 on the new invoice › **Allocate these amounts** (توزيع هذه المبالغ) | Status **Confirmed** (مؤكدة); **Allocations** (التوزيعات) lists the invoice. | Tested (local, verification.spec.ts › FIN-04) |
@@ -246,7 +246,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
-| ADM-01 | `/ar` | Sign in | **Your access** (صلاحياتك) summary (no role home for an admin). | Tested (local, verification.spec.ts › ADM-01) |
+| ADM-01 | `/ar` | Sign in | **Your screens** (شاشاتك): the admin's screens as shortcuts by department, e.g. **Users** (المستخدمون); no permission codes on the home (they stay on the user and role screens). | Tested (local, verification.spec.ts › ADM-01) |
 | ADM-02 | `/ar/admin/users` | Read | **Users** (المستخدمون) with status tabs and **Manage roles**. | Tested (local, verification.spec.ts › ADM-02) |
 | ADM-03 | `/ar/admin/roles` › Sales Representative | Read | Permissions grouped by module (Customers, Finance, …) with scope and **Grant**. | Tested (local, verification.spec.ts › ADM-03) |
 | ADM-04 | `/ar/admin/settings` | Read | **System settings** (إعدادات النظام); "Settings marked "Owner only"… can only be changed by an owner."; owner-only keys have no edit form. | Tested (local, verification.spec.ts › ADM-04) |
