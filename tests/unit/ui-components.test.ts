@@ -43,8 +43,9 @@ describe("primitives.tsx keeps its pre-Phase-P exports", () => {
   });
 
   it("Badge still takes tone, Alert still defaults to role=alert", () => {
-    expect(render("ar", h(primitives.Badge, { tone: "danger" }, "x"))).toContain("text-destructive");
-    expect(render("ar", h(primitives.Badge, { tone: "success" }, "x"))).toContain("text-success");
+    // Status text uses the AA text tokens (H1 UI pass: 4.2:1 → 5.9:1 on the badge tint).
+    expect(render("ar", h(primitives.Badge, { tone: "danger" }, "x"))).toContain("text-danger-text");
+    expect(render("ar", h(primitives.Badge, { tone: "success" }, "x"))).toContain("text-success-text");
     expect(render("ar", h(primitives.Alert, { tone: "info" }, "x"))).toMatch(/role="alert"[^>]*class="[^"]*border-primary/);
     expect(render("ar", h(primitives.Alert, { role: "status" }, "x"))).toContain('role="status"');
   });

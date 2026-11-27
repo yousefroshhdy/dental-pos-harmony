@@ -122,7 +122,9 @@ describe("order status machine", () => {
 
   it("gives every status a tone", () => {
     for (const s of ORDER_STATUSES) expect(statusTone(s)).toMatch(/neutral|success|warning|danger|info/);
-    expect(statusTone("cancelled")).toBe("danger");
+    // One colour rule (src/lib/status-tone.ts): cancelled is grey everywhere, rejected is red.
+    expect(statusTone("cancelled")).toBe("neutral");
+    expect(statusTone("rejected")).toBe("danger");
   });
 });
 

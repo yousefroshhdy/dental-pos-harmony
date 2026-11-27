@@ -14,6 +14,7 @@ import type {
   SummaryRow,
   UnratedRow,
 } from "./types";
+import { sharedStatusTone } from "@/lib/status-tone";
 
 /**
  * Pure helpers for the commission screens. Every amount comes from Postgres; these
@@ -92,7 +93,8 @@ export function statusTone(status: PeriodStatus | null | undefined): "neutral" |
 }
 
 export function requestTone(status: RequestStatus): "neutral" | "warning" | "success" | "danger" {
-  if (status === "pending") return "warning";
+  const shared = sharedStatusTone(status);
+  if (shared === "warning" || shared === "danger" || shared === "neutral" || shared === "success") return shared;
   if (status === "approved") return "success";
   if (status === "rejected") return "danger";
   return "neutral";
