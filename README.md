@@ -27,6 +27,7 @@ The business operating system for **Honest®**, an Egyptian B2B distributor of d
 3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): system architecture, data flows, module map
 4. [`docs/ROADMAP.md`](docs/ROADMAP.md): MVP scope, phases, execution checklist, progress tracker
 5. [`docs/VERIFICATION.md`](docs/VERIFICATION.md): the click-through per role, for the owner's sign-off
+6. [`docs/USER_MANUAL.md`](docs/USER_MANUAL.md) (English) / [`docs/USER_MANUAL.ar.md`](docs/USER_MANUAL.ar.md) (العربية): the user manual per role
 
 Also in `docs/`:
 

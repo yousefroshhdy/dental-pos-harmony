@@ -30,6 +30,8 @@ Working rules and context for AI-assisted development of **Honest OS**, the busi
 | `docs/DECISIONS.md` | Open decisions (D-xx) and ADRs |
 | `docs/ROADMAP.md` | MVP scope, phases, acceptance criteria, execution checklist, progress tracker |
 | `docs/VERIFICATION.md` | Click-through per role (line ids = Playwright tests in `tests/e2e-local/verification.spec.ts`) |
+| `docs/USER_MANUAL.md` | User manual per role (English, Arabic UI labels in brackets): what each role sees, daily/weekly/monthly procedures, rules, FAQ, glossary |
+| `docs/USER_MANUAL.ar.md` | The same user manual in Arabic (exact Arabic UI labels) |
 
 ## Non-negotiable rules
 
