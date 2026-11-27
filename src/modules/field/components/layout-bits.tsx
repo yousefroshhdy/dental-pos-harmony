@@ -7,13 +7,16 @@ import { cn } from "@/lib/utils";
  * pinned to the bottom of the screen on phones.
  */
 
-/** Primary actions: a bar fixed to the bottom on phones, inline from `sm` up. Pair with <PageBody>. */
+/**
+ * Primary actions: a bar fixed to the bottom on phones (above the field bottom bar when the
+ * shell shows one, `--app-bottom-bar` in globals.css), inline from `sm` up. Pair with <PageBody>.
+ */
 export function BottomActions({ children, label }: { children: ReactNode; label: string }) {
   return (
     <div
       role="region"
       aria-label={label}
-      className="fixed inset-x-0 bottom-0 z-10 flex gap-2 border-t bg-card/95 p-3 backdrop-blur sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none [&>*]:flex-1 sm:[&>*]:flex-none"
+      className="fixed inset-x-0 bottom-[var(--app-bottom-bar,0px)] z-20 flex gap-2 border-t bg-card/95 p-3 backdrop-blur sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none [&>*]:flex-1 sm:[&>*]:flex-none"
     >
       {children}
     </div>

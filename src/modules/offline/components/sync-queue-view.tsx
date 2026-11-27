@@ -46,7 +46,7 @@ export function SyncQueueView({ userId, inPanel = false }: { userId: string; inP
       <div
         className={cn(
           "z-10 border-t bg-card/95 p-3 backdrop-blur",
-          inPanel ? "sticky bottom-0 -mx-4" : "fixed inset-x-0 bottom-0 sm:static sm:border-0 sm:bg-transparent sm:p-0",
+          inPanel ? "sticky bottom-0 -mx-4" : "fixed inset-x-0 bottom-[var(--app-bottom-bar,0px)] sm:static sm:border-0 sm:bg-transparent sm:p-0",
         )}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">

@@ -60,7 +60,6 @@ export default async function VisitsPage({ params, searchParams }: { params: Pro
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <ExportCsvButton ctx={ctx} kind="visits" filters={{ status, who }} label={t("export")} />
           {can(ctx, "field.visit.create") && ctx.employee ? (
             <BottomActions label={t("actions")}>
               <Link href="/visits/new" className={buttonVariants()}>
@@ -68,6 +67,7 @@ export default async function VisitsPage({ params, searchParams }: { params: Pro
               </Link>
             </BottomActions>
           ) : null}
+          <ExportCsvButton ctx={ctx} kind="visits" filters={{ status, who }} label={t("export")} />
         </div>
       </div>
 

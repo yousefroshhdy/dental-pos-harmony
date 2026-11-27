@@ -73,7 +73,7 @@ export function OpportunityForm({ customerId, locale, minDate }: { customerId: s
           />
         </div>
       </div>
-      <div className="sticky bottom-0 z-[1] -mx-4 flex gap-2 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
+      <div className="sticky-footer z-[1] -mx-4 flex gap-2 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
         <Button type="submit" disabled={pending} className="flex-1 sm:flex-none">
           {t("submit")}
         </Button>

@@ -116,7 +116,7 @@ export function RequestReturnForm({ orderId, locale, rows }: { orderId: string; 
         <p className="text-xs text-muted-foreground">{t("notesHelp")}</p>
       </div>
 
-      <div className="sticky bottom-0 z-[1] -mx-4 flex flex-col gap-2 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+      <div className="sticky-footer z-[1] -mx-4 flex flex-col gap-2 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
         <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto">
           {pending ? t("submitting") : t("submit")}
         </Button>

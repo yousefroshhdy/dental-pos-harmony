@@ -70,7 +70,7 @@ export default async function OpportunitiesPage({ params, searchParams }: Props)
           <p className="text-sm text-muted-foreground">{t("intro", { days: CLOSED_DAYS })}</p>
         </div>
         {canManage ? (
-          <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
+          <div className="fixed inset-x-0 bottom-[var(--app-bottom-bar,0px)] z-20 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
             <Link href="/opportunities/new" className={buttonVariants({ className: "w-full sm:w-auto" })}>
               {t("new")}
             </Link>

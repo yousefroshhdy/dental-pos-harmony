@@ -83,7 +83,7 @@ export function BatchActions({
   return (
     <section
       aria-label={t("actions")}
-      className="sticky bottom-0 z-10 -mx-4 space-y-3 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:rounded-lg sm:border sm:px-4"
+      className="sticky-footer z-10 -mx-4 space-y-3 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:rounded-lg sm:border sm:px-4"
     >
       {allowed.commit ? (
         <form method="post" onSubmit={commit.onSubmit} className="space-y-2" aria-label={t("commit")}>
