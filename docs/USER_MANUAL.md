@@ -1,6 +1,6 @@
 # Honest OS user manual
 
-> Status: **Implemented (documentation); not Verified** · Last updated: 2026-11-27 · Phase P
+> Status: **Implemented (documentation); not Verified** · Last updated: 2026-11-28 · Phase P
 >
 > Arabic version: [`USER_MANUAL.ar.md`](USER_MANUAL.ar.md). The click paths follow
 > [`VERIFICATION.md`](VERIFICATION.md); what each role sees follows the menu and the role
@@ -50,7 +50,7 @@ Lead  →  Visit  →  Customer  →  Order  →  Approval  →  Stock  →  Inv
 ```
 
 1. **Lead.** Honest OS finds dental clinics around each rep's base address (5 km by default)
-   and lists them under **Leads near me** (عملاء محتملون قريبون).
+   and lists them under **Leads near me** (عيادات قريبة).
 2. **Visit.** The rep starts the working day, goes to the clinic and checks in. The phone's
    position is compared with the clinic's saved location.
 3. **Customer.** At the first visit the rep records the clinic's own details; the lead becomes a
@@ -80,6 +80,7 @@ by inventory, then credited by finance with a credit note.
 | Reserving, fulfilling, receiving goods and returns | Inventory manager | **Orders**, **Stock** (المخزون), **Returns to receive** (مرتجعات للاستلام) |
 | Invoices, verifying and allocating payments, credit notes, write-offs, commission months | Finance officer | **Invoices** (الفواتير), **Payments** (المدفوعات), **Commission periods** (فترات العمولة) |
 | Collection follow-up of overdue invoices | Collection officer, finance officer | **Collections** (التحصيل) |
+| Collection visits: working day, check-in and check-out at clinics | Collection officer | **My day** (يومي), **Visits** (الزيارات) |
 | Users, roles, settings, approval rules | Admin | **Admin** (الإدارة) |
 | Setup, offers, VAT, commission rates, approvals above 25 %, audit | Owner | everything |
 
@@ -119,7 +120,7 @@ Other requests that need a decision:
 | Credit note (إشعار دائن) | Finance officer (a different person from the one who asked) |
 | Invoice write-off (شطب فاتورة) | Finance officer (a different person) |
 | Stock adjustment above the daily limit (تسوية مخزون) | Owner |
-| Commission adjustment (تعديل عمولة) | Owner |
+| Commission adjustment (تعديل عمولة) | A second owner: the owner who asked cannot decide it (owner decision 2026-11-28) |
 
 Nobody can decide their own request or a request about themselves, and one person decides at
 most one stage of a request. The owner can decide any request, within those two rules.
@@ -175,7 +176,8 @@ these actions need a verified session:
 - Before the first working day you read the tracking notice and tap **I have read and
   understood this notice** (قرأت هذا الإشعار وفهمته). While the day is open the header shows
   **Tracking on** (التتبع يعمل).
-- You see your own data; your managers see their team; the owner sees everyone.
+- You see your own data; your area manager sees the team; the sales director and the owner see
+  everyone who starts a working day (owner decision 2026-11-28).
 - Detailed tracking points are deleted after 90 days (the daily summary stays); visit
   positions after 12 months.
 - Stops, gaps and other flags are signals for a conversation with your manager, never automatic
@@ -225,7 +227,22 @@ active employee or it was suspended: contact the admin.
 - People who work in the field (reps, area managers, sales director, collection officers) also
   get the **Field shortcuts** (اختصارات الميدان) bar at the bottom of the phone: **Today**
   (اليوم), **Map** (الخريطة), **Leads** (عيادات قريبة), **Visits** (الزيارات), **Orders**
-  (الطلبات). The owner does not get it.
+  (الطلبات). Each person sees only the items their role opens (a collection officer: Today, Map,
+  Visits). The owner does not get it.
+- Some menu entries are named for you: **My commission** (عمولتي) when you see only your own
+  commission (reps), **Commissions** (العمولات) for managers, finance and the owner; **Approvals**
+  (الموافقات) when you decide requests, **My requests** (طلباتي) when you only make them.
+- Your **Home** (الرئيسية) page starts with your main action where your role has one (**Start my
+  day**, ابدأ يومي, for reps and collection officers), then **To do now** (المطلوب الآن): a short
+  list of your open work with a count on each row, open work first. Tap a row to open the list
+  that holds the work. **Nothing waiting** (لا شيء بالانتظار) means that row is clear; **Couldn't
+  load** (تعذّر التحميل) means the count failed (it is never shown as 0). The cards of your role
+  follow; each chapter lists them in order.
+- Status colours are the same on every screen: amber = waiting on someone (submitted, pending
+  approval, waiting for verification); teal = under way (planned, in progress); green = finished
+  well (completed, posted, paid, fulfilled, credited, verified); red = refused, missed or failed
+  (rejected, missed, bounced); grey = not in anyone's queue (draft, cancelled, written off). The
+  text always names the status, so the colour is only a help.
 
 ### 2.4 Notifications
 
@@ -307,29 +324,29 @@ The owner runs the company in Honest OS and holds every permission.
 
 ### 3.1 What you see
 
-**Home** (`/ar`), subtitle "The company today: sales, money owed, stock and the team.":
+**Home** (`/ar`), subtitle "The company today: sales, money owed, stock and the team.", cards in
+this order:
 
 | Card | What it shows | Opens |
 |------|---------------|-------|
-| **Company this month** (الشركة هذا الشهر): tiles **Booked sales** (المبيعات المسجلة), **Collected** (المحصّل), **Open AR** (الذمم), **Overdue** (المتأخر), **Alerts** (التنبيهات), **Pending** (معلقة), **Invoiced** (المفوتر), **Orders** (الطلبات) | Booked sales = value of submitted orders without VAT (orders are pipeline, not revenue). Collected = payments confirmed by finance, with VAT. Open AR = what customers owe now, with VAT. Overdue = open amount past due date. Alerts = products at or below the reorder point plus lots expiring within 90 days. Pending = approval requests waiting. Invoiced = invoices issued without VAT, minus credit notes. Orders = orders submitted. Each tile shows "Target … · %", **As of now** (حتى الآن) or **No target set** (لا يوجد مستهدف). | Booked sales and Orders → Orders; Collected, Open AR, Overdue → Aging; Alerts → Stock; Pending → Approvals; Invoiced → Invoices |
-| **Team activity today** (نشاط الفريق اليوم) | Visits done of planned, and orders, per person today | Tracking |
+| **Setup progress** (تقدّم الإعداد) | Shown until every step of the owner setup is done: "N steps left of M before the team can start." and the first open steps. Disappears once setup is complete. | **Continue setup** (أكمِل الإعداد) → Setup |
+| **To do now** (المطلوب الآن) | Requests waiting for your approval, overdue invoices, reps whose location stopped arriving, each with its count | Approvals, overdue invoices, Tracking |
 | **Waiting for your approval** (بانتظار موافقتك) | Requests that need your decision | Approvals |
+| **Company this month** (الشركة هذا الشهر): tiles **Booked sales** (المبيعات المسجلة), **Collected** (المحصّل), **Open AR** (الذمم), **Overdue** (المتأخر), **Alerts** (التنبيهات), **Pending** (معلقة), **Invoiced** (المفوتر), **Orders** (الطلبات) | Booked sales = value of submitted orders without VAT (orders are pipeline, not revenue). Collected = payments confirmed by finance, with VAT. Open AR = what customers owe now, with VAT. Overdue = open amount past due date. Alerts = products at or below the reorder point plus lots expiring within 90 days. Pending = approval requests waiting. Invoiced = invoices issued without VAT, minus credit notes. Orders = orders submitted. Each tile shows "Target … · %", **As of now** (حتى الآن) or **No target set** (لا يوجد مستهدف). The link **Full dashboard** (لوحة المؤشرات كاملة) on this card opens **Company overview** (نظرة عامة على الشركة). | Booked sales and Orders → Orders; Collected, Open AR, Overdue → Aging; Alerts → Stock; Pending → Approvals; Invoiced → Invoices |
+| **Team activity today** (نشاط الفريق اليوم) | Visits done of planned, and orders, per person today | Tracking |
 | **Receivables aging** (أعمار المديونيات) | Total owed, overdue amount, buckets **Not yet due** … **Over 90 days**, how many customers owe money | Aging |
 | **Pipeline** (فرص البيع) | Open opportunities per stage (New, Qualified, Proposal, Negotiation) with count and expected value | Opportunities |
 
-The button **Full dashboard** (لوحة المؤشرات كاملة) opens **Company overview** (نظرة عامة على
-الشركة).
-
 **Menu:** every screen:
 - Home: Home, **Approvals**, **Notifications**.
-- Sales & CRM: **Customers**, **Opportunities** (الفرص), **Catalogue** (الكتالوج), **My
-  commission** (عمولتي), **Commission periods** (فترات العمولة), **Commission adjustments**
+- Sales & CRM: **Customers**, **Opportunities** (الفرص), **Catalogue** (الكتالوج),
+  **Commissions** (العمولات), **Commission periods** (فترات العمولة), **Commission adjustments**
   (تسويات العمولة), **Commission rates** (نِسَب العمولة).
 - Field: **My day**, **Visits**, **Tasks** (المهام), **Visit plan**, **Coverage** (التغطية),
   **Tracking**, **Customers map** (خريطة العملاء), **Team map** (خريطة الفريق), **Pin
   proposals**, **Leads near me**, **Leads by rep** (العملاء المحتملون لكل مندوب).
-- Orders: **Orders**, **New order**, **Offers** (العروض), **Returns** (المرتجعات), **Returns to
-  receive**, **Returns to credit** (مرتجعات لإشعار دائن).
+- Orders: **Orders**, **New order**, **Offers** (العروض والباقات), **Returns** (المرتجعات),
+  **Returns to receive**, **Returns to credit** (مرتجعات لإشعار دائن).
 - Finance: **Invoices**, **Payments**, **Collect payment**, **Aging** (أعمار الديون),
   **Collections**.
 - Inventory: **Stock**, **Stock ledger** (سجل حركة المخزون), **Goods receipts** (استلام
@@ -371,7 +388,7 @@ code › **Confirm**. Expected: "Your account is protected and this session is v
 
 **O-3 Import the old system's data.** `/ar/admin/setup` › **Open the workbook import** (فتح
 استيراد الملف) (`/ar/admin/setup/legacy-import`):
-1. **Workbook (.xlsx)** (الملف .xlsx) › choose the workbook › **Upload and check** (رفع ومراجعة).
+1. **Workbook (.xlsx)** (الملف (.xlsx)) › choose the workbook › **Upload and check** (رفع ومراجعة).
 2. Read **Reconciliation with the Checks sheet** (المطابقة مع ورقة المراجعة): every card should
    match the source.
 3. **Items with negative stock** (أصناف رصيدها سالب): for each item **Fix to 0** (تصفير) or
@@ -429,7 +446,7 @@ Drafts take the new rate when saved; submitted orders and issued invoices keep t
 
 **O-8 Price lists and promotions.** `/ar/catalog` › **Price lists** (قوائم الأسعار) › a list ›
 **Prices** (الأسعار) › **Save**. Prices are in EGP before VAT; a new price applies to orders saved
-or submitted from now on. **Promotions** (العروض in the catalogue) are automatic percentage
+or submitted from now on. **Promotions** (الخصومات التلقائية) are automatic percentage
 discounts; they cannot be edited, only ended and created again.
 
 **Daily:**
@@ -480,7 +497,9 @@ only** (للمالك فقط) only you can change.
 **O-16 Commission adjustments.** **Commission adjustments** (`/ar/commissions/adjustments`) ›
 **New adjustment** (تسوية جديدة): **Employee**, **Month**, **Type** (bonus, clawback, correction),
 **Amount (EGP)**, **Reason** › **Send for approval** (إرسال للموافقة). An adjustment counts only
-after approval; see Appendix B about who can approve it.
+after a second owner approves it: you cannot decide a request you made, and no other role
+decides adjustments (owner decision 2026-11-28). Until a second owner account exists, an adjustment
+cannot be approved.
 
 You can also do everything the other roles do (orders without a discount limit, invoices,
 payments, stock), but the work is normally theirs.
@@ -495,6 +514,8 @@ payments, stock), but the work is normally theirs.
   a payment with a reversal, stock with an adjustment, an import with reversals. A closed
   commission month never changes.
 - A lot cost, once saved, is final.
+- Commission adjustments are requested by an owner and approved by a second owner; until a
+  second owner exists, adjustments cannot be approved (owner decision 2026-11-28, D-08).
 - Offer and price changes never alter submitted orders or issued invoices.
 
 ### 3.4 Problems and what to do
@@ -517,19 +538,21 @@ The sales director runs sales for the whole company ("sales manager" in decision
 
 ### 4.1 What you see
 
-**Home** (`/ar`), subtitle "Your team today, the pipeline and what waits for your decision.":
+**Home** (`/ar`), subtitle "Your team today, the pipeline and what waits for your decision.", cards
+in this order:
 
 | Card | What it shows | Opens |
 |------|---------------|-------|
+| **To do now** (المطلوب الآن) | Requests waiting for your approval, reps whose location stopped arriving, each with its count | Approvals, Tracking |
 | **Team activity today** (نشاط الفريق اليوم) | Visits done of planned and orders, per team member today (up to 10) | Tracking |
 | **Waiting for your approval** (بانتظار موافقتك) | Requests waiting for your decision | Approvals |
 | **Pipeline** (فرص البيع) | Open opportunities per stage, count and expected value | Opportunities |
-| **Team this month** (الفريق هذا الشهر): **Booked sales**, **Orders**, **Visits**, **Collected** | The month so far against target. For you these are company figures. | Orders, Orders, Visits, Aging (see Appendix B) |
+| **Team this month** (الفريق هذا الشهر): **Booked sales**, **Orders**, **Visits**, **Collected** | The month so far against target. For you these are company figures. The link **Full dashboard** (لوحة المؤشرات كاملة) opens the dashboard. | Orders, Orders, Visits, Payments |
 
 **Menu:**
 - Home: Home, **Approvals**, **Notifications**.
-- Sales & CRM: **Customers**, **Opportunities**, **Catalogue**, **My commission**, **Commission
-  rates** (read only).
+- Sales & CRM: **Customers**, **Opportunities**, **Catalogue**, **Commissions** (العمولات),
+  **Commission rates** (read only).
 - Field: **My day**, **Visits**, **Tasks**, **Visit plan**, **Coverage**, **Tracking**,
   **Customers map**, **Team map**, **Pin proposals**, **Leads near me**, **Leads by rep**.
 - Orders: **Orders**, **New order**, **Offers**, **Returns**.
@@ -565,12 +588,14 @@ pin** (اعتماده موقعًا للعيادة), or **Reject** (رفض) › *
 Expected: "Done. The decision is saved." A position that is not accurate enough cannot become
 the pin.
 
-**SD-5 Team tracking.** `/ar/tracking` (**Field tracking**, التتبع الميداني): **Tracking health
+**SD-5 Company tracking.** `/ar/tracking` (**Field tracking**, التتبع الميداني): **Tracking health
 now** (حالة التتبع الآن) shows each rep's **Day** (open/closed), **Last point**, **Collected by**,
 **Location permission**, **App version**, **Battery saver**; **Needs attention** (يحتاج متابعة)
 after 15 minutes without a point. Tap a name for the day page (route, stops, gaps, visits).
-**Team map** (`/ar/map/team`) shows where reps on an open day were last seen. Your tracking
-scope is your own team (to confirm on staging if you need the whole company).
+**Team map** (`/ar/map/team`) shows where reps on an open day were last seen. You see the whole
+company: every rep and collection officer who starts a working day, also those outside your
+reporting line (owner decision 2026-11-28). **Export day summary (CSV)** downloads the day (code
+when enforced).
 
 **Weekly:**
 
@@ -591,7 +616,7 @@ stock and team day summary › **Download CSV** (needs a code when enforced).
 
 **Monthly:**
 
-**SD-10 Commission.** **My commission** › **Team summary** (ملخص الفريق) (`/ar/commissions/team`)
+**SD-10 Commission.** **Commissions** (العمولات) › **Team summary** (ملخص الفريق) (`/ar/commissions/team`)
 for each rep's month. **Commission rates** shows the rates; only the owner changes them.
 
 **SD-11 Team access.** **Users** (`/ar/admin/users`) › a person › **Manage roles** (إدارة الأدوار) ›
@@ -609,6 +634,8 @@ discount without approval), payments and returns.
 ### 4.3 Rules that affect you
 
 - Manual discount up to 25 % without approval; above it the owner decides (decision B).
+- Tracking: you see every person's working day across the company; use it for conversations, never
+  as an automatic penalty.
 - You cannot decide your own requests or requests about yourself.
 - You have no credit-limit authority by default: orders over the credit limit go to finance.
 - Delegations last at most 90 days.
@@ -617,8 +644,6 @@ discount without approval), payments and returns.
 
 - **A request is not in To decide:** it may be above 25 % (owner), outside your scope, or yours.
   The request page says why ("This request is above your approval limit…").
-- **Collected tile opens Access denied:** known limit (Appendix B); the figure is right, the aging
-  page is finance's.
 - Also P1–P8.
 
 ---
@@ -630,13 +655,15 @@ team).
 
 ### 5.1 What you see
 
-**Home** (`/ar`): the same cards as the sales director (§4.1), for your team: **Team activity
-today**, **Waiting for your approval**, **Pipeline**, **Team this month**.
+**Home** (`/ar`): the same cards as the sales director (§4.1), in the same order, for your team:
+**To do now** (requests waiting for your approval, reps whose location stopped arriving), **Team
+activity today**, **Waiting for your approval**, **Pipeline**, **Team this month** with **Full
+dashboard**.
 
 **Menu:**
 - Home: Home, **Approvals**, **Notifications**.
-- Sales & CRM: **Customers** (your territory), **Opportunities**, **Catalogue**, **My
-  commission**.
+- Sales & CRM: **Customers** (your territory), **Opportunities**, **Catalogue**, **Commissions**
+  (العمولات).
 - Field: **My day**, **Visits**, **Tasks**, **Visit plan**, **Coverage**, **Tracking**,
   **Customers map**, **Team map**, **Pin proposals**, **Leads near me**, **Leads by rep**.
 - Orders: **Orders**, **New order**, **Offers**, **Returns**.
@@ -666,7 +693,7 @@ reason. You cannot accept your own order.
 **AM-3 Pin proposals.** `/ar/map/proposals` › **Approve as clinic pin** or **Reject** with a
 reason (as SD-4).
 
-**AM-4 Team tracking and health.** `/ar/tracking`: **Tracking health now** first (reps with
+**AM-4 Team tracking and health.** `/ar/tracking` (your team only): **Tracking health now** first (reps with
 **Needs attention** come first: check the phone's location permission, battery saver, the Honest
 OS notification and the network), then the team table (**On shift**, **Shift time**, **Visits**,
 **Visit time**, **Idle stops**, **Gaps**, **Distance**); **To review** (للمراجعة) filters the
@@ -724,25 +751,30 @@ manager."
 
 ### 6.1 What you see
 
-**Home** (`/ar`), subtitle "Your plan, your visits and your month so far.":
+**Home** (`/ar`), subtitle "Your plan, your visits and your month so far.", in this order:
 
 | Card | What it shows | Opens |
 |------|---------------|-------|
 | Button **Start my day** (ابدأ يومي) | | My day |
+| **To do now** (المطلوب الآن) | **Visits planned today** (زيارات مخططة اليوم), **New clinics near you, not visited yet** (عيادات جديدة قريبة منك لم تُزَر بعد), **Orders to finish and send (drafts)** (طلبات لم تُكمَل وتُرسَل (مسودات)), **Follow-ups and tasks due** (متابعات ومهام مستحقة), each with its count | My day, Leads near me, draft orders, Tasks |
 | **Today's plan** (خطة اليوم) | Today's planned visits in order, with time or **In progress** (جارية). Empty: **Plan visits** (خطّط الزيارات) | My day / Visit plan |
-| **My visits today** (زياراتي اليوم) | Today's check-ins, **Done** (تمت) or **Open** (مفتوحة) | Visits |
-| **Clinics near me** (عيادات قريبة مني) | "New dental clinics around your area, sorted by distance." › **Show clinics near me** (اعرض العيادات القريبة) | Leads near me |
-| **My month** (شهري): **Visits**, **Orders**, **Booked sales**, **Collected** | Your month so far against your target | Visits, Orders, Orders, Aging (see Appendix B) |
+| **My visits today** (زياراتي اليوم) | Today's check-ins, **Done** (تمت) or **Open** (مفتوحة). Empty: **Check in at a clinic** (تسجيل وصول لعيادة) | Visits |
+| **My month** (شهري): **Visits**, **Orders**, **Booked sales**, **Collected** | Your month so far against your target. The link **Full dashboard** (لوحة المؤشرات كاملة) opens **My performance** (أدائي). | Visits, Orders, Orders, Payments |
+
+New clinics near you are in **To do now** and on the bottom bar **Leads**; there is no separate
+card for them.
 
 **Menu:**
-- Home: Home, **Notifications**.
-- Sales & CRM: **Customers** (your own), **Opportunities**, **Catalogue**, **My commission**.
+- Home: Home, **My requests** (طلباتي) (the requests you made and their decisions),
+  **Notifications**.
+- Sales & CRM: **Customers** (your own), **Opportunities**, **Catalogue**, **My commission**
+  (عمولتي).
 - Field: **My day**, **Visits**, **Tasks**, **Visit plan**, **Coverage**, **Customers map**,
   **Leads near me**.
 - Orders: **Orders**, **New order**, **Offers**, **Returns**.
 - Finance: **Invoices** (your customers'), **Payments** (yours), **Collect payment**.
 - Inventory: **Stock** (sellable stock you can promise).
-- Reports: **Dashboard** (**My performance**, أدائي), **Reports**.
+- Reports: **Dashboard** (**My performance** (أدائي)), **Reports**.
 - Phone bottom bar **Field shortcuts**: **Today** (اليوم), **Map** (الخريطة), **Leads** (عيادات
   قريبة), **Visits** (الزيارات), **Orders** (الطلبات).
 
@@ -904,7 +936,6 @@ next month.
 | "Updating prices needs a connection." / offline order | Save the draft on the device (**Save draft on this device**); submit when online (P3). |
 | Leads show **Clinic (name not loaded)** or "Your base location is not set yet" | The owner's Google setup or your base address is missing (P6); ask the owner. |
 | "No delivered orders to return from." | Returns start from a delivered and invoiced order. |
-| **Access denied** when you tap **Collected** on your home | Known limit (Appendix B); your figure is correct. |
 | Also P1–P9 | |
 
 ---
@@ -913,25 +944,28 @@ next month.
 
 ### 7.1 What you see
 
-**Home** (`/ar`), subtitle "Money in today, what customers owe, and what waits for you.":
+**Home** (`/ar`), subtitle "Money in today, what customers owe, and what waits for you.", cards in
+this order:
 
 | Card | What it shows | Opens |
 |------|---------------|-------|
+| **To do now** (المطلوب الآن) | **Payments waiting for verification** (مدفوعات بانتظار التحقق), **Orders ready to invoice** (طلبات جاهزة للفوترة), **Overdue invoices** (فواتير متأخرة السداد), **Received returns to credit** (مرتجعات مستلمة لإشعار دائن), **Requests waiting for your approval** (طلبات بانتظار موافقتك), each with its count | Payments to verify, Orders to invoice, overdue invoices, Returns to credit, Approvals |
 | **Receipts today** (تحصيلات اليوم) | Total received today, number of payments, how many await verification (bounced and reversed ones not counted) | Payments |
 | **Receivables aging** (أعمار المديونيات) | Total open, overdue, buckets **Not yet due**, **1–30 days**, **31–60 days**, **61–90 days**, **Over 90 days**, customers owing | Aging |
 | **Waiting for your approval** (بانتظار موافقتك) | Credit notes, write-offs and credit-limit stages waiting for you | Approvals |
 
 **Menu:**
 - Home: Home, **Approvals**, **Notifications**.
-- Sales & CRM: **Customers**, **Catalogue**, **My commission**, **Commission periods**.
+- Sales & CRM: **Customers**, **Catalogue**, **Commissions** (العمولات), **Commission periods**.
 - Field: **Customers map**.
 - Orders: **Orders**, **Offers**, **Returns to credit** (مرتجعات لإشعار دائن).
 - Finance: **Invoices**, **Payments**, **Collect payment**, **Aging**, **Collections**.
-- Reports: **Reports** (invoices, payments, aging).
+- Reports: **Dashboard** (لوحة المؤشرات) (company figures, owner decision 2026-11-28), **Reports**
+  (invoices, payments, aging).
 - Admin: **Delegations**, **Escalations**.
 
-**You don't see:** the dashboard (Appendix B), field screens, stock screens, setup and admin
-screens, commission rates.
+**You don't see:** field screens, stock screens, targets, setup and admin screens, commission
+rates.
 
 ### 7.2 Your tasks
 
@@ -985,7 +1019,7 @@ approved." A second person approves it.
 the excess stays as customer credit for later invoices; it is never paid out in cash. Code when
 enforced.
 
-**FIN-9 Write-offs.** Invoice page › **Request a write-off** (طلب إعدام مبلغ) › **Amount to write
+**FIN-9 Write-offs.** Invoice page › **Request a write-off** (طلب شطب مبلغ) › **Amount to write
 off, VAT included (EGP)** (at most the open amount) › **Reason** › **Request write-off**. A second
 person approves it (**Decide write-offs**; code when enforced).
 
@@ -1002,6 +1036,13 @@ early: tick "I checked the {month} statements and want to close the month." › 
 A closed month is final; later events go to the next open month. Code when enforced.
 
 **FIN-12 Exports.** `/ar/reports`: invoices, payments, receivables aging › **Download CSV**.
+
+**FIN-13 Company dashboard.** **Dashboard** (`/ar/dashboard`), **Company overview** (نظرة عامة على
+الشركة): the company's figures for the period you pick, grouped as **Field activity** (النشاط
+الميداني), **Sales** (المبيعات), **Collections and receivables** (التحصيلات والذمم) and
+**Operations** (العمليات), the team table, the territory and brand tables and **Overdue
+customers** (العملاء المتأخرون). You read it; targets are set by the sales director and the owner.
+The stock-alert tile is not shown to finance.
 
 ### 7.3 Rules that affect you
 
@@ -1025,33 +1066,68 @@ A closed month is final; later events go to the next open month. Code when enfor
 
 ## 8. Collection officer
 
-The collection officer follows up overdue invoices and collects money.
+The collection officer follows up overdue invoices and collects money, and visits clinics for it:
+since the owner's decision of 2026-11-28 you work the field like a rep, for visits (working day,
+check-in and check-out, your own visits), without orders, leads or commissions.
 
 ### 8.1 What you see
 
-**Home** (`/ar`): **Receipts today** (your payments) and **Receivables aging** (as §7.1).
+**Home** (`/ar`), the finance home ("Money in today, what customers owe, and what waits for you."),
+in this order:
 
-**Menu:** Home, **Notifications**; **Customers**; Field: **My day**, **Tasks**, **Customers map**;
-Finance: **Invoices**, **Payments** (yours), **Collect payment**, **Aging**, **Collections**;
-**Reports** (invoices, payments, aging). Phone bottom bar: **Today** and **Map** only.
+| Card | What it shows | Opens |
+|------|---------------|-------|
+| Button **Start my day** (ابدأ يومي) | | My day |
+| **To do now** (المطلوب الآن) | **Visits planned today** (زيارات مخططة اليوم), **Overdue invoices** (فواتير متأخرة السداد), each with its count | My day, overdue invoices |
+| **My visits today** (زياراتي اليوم) | Today's check-ins, **Done** (تمت) or **Open** (مفتوحة). Empty: **Check in at a clinic** (تسجيل وصول لعيادة) | Visits |
+| **Receipts today** (تحصيلات اليوم) | Your payments received today | Payments |
+| **Receivables aging** (أعمار المديونيات) | As §7.1 | Aging |
 
-**You don't see:** approvals, orders, visits list, stock, commission, admin screens. There is no
-**Start my day** for your role (no work-hours tracking).
+**Menu:**
+- Home: Home, **My requests** (طلباتي), **Notifications**.
+- Sales & CRM: **Customers**.
+- Field: **My day** (يومي), **Visits** (الزيارات) (your own), **Tasks**, **Visit plan** (خطة
+  الزيارات), **Coverage** (التغطية), **Customers map**.
+- Finance: **Invoices**, **Payments** (yours), **Collect payment**, **Aging**, **Collections**.
+- Reports: **Reports** (invoices, payments, aging, your visits).
+- Phone bottom bar **Field shortcuts**: **Today** (اليوم), **Map** (الخريطة), **Visits** (الزيارات).
+
+**You don't see:** approvals to decide, orders, leads, commission, the dashboard, stock, other
+people's visits or tracking, admin screens.
 
 ### 8.2 Your tasks
 
+**Every working day you go out:**
+
+1. **Start my day** (ابدأ يومي): from the home button or the bottom bar **Today**, as REP-1 (the
+   tracking notice the first time; on the phone allow location **While using the app**). Your
+   location is recorded only until **End my day** (أنهِ يومي), as for reps (§1, privacy).
+2. Plan the visits you will make: **Visit plan** (`/ar/planning`) › **Add a visit** (إضافة
+   زيارة) › **Customer** › **Day** › **Add to plan**, as REP-18. **Coverage** shows customers
+   overdue for a visit.
+3. Check in at the clinic (planned: **Today** › **Today's plan**; not planned: **Unplanned
+   visit** (زيارة غير مخططة) or the customer page › **Check in** (تسجيل وصول)), as REP-4. If the
+   result is not **Verified**, open the visit › **Request an exception** (طلب استثناء), as REP-5.
+4. Collect the payment at the visit: **Collect payment** as REP-12. Expected: **Waiting for
+   verification** until finance confirms.
+5. **Check out** (تسجيل المغادرة) with the **Outcome** **Collection** (or another outcome), as REP-6.
+6. **End my day** (أنهِ يومي) › **Yes, end my day**, as REP-14.
+
+**At the office:**
+
 1. **Collections** (`/ar/finance/collections`): work each task as FIN-4 (promise, escalate,
    collected, close).
-2. **Collect payment**: as REP-12. Expected: **Waiting for verification** until finance confirms.
-3. **Aging** and **Statement**: as FIN-6, to know what each customer owes before you call or
+2. **Aging** and **Statement**: as FIN-6, to know what each customer owes before you call or
    visit.
-4. **Write-off request** for an amount the customer will not pay: as FIN-9; finance decides.
-5. **Check in** at a clinic you visit (customer page › **Check in**), as REP-4 (to confirm on
-   staging: the visits list is not in your menu).
+3. **Write-off request** for an amount the customer will not pay: as FIN-9; finance decides.
+4. **Visits** (`/ar/visits`): your own visits and their GPS result.
 
 ### 8.3 Rules, problems
 
-As §7.3; P1–P8.
+As §7.3, plus the rep's visit rules (§6.3): a visit counts when it is **Verified** or its exception
+is approved; your location is recorded only during your working day. Your visit exceptions go to
+the sales director (or the owner). The owner and the sales director see your working day; finance
+does not. Problems: as the rep's (§6.4) for check-in and location; P1–P9.
 
 ---
 
@@ -1059,11 +1135,15 @@ As §7.3; P1–P8.
 
 ### 9.1 What you see
 
-**Home** (`/ar`): **Your access** (صلاحياتك), the list of your permissions ("Your screens are in the
-menu."). Your work starts from the menu.
+**Home** (`/ar`), subtitle "Orders to reserve and deliver, returns to receive and stock to watch.":
+
+| Card | What it shows | Opens |
+|------|---------------|-------|
+| **To do now** (المطلوب الآن) | **Approved orders to reserve stock for** (طلبات معتمدة تحتاج حجز المخزون), **Reserved orders to deliver** (طلبات محجوزة جاهزة للصرف), **Approved returns to receive** (مرتجعات معتمدة للاستلام), **Goods receipts to post** (أذونات استلام لم تُرحَّل), **Items at or below their reorder point** (أصناف عند حد إعادة الطلب أو أقل), each with its count | the filtered list of each |
+| **Your screens** (شاشاتك) | Your menu as shortcuts, by department | each screen |
 
 **Menu:**
-- Home: Home, **Approvals** (your own requests), **Notifications**.
+- Home: Home, **My requests** (طلباتي) (your own requests), **Notifications**.
 - Sales & CRM: **Catalogue**.
 - Orders: **Orders**, **Offers**, **Returns to receive** (مرتجعات للاستلام).
 - Inventory: **Stock**, **Stock ledger**, **Goods receipts**, **Transfers**, **Adjust stock**.
@@ -1137,8 +1217,8 @@ variants (SKUs) › **Save variant**. Prices are the owner's.
 - **"There is no active quarantine warehouse."**: ask the owner to create it on **Setup**.
 - **"Receiving this transfer releases quarantined stock and needs the quarantine release
   permission."**: only you (or the owner) can receive it.
-- **Approvals → To decide is always empty:** correct; your role raises requests, the owner
-  decides them.
+- **My requests lists only requests you made:** correct; your role raises requests (stock
+  adjustments above the daily limit), the owner decides them.
 - Also P1–P8.
 
 ---
@@ -1149,9 +1229,10 @@ The admin manages people's access and the system's rules, without any money or s
 
 ### 10.1 What you see
 
-**Home** (`/ar`): **Your access** (صلاحياتك), your permissions.
+**Home** (`/ar`), subtitle "Your screens, one tap away.": **Your screens** (شاشاتك), your menu as
+shortcuts by department. Permission codes are shown on the user and role screens, not on the home.
 
-**Menu:** Home, **Notifications**; **Catalogue**; Admin: **Users**, **Employees**, **Territories**,
+**Menu:** Home, **My requests** (طلباتي), **Notifications**; **Catalogue**; Admin: **Users**, **Employees**, **Territories**,
 **Roles & permissions**, **Settings**, **Security events**, **Approval rules**.
 
 **You don't see:** **Setup**, **Data import** and **Audit log** (owner only); money, stock, field
@@ -1217,17 +1298,17 @@ same thing, both are given.
 
 | English | Arabic | Meaning |
 |---------|--------|---------|
-| Lead (leads near me) | عميل محتمل / عيادة قريبة | A clinic found around the rep's base, not a customer yet |
-| Lead (customer stage) | عميل محتمل (in Customers) · عميل مرتقب (map legend) | First stage of a customer record |
-| Prospect | مهتم (in Customers) · عميل محتمل (leads, map legend) | A customer after the first visit |
+| Leads near me, a lead | عيادات قريبة، عيادة قريبة | A clinic Google finds around the rep's base, not a customer yet |
+| Lead (customer stage) | عميل محتمل | First stage of a customer record |
+| Prospect | مهتم | A customer after the first visit (customers, leads, map legend, reports) |
 | Active / Dormant / Lost / Blocked | نشط / خامل / مفقود / موقوف | Customer stages |
 | Visit, check-in, check-out | زيارة، تسجيل الوصول، تسجيل المغادرة | |
 | Verified | موثّقة | The visit was at the clinic |
 | Visit exception | استثناء زيارة | Manager's approval for a visit that could not be verified |
 | Pin proposal | موقع مقترح | A check-in position proposed as the clinic's location |
 | Start my day / End my day | ابدأ يومي / أنهِ يومي | Opens and closes the working day (tracking) |
-| Offer, package | عرض، باقة | Owner-defined deal; no approval |
-| Promotion | العروض (catalogue) | Automatic percentage discount in the catalogue |
+| Offers and packages | العروض والباقات | Owner-defined deals; no approval |
+| Promotion (automatic discount) | الخصومات التلقائية | Automatic percentage discount in the catalogue |
 | List price / Net price | سعر القائمة / سعر صافٍ | |
 | Free / bonus | مجاني / هدية | A line priced 0 |
 | Discount on the whole order | خصم على الطلب كله | Counts as a manual discount |
@@ -1235,13 +1316,13 @@ same thing, both are given.
 | Reserved / Fulfilled / Invoiced | محجوز / منفذ / مفوتر | Order statuses |
 | VAT | ضريبة القيمة المضافة | Added per product rate, 14 % by default |
 | Invoice, credit note | فاتورة، إشعار دائن | |
-| Write-off | إعدام دين / معدومة (finance) · شطب فاتورة (approvals) | Amount the customer will not pay |
+| Write-off | شطب (the request and the action) · معدومة (a written-off invoice) | Amount the customer will not pay |
 | Payment, allocation | دفعة، توزيع | |
 | Waiting for verification / Confirmed | بانتظار التحقق / مؤكدة | Payment statuses |
 | Reverse payment | إلغاء الدفعة | |
 | Receivables aging | أعمار الديون / أعمار المديونيات | Open invoices by days late |
 | Statement | كشف الحساب | |
-| Lot | التشغيلة (stock) · دفعة (returns) | A batch of one product, with expiry |
+| Lot | تشغيلة | A batch of one product, with expiry (stock and returns) |
 | Warehouse | المستودع / المخزن | |
 | Quarantine | الحجر | Warehouse for returned goods; never sellable |
 | In transit | في العبور | Shipped, not yet received |
@@ -1250,6 +1331,8 @@ same thing, both are given.
 | Approval, delegation, escalation | موافقة، تفويض، تصعيد | |
 | Authenticator app, code | تطبيق المصادقة، رمز | Two-step verification |
 | Access denied | غير مسموح بالدخول | |
+| To do now | المطلوب الآن | The list of open work at the top of your home |
+| My requests | طلباتي | The requests you made (menu entry for people who do not decide approvals) |
 | Pending sync | في انتظار المزامنة | Work saved on the device, not sent yet |
 
 ## 12. Who to contact
@@ -1292,20 +1375,17 @@ This appendix uses technical words on purpose; reps and managers do not need it.
 
 Found while writing this manual; to confirm on staging.
 
-- The **Collected**, **Open AR** and **Overdue** tiles (home and dashboard) open the aging page,
-  which reps, area managers and the sales director cannot open, so they see **Access denied**.
-  The figures themselves are correct.
-- Reps have no menu entry for their own approval requests; they reach them from the order or
-  return page (**Open the approval request**) or from notifications (`/ar/approvals` shows **My
-  requests**).
 - Reps can open `/ar/finance/collections` for collection tasks assigned to them, but it is not in
   their menu.
-- The collection officer can check in but has no visits list and no Start my day.
-- Commission adjustments are requested and decided by owners only; with one owner, nobody can
-  approve an adjustment the owner requested (keep two owners, or the owner gives the decision to
-  another role).
-- The inventory manager's home shows the access list with technical permission codes.
-- The finance officer cannot open the dashboard.
-- The sales director's tracking covers the own team only.
-- Some Arabic words differ between screens for the same thing (see the glossary): "العروض" is used
-  for both offers and catalogue promotions.
+- Commission adjustments need a second owner (owner decision 2026-11-28): with one owner account,
+  an adjustment the owner requested stays waiting.
+- A collection officer's visit exceptions are decided by the sales director or the owner (the
+  collection officer is usually not in an area manager's team).
+
+Closed on 2026-11-27/28 (no longer limits): the **Collected**, **Open AR** and **Overdue** tiles now
+open a list you can open (payments, open or overdue invoices) instead of **Access denied**; reps
+and other roles that do not decide approvals have **My requests** in the menu; the inventory and
+admin homes show **Your screens** instead of permission codes; the collection officer has **Start
+my day** and a visits list; the finance officer opens the company dashboard; the sales director's
+tracking covers the whole company; offers (العروض والباقات) and catalogue promotions (الخصومات
+التلقائية) have different Arabic words.
