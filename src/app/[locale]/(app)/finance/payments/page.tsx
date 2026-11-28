@@ -51,8 +51,8 @@ export default async function PaymentsPage({ params, searchParams }: { params: P
         description={t("payments.intro")}
         actions={
           <>
-            <ExportCsvButton ctx={ctx} kind="payments" filters={{ status: filter, customer: customerId }} label={t("payments.export")} />
             {record}
+            <ExportCsvButton ctx={ctx} kind="payments" filters={{ status: filter, customer: customerId }} label={t("payments.export")} />
           </>
         }
       />

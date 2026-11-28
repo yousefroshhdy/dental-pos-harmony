@@ -8,7 +8,8 @@ import type { NavItem } from "@/lib/nav";
  * perf.commission_plan.read (changes need perf.commission_plan.manage: the owner).
  */
 export const commissionsNav: NavItem[] = [
-  { href: "/commissions", labelKey: "commissions.nav.statement", permission: "perf.commission.read" },
+  // "My commission" for reps (own scope); "Commissions" for managers, finance and the owner, who see others' statements.
+  { href: "/commissions", labelKey: "commissions.nav.statements", ownLabelKey: "commissions.nav.statement", permission: "perf.commission.read" },
   { href: "/commissions/periods", labelKey: "commissions.nav.periods", permission: "perf.commission.calculate" },
   { href: "/commissions/adjustments", labelKey: "commissions.nav.adjustments", permission: "perf.commission.adjust" },
   // Rate editor: readable with perf.commission_plan.read (sales director); editable by the owner only.

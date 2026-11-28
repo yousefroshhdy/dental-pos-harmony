@@ -143,7 +143,7 @@ export default async function DashboardPage({ params, searchParams }: { params: 
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {codes.map((code) => (
-                  <StatTile key={code} code={code} row={rows[code]} pace={pace} secondary={secondary(code)} />
+                  <StatTile key={code} ctx={ctx} code={code} row={rows[code]} pace={pace} secondary={secondary(code)} />
                 ))}
               </div>
             </section>

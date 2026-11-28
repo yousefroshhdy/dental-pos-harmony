@@ -56,7 +56,7 @@ export function FormActions({ children, className }: { children: ReactNode; clas
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-10 -mx-4 flex flex-col gap-2 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:items-center sm:border-0 sm:bg-transparent sm:p-0",
+        "sticky-footer z-10 -mx-4 flex flex-col gap-2 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:items-center sm:border-0 sm:bg-transparent sm:p-0",
         className,
       )}
     >

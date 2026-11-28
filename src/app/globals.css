@@ -28,6 +28,24 @@
   }
 }
 
+/*
+ * A form's primary actions, kept in reach on phones (H1 UI pass): sticky at the bottom of
+ * the viewport, above the field bottom bar when the shell shows one (the layout sets
+ * `data-bottom-bar`; the bar is 3.5rem + its border + the safe area, hidden from md up).
+ * Each form still says from which width the row turns static (e.g. `sm:static`).
+ */
+@utility sticky-footer {
+  position: sticky;
+  inset-block-end: var(--app-bottom-bar, 0px);
+}
+
+[data-bottom-bar] {
+  --app-bottom-bar: calc(3.5rem + 1px + env(safe-area-inset-bottom));
+  @media (width >= 48rem) {
+    --app-bottom-bar: 0px;
+  }
+}
+
 :root {
   --background: oklch(0.985 0.004 200);
   --foreground: oklch(0.22 0.025 230);
@@ -53,6 +71,9 @@
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.72 0.15 75);
   --warning-foreground: oklch(0.25 0.05 60);
+  /* Status text on a tinted badge (WCAG AA 4.5:1 at 12 px on the 12–15 % tint). */
+  --success-text: oklch(0.44 0.12 155);
+  --danger-text: oklch(0.47 0.19 27);
   --ring: oklch(0.55 0.09 195);
 
   --sidebar: oklch(0.26 0.045 212);
@@ -71,6 +92,15 @@
 /* Arabic pages: Plex Sans Arabic first so mixed text keeps one rhythm. */
 :root:lang(ar) {
   --app-font: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, "Segoe UI", Tahoma, sans-serif;
+  /*
+   * Arabic readability on phones (H1 UI pass): Arabic letterforms sit smaller on the line and
+   * carry dots above and below, so the smallest text is one step larger (12 → 13 px) and small
+   * text gets more leading. Tailwind's text-* utilities read these theme variables.
+   */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.55;
+  --text-sm--line-height: 1.6;
+  --text-base--line-height: 1.65;
 }
 
 .dark {
@@ -98,6 +128,8 @@
   --success-foreground: oklch(0.18 0.03 155);
   --warning: oklch(0.8 0.14 80);
   --warning-foreground: oklch(0.2 0.04 60);
+  --success-text: oklch(0.78 0.13 155);
+  --danger-text: oklch(0.76 0.15 25);
   --ring: oklch(0.72 0.1 190);
 
   --sidebar: oklch(0.14 0.02 225);
@@ -135,6 +167,8 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-success-text: var(--success-text);
+  --color-danger-text: var(--danger-text);
   --color-ring: var(--ring);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);

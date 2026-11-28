@@ -47,9 +47,9 @@ export default async function OrdersPage({ params, searchParams }: { params: Pro
         description={t("list.intro")}
         actions={
           <>
+            {newOrder}
             <ExportCsvButton ctx={ctx} kind="orders" filters={{ status: filter }} label={t("list.exportOrders")} />
             <ExportCsvButton ctx={ctx} kind="order_lines" filters={{ status: filter }} label={t("list.exportLines")} />
-            {newOrder}
           </>
         }
       />

@@ -102,7 +102,7 @@ export function DelegationForm({
       </fieldset>
       <ReasonField required={false} />
       <ActionMessage state={state} success={t("created")} />
-      <div className="sticky bottom-0 -mx-4 border-t bg-card px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
+      <div className="sticky-footer -mx-4 border-t bg-card px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
         <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {t("submit")}
         </Button>

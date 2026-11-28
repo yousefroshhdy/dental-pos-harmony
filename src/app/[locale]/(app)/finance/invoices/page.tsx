@@ -43,12 +43,12 @@ export default async function InvoicesPage({ params, searchParams }: { params: P
         description={t("invoices.intro")}
         actions={
           <>
-            <ExportCsvButton ctx={ctx} kind="invoices" filters={{ status: filter, bucket, customer: customerId }} label={t("invoices.export")} />
             {can(ctx, "finance.invoice.issue") ? (
               <Link href="/finance/invoices/new" className={buttonVariants()}>
                 {t("invoices.toInvoice")}
               </Link>
             ) : null}
+            <ExportCsvButton ctx={ctx} kind="invoices" filters={{ status: filter, bucket, customer: customerId }} label={t("invoices.export")} />
           </>
         }
       />

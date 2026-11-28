@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Alert, Badge, Card, CardTitle, Label, Select } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { getUserContext } from "@/lib/authz/context";
+import { sharedStatusTone } from "@/lib/status-tone";
 import { cn } from "@/lib/utils";
 import { BottomActions, PageBody } from "@/modules/field/components/layout-bits";
 import { localizedName } from "@/modules/field/logic";
@@ -38,8 +39,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-const STATUS_TONE = { planned: "info", in_progress: "warning", completed: "success", missed: "danger" } as const;
 
 /**
  * The week plan (api.v_visit_plan) for me, or for a team member when I plan for a team
@@ -100,7 +99,7 @@ export default async function PlanningWeekPage({ params, searchParams }: { param
 
   const statusBadge = (r: PlanRow) => {
     const status = r.is_missed ? "missed" : r.status;
-    return <Badge tone={STATUS_TONE[status]}>{t(`status.${status}`)}</Badge>;
+    return <Badge tone={sharedStatusTone(status) ?? "neutral"}>{t(`status.${status}`)}</Badge>;
   };
 
   return (

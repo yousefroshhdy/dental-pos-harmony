@@ -2,6 +2,7 @@ import { can, type UserContext } from "@/lib/authz/can";
 import type { AppError } from "@/lib/errors";
 import type { Numeric, ReasonCode, ReturnableLineRow, ReturnRow, ReturnStatus } from "./types";
 import { REASON_CODES, RETURN_STATUSES } from "./types";
+import { sharedStatusTone } from "@/lib/status-tone";
 
 /**
  * Pure logic for the returns screens. Every rule here is a courtesy for the
@@ -89,6 +90,8 @@ export function returnErrorCode(error: Pick<AppError, "code" | "messageKey">): R
 type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 export function statusTone(status: ReturnStatus): BadgeTone {
+  const shared = sharedStatusTone(status);
+  if (shared) return shared;
   switch (status) {
     case "requested":
     case "pending_approval":

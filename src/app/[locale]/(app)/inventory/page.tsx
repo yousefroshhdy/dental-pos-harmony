@@ -64,8 +64,6 @@ export default async function StockPage({ params, searchParams }: { params: Prom
       description={full ? t("introFull") : t("introSellable")}
       actions={
         <>
-          {/* The stock alert view is page-only; the file takes the warehouse, brand and product filters. */}
-          <ExportCsvButton ctx={ctx} kind="stock" filters={{ warehouse: filters.warehouse, brand: filters.brand, product: filters.product }} label={t("export")} />
           {can(ctx, "inventory.receipt.post") ? (
             <Link href="/inventory/receipts/new" className={buttonVariants({ variant: "outline" })}>
               {t("newReceipt")}
@@ -91,6 +89,8 @@ export default async function StockPage({ params, searchParams }: { params: Prom
               {t("transfers")}
             </Link>
           ) : null}
+          {/* The stock alert view is page-only; the file takes the warehouse, brand and product filters. */}
+          <ExportCsvButton ctx={ctx} kind="stock" filters={{ warehouse: filters.warehouse, brand: filters.brand, product: filters.product }} label={t("export")} />
         </>
       }
     />

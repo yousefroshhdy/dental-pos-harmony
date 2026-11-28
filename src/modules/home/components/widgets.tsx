@@ -1,4 +1,4 @@
-import { CalendarCheck, ChevronLeft, ChevronRight, CircleAlert, Inbox, MapPinCheck, Sparkles, Users } from "lucide-react";
+import { CalendarCheck, Check, ChevronLeft, ChevronRight, CircleAlert, Inbox, ListChecks, MapPinCheck, Rocket, Sparkles, Users } from "lucide-react";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,15 @@ import type { AppError } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import { workflowLabel } from "@/modules/approvals/components/request-view";
 import { formatKpi, formatPercent } from "@/modules/dashboards/format";
-import { byCode, KPI_LINKS, pivotTeam, toNumber } from "@/modules/dashboards/logic";
+import { byCode, kpiHref, pivotTeam, toNumber } from "@/modules/dashboards/logic";
+import type { UserContext } from "@/lib/authz/can";
 import { getKpiSummary, getKpiTeam, getPendingForMe } from "@/modules/dashboards/queries";
 import type { KpiCode, Period } from "@/modules/dashboards/types";
 import { pipelineByStage, receiptsSummary } from "../logic";
 import { getAgingTotals, listOpenOpportunities, listPlanToday, listReceiptsToday, listVisitsToday } from "../queries";
+import { remainingSteps, setupStepHref, type TodoItem } from "../todo";
+import { setupSteps } from "@/modules/admin/setup";
+import { getSetupOverview } from "@/modules/admin/setup-queries";
 
 const LATN = { numberingSystem: "latn" } as const;
 const CAIRO_TIME = { hour: "numeric", minute: "2-digit", timeZone: "Africa/Cairo", numberingSystem: "latn" } as const;
@@ -73,10 +77,69 @@ export async function HomeError({ error }: { error: AppError }) {
 }
 
 // ---------------------------------------------------------------------------
+// "To do now" (src/modules/home/todo.ts): counts from existing api.* views
+// ---------------------------------------------------------------------------
+
+/** The role's to-do entries with live counts; open work first, each row opens the screen that holds it. */
+export async function TodoCard({ items }: { items: readonly TodoItem[] }) {
+  const t = await getTranslations("home.todo");
+  const format = await getFormatter();
+  const locale = await getLocale();
+  const Chevron = locale === "ar" ? ChevronLeft : ChevronRight;
+  if (items.length === 0) return null;
+  const open = items.filter((i) => i.state === "todo").length;
+
+  return (
+    <section aria-labelledby="home-todo" className="rounded-lg border bg-card p-4 shadow-sm">
+      <h2 id="home-todo" className="mb-2 flex items-center gap-2 text-base font-semibold">
+        <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-md bg-highlight/25 text-foreground [&_svg]:size-4">
+          <ListChecks />
+        </span>
+        {t("title")}
+      </h2>
+      {open === 0 && !items.some((i) => i.state === "error") ? <p className="mb-1 text-sm text-muted-foreground">{t("allClear")}</p> : null}
+      <ul className="divide-y">
+        {items.map((item) => (
+          <li key={item.key}>
+            <Link
+              href={item.href}
+              className={cn(
+                "flex min-h-12 items-center gap-3 py-2 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                item.state === "done" && "text-muted-foreground",
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex h-8 min-w-8 shrink-0 items-center justify-center rounded-full px-2 text-sm font-semibold tabular-nums",
+                  item.state === "todo" && (item.urgent ? "bg-destructive/12 text-danger-text" : "bg-primary/12 text-primary"),
+                  item.state === "done" && "bg-success/12 text-success-text",
+                  item.state === "error" && "bg-muted text-muted-foreground",
+                )}
+              >
+                {item.state === "done" ? <Check className="size-4" /> : item.count === null ? "!" : format.number(item.count, LATN)}
+              </span>
+              <span className="min-w-0 flex-1 text-sm leading-snug font-medium">
+                {t(`items.${item.key}`)}
+                {item.state === "todo" ? <span className="sr-only">: {format.number(item.count ?? 0, LATN)}</span> : null}
+                {item.state !== "todo" ? (
+                  <span className="block text-xs font-normal text-muted-foreground">{item.state === "done" ? t("nothing") : t("failed")}</span>
+                ) : null}
+              </span>
+              <Chevron aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // KPI strip (api.kpi_summary through the dashboards module)
 // ---------------------------------------------------------------------------
 
-export async function KpiStrip({ codes, period, title }: { codes: readonly KpiCode[]; period: Period; title: string }) {
+export async function KpiStrip({ ctx, codes, period, title }: { ctx: UserContext; codes: readonly KpiCode[]; period: Period; title: string }) {
   const t = await getTranslations("home");
   const td = await getTranslations("dashboards");
   const format = await getFormatter();
@@ -104,7 +167,7 @@ export async function KpiStrip({ codes, period, title }: { codes: readonly KpiCo
               {shown.map((code) => {
                 const row = rows[code]!;
                 const target = toNumber(row.target);
-                const href = KPI_LINKS[code];
+                const href = kpiHref(ctx, code);
                 const body = (
                   <>
                     <p className="text-xs font-medium text-muted-foreground">{td(`kpi.${code}.short`)}</p>
@@ -315,7 +378,8 @@ export async function AgingCard() {
         <div className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="text-2xl font-semibold tabular-nums">{format.number(open, "egp")}</p>
-            <p className="text-sm text-destructive tabular-nums">
+            {/* Red only when something is overdue: a red zero reads as an alarm. */}
+            <p className={cn("text-sm tabular-nums", (toNumber(totals.overdue_amount) ?? 0) > 0 ? "font-medium text-destructive" : "text-muted-foreground")}>
               {t("aging.overdue", { amount: format.number(toNumber(totals.overdue_amount) ?? 0, "egp") })}
             </p>
           </div>
@@ -400,7 +464,16 @@ export async function VisitsTodayCard({ employeeId }: { employeeId: string | nul
       {!result.ok ? (
         <HomeError error={result.error} />
       ) : result.data.length === 0 ? (
-        <EmptyState compact title={t("visits.empty")} />
+        <EmptyState
+          compact
+          title={t("visits.empty")}
+          action={
+            // The rep home is shown only to holders of field.visit.create (selectHome), who may check in.
+            <Link href="/visits/new" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              {t("visits.checkIn")}
+            </Link>
+          }
+        />
       ) : (
         <ul className="divide-y">
           {result.data.map((v) => (
@@ -422,20 +495,71 @@ export async function VisitsTodayCard({ employeeId }: { employeeId: string | nul
   );
 }
 
-/** Leads near the rep (Phase P step 4, another module): a pointer until that screen lands. */
-export async function LeadsCard() {
-  const t = await getTranslations("home");
+// ---------------------------------------------------------------------------
+// Owner: setup progress until go-live (api.setup_overview, the /admin/setup checklist)
+// ---------------------------------------------------------------------------
+
+const SETUP_PREVIEW = 4;
+
+/**
+ * Until setup is complete, the owner's home opens with it: progress, the next steps and one
+ * "Continue setup" button. Renders nothing once every step is done. Owner only (the caller
+ * checks; api.setup_overview refuses anyone else).
+ */
+export async function SetupProgressCard() {
+  const t = await getTranslations("home.setup");
+  const ts = await getTranslations("setup.progress");
+  const format = await getFormatter();
+  const result = await getSetupOverview();
+  if (result.ok && !result.data) return null;
+  const steps = result.ok && result.data ? setupSteps(result.data) : [];
+  const left = remainingSteps(steps);
+  if (result.ok && left.length === 0) return null;
+  const done = steps.length - left.length;
+
   return (
-    <HomeSection title={t("leads.title")} icon={<Sparkles />}>
-      <EmptyState
-        compact
-        title={t("leads.body")}
-        action={
-          <Link href="/leads" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            {t("leads.open")}
-          </Link>
-        }
-      />
-    </HomeSection>
+    <section aria-labelledby="home-setup" className="rounded-lg border border-highlight/60 bg-card p-4 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="home-setup" className="flex items-center gap-2 text-base font-semibold">
+          <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-md bg-highlight/25 text-foreground [&_svg]:size-4">
+            <Rocket />
+          </span>
+          {t("title")}
+        </h2>
+        <Link href="/admin/setup" className={buttonVariants()}>
+          {t("continue")}
+        </Link>
+      </div>
+      {!result.ok ? (
+        <HomeError error={result.error} />
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">{t("body", { left: left.length, total: steps.length })}</p>
+          <div
+            role="progressbar"
+            aria-labelledby="home-setup"
+            aria-valuemin={0}
+            aria-valuemax={steps.length}
+            aria-valuenow={done}
+            className="h-2 overflow-hidden rounded-full bg-muted"
+          >
+            <div className="h-full rounded-full bg-primary" style={{ inlineSize: `${steps.length ? (done / steps.length) * 100 : 0}%` }} />
+          </div>
+          <ol className="grid gap-1 sm:grid-cols-2">
+            {left.slice(0, SETUP_PREVIEW).map((s) => (
+              <li key={s.key}>
+                <Link href={setupStepHref(s.href)} className="flex min-h-11 items-center gap-3 rounded-md px-2 text-sm font-medium hover:bg-muted hover:text-primary">
+                  <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground tabular-nums">
+                    {format.number(steps.indexOf(s) + 1, LATN)}
+                  </span>
+                  {ts(`steps.${s.key}`)}
+                </Link>
+              </li>
+            ))}
+          </ol>
+          {left.length > SETUP_PREVIEW ? <p className="text-xs text-muted-foreground">{t("more", { count: left.length - SETUP_PREVIEW })}</p> : null}
+        </div>
+      )}
+    </section>
   );
 }

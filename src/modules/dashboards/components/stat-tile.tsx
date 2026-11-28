@@ -3,7 +3,8 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { formatKpi, formatPercent } from "../format";
-import { accumulates, KPI_LINKS, kpiStatus, meterPercent, toNumber } from "../logic";
+import type { UserContext } from "@/lib/authz/can";
+import { accumulates, kpiHref, kpiStatus, meterPercent, toNumber } from "../logic";
 import type { KpiCode, KpiRow, KpiStatus } from "../types";
 
 const STATUS_TONE: Record<KpiStatus, "success" | "warning" | "danger"> = { onTrack: "success", atRisk: "warning", behind: "danger" };
@@ -14,14 +15,14 @@ const STATUS_ICON = { onTrack: CircleCheck, atRisk: TriangleAlert, behind: Circl
  * colour alone), the formula behind it and a link to the records it counts.
  * The meter's unfilled track is a lighter step of the same hue (dataviz guidance).
  */
-export async function StatTile({ code, row, pace, secondary }: { code: KpiCode; row: KpiRow | undefined; pace: number; secondary?: string }) {
+export async function StatTile({ ctx, code, row, pace, secondary }: { ctx: UserContext; code: KpiCode; row: KpiRow | undefined; pace: number; secondary?: string }) {
   const t = await getTranslations("dashboards");
   const format = await getFormatter();
   if (!row) return null;
 
   const status = kpiStatus(row, pace);
   const target = toNumber(row.target);
-  const href = KPI_LINKS[code];
+  const href = kpiHref(ctx, code);
   const headingId = `kpi-${code}`;
   const Icon = status ? STATUS_ICON[status] : null;
 

@@ -11,6 +11,7 @@ import type {
   PriceAdjust,
   StockAvailableRow,
 } from "./types";
+import { sharedStatusTone } from "@/lib/status-tone";
 
 /**
  * Pure order logic for the UI: the status machine, which actions to offer, and
@@ -172,7 +173,10 @@ export function parseStatusFilter(value: string | string[] | undefined): StatusF
 
 type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
+/** Shared words (draft, submitted, cancelled, …) follow src/lib/status-tone.ts; the rest is the order's own flow. */
 export function statusTone(status: OrderStatus): BadgeTone {
+  const shared = sharedStatusTone(status);
+  if (shared) return shared;
   switch (status) {
     case "draft":
       return "neutral";

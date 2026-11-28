@@ -72,18 +72,18 @@ export default async function CustomersPage({ params, searchParams }: Props) {
         description={t("intro")}
         actions={
           <>
+            {/* Bottom of the screen on phones (thumb reach, above the field bottom bar), inline from `sm` up. */}
+            {newButton ? (
+              <div className="fixed inset-x-0 bottom-[var(--app-bottom-bar,0px)] z-20 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
+                {newButton}
+              </div>
+            ) : null}
             <ExportCsvButton
               ctx={ctx}
               kind="customers"
               filters={{ q: filters.q, stage: filters.stage, territory: filters.territory, specialty: filters.specialty }}
               label={t("export")}
             />
-            {/* Bottom of the screen on phones (thumb reach), inline from `sm` up. */}
-            {newButton ? (
-              <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
-                {newButton}
-              </div>
-            ) : null}
           </>
         }
       />

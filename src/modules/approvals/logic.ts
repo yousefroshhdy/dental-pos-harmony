@@ -1,4 +1,5 @@
 import { APPROVAL_ERROR_KEYS, type ApprovalErrorKey, type ApprovalRequestRow, type NotificationRow, type RequestStatus, type Verdict } from "./types";
+import { sharedStatusTone } from "@/lib/status-tone";
 
 /**
  * Pure presentation logic for the approvals inbox and notifications. UI gating
@@ -69,6 +70,8 @@ export function groupByWorkflow<T extends { workflow_code: string }>(rows: T[]):
 // ---------------------------------------------------------------------------
 
 export function statusTone(status: RequestStatus): BadgeTone {
+  const shared = sharedStatusTone(status);
+  if (shared) return shared;
   switch (status) {
     case "pending":
       return "warning";

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Grant, Scope, UserContext } from "@/lib/authz/can";
-import { activeHref, HOME_ITEM, NAV_GROUP_IDS, NAV_SOURCES, navIcon, USER_MENU_NAV, visibleNavGroups, type NavItem } from "@/lib/nav";
+import { activeHref, HOME_ITEM, NAV_GROUP_IDS, NAV_SOURCES, navIcon, navLabelKey, USER_MENU_NAV, visibleNavGroups, type NavItem } from "@/lib/nav";
 import { adminNav } from "@/modules/admin/nav";
 import { approvalsNav } from "@/modules/approvals/nav";
 import { auditNav } from "@/modules/audit/nav";
@@ -106,6 +106,7 @@ describe("department groups", () => {
     expect(hrefs).not.toContain("/leads/team"); // crm.lead.assign
     expect(hrefs).not.toContain("/finance/aging");
     expect(hrefs).not.toContain("/approvals"); // wf.approval.read
+    expect(hrefs).toContain("/approvals?tab=mine"); // a requester: "My requests"
     expect(hrefs).not.toContain("/reports"); // no export permission
     expect(hrefs).not.toContain("/admin/users");
   });
@@ -178,5 +179,35 @@ describe("nav messages", () => {
       expect(keys(ar[ns]).sort(), ns).toEqual(keys(en[ns]).sort());
       for (const k of keys(ar[ns])) expect(at(ar[ns], k), `ar ${ns}.${k}`).not.toBe("");
     }
+  });
+});
+
+describe("navLabelKey: own-scope label (H1 UI pass)", () => {
+  const statement = commissionsNav.find((i) => i.href === "/commissions")!;
+
+  it("a rep (own scope) reads 'My commission'; managers, finance and the owner read 'Commissions'", () => {
+    expect(navLabelKey(ctx({ "perf.commission.read": "own" }), statement)).toBe("commissions.nav.statement");
+    expect(navLabelKey(ctx({ "perf.commission.read": "team" }), statement)).toBe("commissions.nav.statements");
+    expect(navLabelKey(ctx({ "perf.commission.read": "all" }), statement)).toBe("commissions.nav.statements");
+    expect(navLabelKey(OWNER, statement)).toBe("commissions.nav.statements");
+  });
+
+  it("entries without an own label keep their label", () => {
+    for (const item of NAV_SOURCES.flatMap((s) => s.items).filter((i) => !i.ownLabelKey)) {
+      expect(navLabelKey(ctx({ [item.permission ?? "x"]: "own" }), item)).toBe(item.labelKey);
+    }
+  });
+});
+
+describe("approvals entry (H1 UI pass)", () => {
+  const hrefs = (c: UserContext) => visibleNavGroups(c).flatMap((g) => g.items.map((i) => i.href));
+
+  it("deciders get Approvals; readers who decide nothing and requesters get My requests", () => {
+    expect(hrefs(ctx({ "wf.approval.read": "team", "wf.decide.order_discount": "team" }))).toContain("/approvals");
+    const inventory = hrefs(ctx({ "wf.approval.read": "all", "inventory.module.access": "all" }));
+    expect(inventory).not.toContain("/approvals");
+    expect(inventory).toContain("/approvals?tab=mine");
+    expect(hrefs(OWNER)).toContain("/approvals");
+    expect(hrefs(OWNER)).not.toContain("/approvals?tab=mine");
   });
 });

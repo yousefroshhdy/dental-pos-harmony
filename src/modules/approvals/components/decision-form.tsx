@@ -49,7 +49,7 @@ export function DecisionForm({ requestId }: { requestId: string }) {
       </div>
       <ActionMessage state={state} success={success} />
       {/* Primary actions stay reachable at the bottom of the screen on phones. */}
-      <div className="sticky bottom-0 -mx-4 flex gap-2 border-t bg-card px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
+      <div className="sticky-footer -mx-4 flex gap-2 border-t bg-card px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
         <Button type="submit" name="decision" value="approve" disabled={pending} className="flex-1 sm:flex-none">
           {t("approve")}
         </Button>

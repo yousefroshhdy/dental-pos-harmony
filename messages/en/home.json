@@ -7,7 +7,8 @@
     "finance": "Money in today, what customers owe, and what waits for you.",
     "manager": "Your team today, the pipeline and what waits for your decision.",
     "rep": "Your plan, your visits and your month so far.",
-    "general": "Your screens are in the menu. This is the access you hold."
+    "general": "Your screens, one tap away.",
+    "inventory": "Orders to reserve and deliver, returns to receive and stock to watch."
   },
   "open": "Open",
   "error": {
@@ -80,17 +81,41 @@
     "empty": "No check-ins yet today.",
     "noEmployee": "Your login is not linked to an employee, so there are no visits to show.",
     "done": "Done",
-    "open": "Open"
-  },
-  "leads": {
-    "title": "Clinics near me",
-    "body": "New dental clinics around your area, sorted by distance.",
-    "open": "Show clinics near me"
+    "open": "Open",
+    "checkIn": "Check in at a clinic"
   },
   "rep": {
     "startDay": "Start my day"
   },
   "noRoles": "You have no roles yet. An administrator must assign one before you can use Honest OS.",
-  "yourAccess": "Your access",
-  "permissionCount": "{count, plural, =0 {No permissions} one {# permission} other {# permissions}}"
+  "todo": {
+    "title": "To do now",
+    "allClear": "Nothing is waiting for you right now.",
+    "nothing": "Nothing waiting",
+    "failed": "Couldn't load",
+    "items": {
+      "planToday": "Visits planned today",
+      "draftOrders": "Orders to finish and send (drafts)",
+      "leadsNew": "New clinics near you, not visited yet",
+      "tasksToday": "Follow-ups and tasks due",
+      "approvals": "Requests waiting for your approval",
+      "repsNeedingAttention": "Reps whose location stopped arriving",
+      "paymentsToVerify": "Payments waiting for verification",
+      "ordersToInvoice": "Orders ready to invoice",
+      "overdueInvoices": "Overdue invoices",
+      "returnsToCredit": "Received returns to credit",
+      "ordersToReserve": "Approved orders to reserve stock for",
+      "ordersToFulfil": "Reserved orders to deliver",
+      "returnsToReceive": "Approved returns to receive",
+      "draftReceipts": "Goods receipts to post",
+      "lowStock": "Items at or below their reorder point"
+    }
+  },
+  "shortcuts": "Your screens",
+  "setup": {
+    "title": "Setup progress",
+    "body": "{left, plural, one {# step} other {# steps}} left of {total} before the team can start.",
+    "continue": "Continue setup",
+    "more": "{count, plural, one {and # more step} other {and # more steps}}"
+  }
 }

@@ -4,8 +4,8 @@
 >
 > **Current suite (Phase P, local run, 2026-11-26; unknown lot cost added):**
 > - Database: **3488 assertions in 62 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). DB suites no longer run on staging since it holds real data (DECISIONS 2026-11-25).
-> - Unit: **2013 Vitest tests in 130 files** (`pnpm test`).
-> - Local signed-in stack (§7, §8): **78 verification lines passed** (`pnpm e2e:local:verify`) and **348 screenshots** (87 screens × ar/en × 390/1440, `pnpm e2e:local:shots`). Mock auth: Tested, not Verified.
+> - Unit: **2040 Vitest tests in 132 files** (`pnpm test`).
+> - Local signed-in stack (§7, §8): **78 verification lines passed** (`pnpm e2e:local:verify`) and **372 screenshots** (93 screens × ar/en × 390/1440, `pnpm e2e:local:shots`). Mock auth: Tested, not Verified.
 >
 > Earlier totals, kept for history (run by the lead on `0ba1acf`, 2026-10-30):
 > - Database: 2737 assertions in 53 pgTAP-format suites, 0 failing files locally after the per-kind export permissions and the duplicate-index guard (2026-10-31). Before that change, all 52 suites (2687 assertions) also passed on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
@@ -296,9 +296,9 @@ Sign in as any fixture user (`owner@honest.test` at aal2, `sd@`, `am.cairo@`, `r
 file.
 
 **Screenshots** (`playwright.local.config.ts`, `tests/e2e-local/screens.spec.ts`): every persona
-signs in once through the real login form; each screen in `tests/e2e-local/screens.ts` (87,
+signs in once through the real login form; each screen in `tests/e2e-local/screens.ts` (93,
 including `/admin/setup/legacy-import` with the synthetic workbook checked, so the reconciliation
-shows; a screen's `prepare` step runs before the shot) is captured full-page in
+shows, and the role home of every persona (H1 UI pass); a screen's `prepare` step runs before the shot) is captured full-page in
 ar and en at 390 × 844 and 1440 × 900 (`deviceScaleFactor` 1) as
 `NN-screen-persona-locale-width.png`. Checks per shot, listed in `index.md`: horizontal scroll at
 390 px, visible links/buttons in `<main>` under 44 px at 390 px (under 24 px at 1440 px, the
@@ -342,5 +342,5 @@ and Excel checks). Only the owner sets a line to Verified.
 | Local | `pnpm e2e:local:up`, then `PW_CHROMIUM_PATH=… pnpm e2e:local:verify` | All 78 automated lines against the local stack; the writing flows (old-system workbook, the owner's unknown lot cost on a one-line opening stock of its own, decision-B approvals, order → invoice → payment → commission → return, lead → prospect → pin, customer without a phone) run in order and create their own records, so the run repeats on the same database. Passing is **Tested (local)**, never Verified (mock auth). |
 | Preview | `VERIFY_BASE_URL=… VERIFY_EMAIL=… VERIFY_PASSWORD=… VERIFY_ROLE=<owner\|sd\|am\|rep\|finance\|inventory\|admin> pnpm verify:preview` | The 38 read-only lines of that role against a Vercel preview or staging, signed in with a real password (a test account the owner creates). Staging holds real data (decision A): writing lines and lines that need the local demo records are skipped with the reason; no screenshot, trace, video or failure page snapshot is kept; the session and Playwright's output live in a temporary folder deleted at the end. Not run yet (no test account). |
 
-Local result on the step-8 commit: 77 passed, 0 failed, 0 skipped. With OWN-20 (unknown lot cost, 2026-11-26): 78 passed, 0 failed. Preview mode exercised against
+Local result on the step-8 commit: 77 passed, 0 failed, 0 skipped. With OWN-20 (unknown lot cost, 2026-11-26): 78 passed, 0 failed. After the H1 UI pass (2026-11-27; OWN-01, SD-01, AM-01, REP-01 and FIN-01 also check **To do now**, ADM-01 checks **Your screens**): 78 passed, 0 failed; the screenshot run's phone checks stay clean (no horizontal scroll, no target under 44 px), and the home permission-code findings are gone (24 → 16 shots, all on admin screens). Preview mode exercised against
 the local stack for all seven roles: 38 passed, the rest skipped, nothing left on disk.

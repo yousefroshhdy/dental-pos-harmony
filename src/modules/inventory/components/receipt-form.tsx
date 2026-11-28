@@ -244,7 +244,7 @@ export function ReceiptForm({
 
       <InventoryActionMessage state={state} />
 
-      <div className="sticky bottom-0 -mx-4 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+      <div className="sticky-footer -mx-4 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
         <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {t("submit")}
         </Button>

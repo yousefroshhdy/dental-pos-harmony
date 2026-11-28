@@ -18,6 +18,7 @@ import {
   type VariantRow,
   type WarehouseKind,
 } from "./types";
+import { sharedStatusTone } from "@/lib/status-tone";
 
 /**
  * Pure presentation logic for the inventory workspace. Gating here is
@@ -415,7 +416,7 @@ export function parseStockLineValue(value: string): { variantId: string; lotId: 
 // ---------------------------------------------------------------------------
 
 export function receiptStatusTone(status: ReceiptStatus): BadgeTone {
-  return status === "posted" ? "success" : status === "cancelled" ? "neutral" : "warning";
+  return sharedStatusTone(status) ?? "warning";
 }
 
 export function isReceiptStatus(v: string): v is ReceiptStatus {
@@ -447,6 +448,8 @@ export function canReadReceipts(ctx: UserContext): boolean {
 // ---------------------------------------------------------------------------
 
 export function transferStatusTone(status: TransferStatus): BadgeTone {
+  const shared = sharedStatusTone(status);
+  if (shared) return shared;
   switch (status) {
     case "received":
       return "success";

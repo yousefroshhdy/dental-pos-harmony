@@ -13,6 +13,7 @@ import {
   type VisitRow,
   type VisitStatus,
 } from "./types";
+import { sharedStatusTone } from "@/lib/status-tone";
 
 /**
  * Pure logic for the rep's day (Today, visits, tasks). UI gating here is
@@ -145,6 +146,8 @@ export function verificationTone(status: VerificationStatus): BadgeTone {
 }
 
 export function visitStatusTone(status: VisitStatus): BadgeTone {
+  const shared = sharedStatusTone(status);
+  if (shared) return shared;
   switch (status) {
     case "completed":
       return "success";

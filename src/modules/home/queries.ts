@@ -3,6 +3,7 @@ import { fail, networkError, ok, parseDbError, type Result } from "@/lib/errors"
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
 import { cairoDayBounds } from "@/modules/field/logic";
+import type { TodoKey } from "./todo";
 import type { AgingTotals, OpportunityLite, PlanItem, ReceiptRow, VisitToday } from "./types";
 
 /**
@@ -92,4 +93,70 @@ export async function getAgingTotals(): Promise<Result<AgingTotals | null>> {
 export async function listOpenOpportunities(): Promise<Result<OpportunityLite[]>> {
   const db = await createClient();
   return run("v_opportunities", db.from("v_opportunities").select("stage, expected_value").is("closed_at", null).limit(2000), []);
+}
+
+// ---------------------------------------------------------------------------
+// To-do counts (src/modules/home/todo.ts): exact counts, no rows, existing api.* views
+// ---------------------------------------------------------------------------
+
+type CountQuery = PromiseLike<{ count: number | null; error: { code?: string; message?: string; details?: string } | null }>;
+
+/** A head-only exact count as the caller; a failed read is `null`, never 0. */
+async function countOf(name: string, query: CountQuery): Promise<number | null> {
+  try {
+    const { count, error } = await query;
+    if (error) {
+      const appError = parseDbError(error);
+      log("warn", "home.count_failed", { view: name, code: appError.code, detail: appError.detail });
+      return null;
+    }
+    return count ?? 0;
+  } catch (cause) {
+    log("error", "home.count_failed", { view: name, detail: cause instanceof Error ? cause.message : String(cause) });
+    return null;
+  }
+}
+
+const HEAD = { count: "exact", head: true } as const;
+
+/** One count per to-do key, as the caller (RLS decides what is counted). */
+export async function countTodo(key: TodoKey): Promise<number | null> {
+  const db = await createClient();
+  switch (key) {
+    case "approvals":
+      // The same rows as the approvals card (getPendingForMe), counted without its list limit.
+      return countOf(
+        "v_approval_requests",
+        db.from("v_approval_requests").select("request_id", HEAD).eq("status", "pending").eq("can_decide", true),
+      );
+    case "planToday":
+      // Planned and in-progress visits today (api.v_my_today is the caller's own Cairo day).
+      return countOf("v_my_today", db.from("v_my_today").select("item_id", HEAD).eq("item_type", "visit"));
+    case "tasksToday":
+      return countOf("v_my_today", db.from("v_my_today").select("item_id", HEAD).eq("item_type", "task"));
+    case "draftOrders":
+      return countOf("v_orders", db.from("v_orders").select("id", HEAD).eq("status", "draft"));
+    case "leadsNew":
+      return countOf("v_leads", db.from("v_leads").select("id", HEAD).eq("status", "new"));
+    case "repsNeedingAttention":
+      return countOf("v_tracking_health", db.from("v_tracking_health").select("employee_id", HEAD).eq("needs_attention", true));
+    case "paymentsToVerify":
+      return countOf("v_payments", db.from("v_payments").select("id", HEAD).eq("status", "pending_verification"));
+    case "ordersToInvoice":
+      return countOf("v_invoiceable_orders", db.from("v_invoiceable_orders").select("order_id", HEAD));
+    case "overdueInvoices":
+      return countOf("v_invoices", db.from("v_invoices").select("id", HEAD).eq("is_overdue", true));
+    case "returnsToCredit":
+      return countOf("v_returns", db.from("v_returns").select("id", HEAD).eq("status", "received"));
+    case "ordersToReserve":
+      return countOf("v_orders", db.from("v_orders").select("id", HEAD).eq("status", "approved"));
+    case "ordersToFulfil":
+      return countOf("v_orders", db.from("v_orders").select("id", HEAD).in("status", ["reserved", "partially_fulfilled"]));
+    case "returnsToReceive":
+      return countOf("v_returns", db.from("v_returns").select("id", HEAD).eq("status", "approved"));
+    case "draftReceipts":
+      return countOf("v_goods_receipts", db.from("v_goods_receipts").select("id", HEAD).eq("status", "draft"));
+    case "lowStock":
+      return countOf("v_reorder_alerts", db.from("v_reorder_alerts").select("variant_id", HEAD));
+  }
 }

@@ -12,6 +12,7 @@ import type {
   StatementRow,
 } from "./types";
 import { AGING_BUCKETS } from "./types";
+import { sharedStatusTone } from "@/lib/status-tone";
 
 /**
  * Pure finance logic for the UI: filters, which actions to offer, money
@@ -113,6 +114,8 @@ export function invoiceStatusTone(status: InvoiceStatus, overdue = false): Badge
 }
 
 export function paymentStatusTone(status: PaymentStatus): BadgeTone {
+  const shared = sharedStatusTone(status);
+  if (shared) return shared;
   switch (status) {
     case "confirmed":
       return "success";

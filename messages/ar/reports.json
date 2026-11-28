@@ -50,7 +50,7 @@
     "paymentStatus": { "pending": "بانتظار التحقق", "unallocated": "غير مخصصة", "confirmed": "مؤكدة", "closed": "مرتدة أو معكوسة", "all": "الكل" },
     "bucket": { "current": "غير مستحقة", "d1_30": "١–٣٠ يومًا", "d31_60": "٣١–٦٠ يومًا", "d61_90": "٦١–٩٠ يومًا", "d90_plus": "أكثر من ٩٠ يومًا" },
     "visitStatus": { "planned": "مخططة", "in_progress": "جارية", "completed": "مكتملة", "cancelled": "ملغاة", "missed": "فائتة" },
-    "stage": { "lead": "عميل محتمل", "prospect": "مرشح", "active": "نشط", "dormant": "خامل", "lost": "مفقود", "blocked": "محظور" }
+    "stage": { "lead": "عميل محتمل", "prospect": "مهتم", "active": "نشط", "dormant": "خامل", "lost": "مفقود", "blocked": "محظور" }
   },
   "csv": {
     "yes": "نعم",

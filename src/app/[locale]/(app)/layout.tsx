@@ -18,7 +18,7 @@ import { directionOf } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { can } from "@/lib/authz/can";
 import { getUserContext } from "@/lib/authz/context";
-import { bottomBarItems, navIcon, navVisible, USER_MENU_NAV, visibleNavGroups, type NavItem } from "@/lib/nav";
+import { bottomBarItems, navIcon, navLabelKey, navVisible, USER_MENU_NAV, visibleNavGroups, type NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { NotificationBadge } from "@/modules/approvals/components/notification-badge";
 import { displayName } from "@/modules/home/logic";
@@ -84,7 +84,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
     );
   }
 
-  const toShellItem = (item: NavItem): ShellNavItem => ({ href: item.href, label: tAll(item.labelKey), icon: navIcon(item.href) });
+  const toShellItem = (item: NavItem): ShellNavItem => ({ href: item.href, label: tAll(navLabelKey(ctx, item)), icon: navIcon(item.href) });
   const groups: ShellNavGroup[] = visibleNavGroups(ctx).map((g) => ({ id: g.id, label: tAll(g.labelKey), items: g.items.map(toShellItem) }));
   const bottom = bottomBarItems(ctx).map(toShellItem);
   const userLinks = USER_MENU_NAV.filter((item) => navVisible(ctx, item)).map(toShellItem);
@@ -93,7 +93,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-dvh">
+      <div className="flex min-h-dvh" data-bottom-bar={bottom.length > 0 ? "" : undefined}>
         <AppSidebar
           groups={groups}
           initialCollapsed={collapsed}

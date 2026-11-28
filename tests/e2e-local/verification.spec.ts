@@ -37,6 +37,7 @@ test.describe("owner", () => {
     await expect(heading(page, arRe("home.greeting"))).toBeVisible();
     await expect(heading(page, ar("home.kpis.companyMonth"))).toBeVisible();
     await expect(heading(page, ar("home.approvals.title"))).toBeVisible();
+    await expect(heading(page, ar("home.todo.title"))).toBeVisible();
   });
 
   line("OWN-02", "owner setup: progress and the workbook import card", { as: "owner" }, async ({ page }) => {
@@ -234,6 +235,7 @@ test.describe("sales director", () => {
     await expect(heading(page, arRe("home.greeting"))).toBeVisible();
     await expect(heading(page, ar("home.team.title"))).toBeVisible();
     await expect(heading(page, ar("home.approvals.title"))).toBeVisible();
+    await expect(heading(page, ar("home.todo.title"))).toBeVisible();
   });
 
   line("SD-02", "approvals inbox", { as: "sd" }, async ({ page }) => {
@@ -274,6 +276,7 @@ test.describe("area manager", () => {
     await visit(page, "/");
     await expect(heading(page, ar("home.team.title"))).toBeVisible();
     await expect(heading(page, ar("home.kpis.teamMonth"))).toBeVisible();
+    await expect(heading(page, ar("home.todo.title"))).toBeVisible();
   });
 
   line("AM-02", "tracking health panel lists the team", { as: "am" }, async ({ page, local }) => {
@@ -318,6 +321,7 @@ test.describe("sales rep", () => {
     await visit(page, "/");
     await expect(heading(page, arRe("home.greeting"))).toBeVisible();
     await expect(page.getByRole("link", { name: ar("home.rep.startDay") })).toBeVisible();
+    await expect(heading(page, ar("home.todo.title"))).toBeVisible();
     const bar = page.getByRole("navigation", { name: ar("shell.bottomNav") });
     await expect(bar.getByRole("link")).toHaveCount(5);
   });
@@ -660,6 +664,7 @@ test.describe("finance officer", () => {
     await visit(page, "/");
     await expect(heading(page, ar("home.receipts.title"))).toBeVisible();
     await expect(heading(page, ar("home.aging.title"))).toBeVisible();
+    await expect(heading(page, ar("home.todo.title"))).toBeVisible();
   });
 
   line("FIN-02", "invoices list and an invoice with its VAT summary", { as: "finance", demoData: true }, async ({ page, ids }) => {
@@ -710,9 +715,10 @@ test.describe("inventory manager", () => {
 
 // ============================================================================= admin
 test.describe("admin", () => {
-  line("ADM-01", "home shows the access summary", { as: "admin" }, async ({ page }) => {
+  line("ADM-01", "home shows the admin's screens as shortcuts", { as: "admin" }, async ({ page }) => {
     await visit(page, "/");
-    await expect(heading(page, ar("home.yourAccess"))).toBeVisible();
+    await expect(heading(page, ar("home.shortcuts"))).toBeVisible();
+    await expect(page.getByRole("main").getByRole("link", { name: ar("admin.nav.users") })).toBeVisible();
   });
 
   line("ADM-02", "users", { as: "admin" }, async ({ page }) => {

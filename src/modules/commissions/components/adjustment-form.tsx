@@ -105,7 +105,7 @@ export function AdjustmentForm({ employees, months }: { employees: readonly Empl
         {localError ? <Alert>{localError}</Alert> : null}
         <CommissionActionMessage state={state} />
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card p-3 sm:static sm:col-span-2 sm:border-0 sm:bg-transparent sm:p-0">
+      <div className="fixed inset-x-0 bottom-[var(--app-bottom-bar,0px)] z-20 border-t bg-card p-3 sm:static sm:col-span-2 sm:border-0 sm:bg-transparent sm:p-0">
         <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? t("submitting") : t("submit")}
         </Button>
