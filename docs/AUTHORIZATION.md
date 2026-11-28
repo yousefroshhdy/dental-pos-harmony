@@ -86,9 +86,9 @@ Existing codes newly flagged (MFA): `admin.role.assign`, `admin.role.manage`, `a
 | finance | `finance.invoice.export` (MFA) | `finance.invoice.read` | default set | sales director A, area manager Te, rep O, finance A, collection officer A |
 | finance | `finance.payment.export` (MFA) | `finance.payment.read` | default set | sales director A, area manager T, rep O, finance A, collection officer O |
 | finance | `finance.aging.export` (MFA) | `finance.page.aging` or `finance.ledger.read` | default set | finance A, collection officer A |
-| field | `field.visit.export` (MFA) | `field.visit.read` | default set | sales director A, area manager T, rep O |
+| field | `field.visit.export` (MFA) | `field.visit.read` | default set | sales director A, area manager T, rep O, collection officer O (2026-11-28) |
 | inventory | `inventory.stock.export` (MFA) | `inventory.stock.read` | default set | sales director A, area manager A, rep O, inventory manager A, quality manager A |
-| field | `field.tracking.export` (MFA) | `field.tracking.read` | own, team, territory, all | sales director T, area manager T |
+| field | `field.tracking.export` (MFA) | `field.tracking.read` | own, team, territory, all | sales director A (2026-11-28; was T), area manager T |
 
 ## 4. Default role matrix (starting point, all editable by the owner)
 
@@ -103,7 +103,10 @@ Legend:
 | crm.customer.reassign | A | — | A | Te | — | — | — | — | — | — |
 | crm.customer.balance.read | A | — | A | Te | O | — | A | A | — | — |
 | field.visit.create | A | — | O | O | O | — | — | O | — | — |
-| field.visit.read | A | — | A | T | O | — | — | — | — | — |
+| field.visit.read | A | — | A | T | O | — | — | O | — | — |
+| field.shift.start (start/end the tracked day) | A | — | O | O | O | — | — | O | — | — |
+| field.tracking.read | A | — | A | T | — | — | — | — | — | — |
+| field.visit_exception.request | A | — | O | — | O | — | — | O | — | — |
 | field.location.read | A | — | A | T | — | — | — | — | — | — |
 | catalog.price.read | A | A | A | A | A | A | A | A | A | A |
 | catalog.cost.read | A | — | — | — | — | A | A | — | — | — |
@@ -118,13 +121,13 @@ Legend:
 | finance.payment.record | A | — | — | T | O | — | A | O | — | — |
 | finance.payment.confirm | A | — | — | — | — | — | A | — | — | — |
 | finance.payment.allocate | A (∞) | — | — | — | — | — | A (∞) | — | — | — |
-| perf.kpi.read | A | — | A | T | O | — | — | — | — | — |
+| perf.kpi.read | A | — | A | T | O | — | A | — | — | A |
 | perf.commission.read | A | — | A | T | O | — | A | — | — | — |
 | perf.commission_plan.manage | A | — | — | — | — | — | — | — | — | — |
 | admin.role.manage / assign | A | A* | — | — | — | — | — | — | — | — |
 | audit.log.read / security | A | A | — | — | — | — | — | — | — | — |
 | exec.page.overview | A | — | A | — | — | — | A | — | — | A |
-| field.visit.plan | A | — | T | T | O | — | — | — | — | — |
+| field.visit.plan | A | — | T | T | O | — | — | O | — | — |
 | sales.return.request | A | — | A | T | O | — | — | — | — | — |
 | sales.return.receive | A | — | — | — | — | A | — | — | — | — |
 | sales.return.credit | A | — | — | — | — | — | A | — | — | — |
@@ -139,9 +142,17 @@ Legend:
 | finance.invoice.export (MFA) | A | — | A | Te | O | — | A | A | — | — |
 | finance.payment.export (MFA) | A | — | A | T | O | — | A | O | — | — |
 | finance.aging.export (MFA) | A | — | — | — | — | — | A | A | — | — |
-| field.visit.export (MFA) | A | — | A | T | O | — | — | — | — | — |
+| field.visit.export (MFA) | A | — | A | T | O | — | — | O | — | — |
 | inventory.stock.export (MFA) | A | — | A | A | O | A | — | — | A | — |
-| field.tracking.export (MFA) | A | — | T | T | — | — | — | — | — | — |
+| field.tracking.export (MFA) | A | — | A | T | — | — | — | — | — | — |
+
+**Owner decisions of 2026-11-28** (`20261126000500`, suite 64; `docs/DECISIONS.md` Part C): the
+finance officer holds `perf.kpi.read` at **A** (company dashboard); the collection officer holds every
+`field.*` permission of the sales rep at **O** (start/end the tracked day, own visits and day, own
+planning, visit exceptions, own visit export; check-in was already held), and still no order, lead,
+KPI or commission permission; the sales director holds `field.tracking.read` and
+`field.tracking.export` at **A** (was T). Commission adjustments stay owner-only (no role holds
+`perf.commission.adjust` or `wf.decide.commission_adjust`; a second owner decides, D-08).
 
 The export rows are the seeded grants (suite 54 pins them); each mirrors the read permission the kind needs. The read rows above are the brief's starting point and differ in places from the seeded grants (for example `inventory.stock.read`).
 
@@ -246,7 +257,7 @@ The rep restrictions requested in the brief map as follows:
 
 **Owner-only settings.** `security.*`, `tracking.*`, `finance.payment.*`, `commission.*`, `wf.delegation.*` and `wf.escalation.*` are owner-only by table CHECK on `core.setting_definitions`, as are VAT, visit-GPS retention, `company.timezone`, `company.currency` and the company tax and commercial-register numbers. A non-owner gets `OWNER_ONLY` (42501) before any MFA check.
 
-**Tracking health** (`20261125000500`, Phase P step 5). No new permission. `api.report_device_status` needs `field.shift.start` and writes only to the caller's own open shift. `api.v_tracking_health` follows the D-14 tracking scope exactly: the caller's own row, plus `field.tracking.read` at own/team/territory scope, plus everyone trackable for a global holder (the owner), through `authz.tracking_employee_ids()`; RLS on `field.work_shifts`, `field.location_pings` and `field.device_status` applies on top. It shows times, collector and device facts, never coordinates.
+**Tracking health** (`20261125000500`, Phase P step 5). No new permission. `api.report_device_status` needs `field.shift.start` and writes only to the caller's own open shift. `api.v_tracking_health` follows the D-14 tracking scope exactly: the caller's own row, plus `field.tracking.read` at own/team/territory scope, plus everyone trackable for a global holder (the owner, and the sales director since 2026-11-28), through `authz.tracking_employee_ids()`; RLS on `field.work_shifts`, `field.location_pings` and `field.device_status` applies on top. It shows times, collector and device facts, never coordinates.
 
 **Leads** (`20261126000100`, Phase P step 4). Leads belong to an employee, so every lead permission is scoped by the employee (`authz.employee_in_scope`), not by customer or territory assignment. `crm.lead.read` (sales_rep own, area_manager team, sales_director all) decides which leads and runs are visible (RLS on `crm.leads` and `crm.lead_discovery_runs` through the definer helper `crm.lead_scope_employee_ids`). `crm.lead.work` (same scopes) changes status and notes, plans a lead (plus `field.visit.plan` over the rep, the planning rule) and records the first visit (plus `crm.customer.create`, checked inside `api.create_customer`). `crm.lead.assign` (area_manager team, sales_director all) moves leads; both the current and the new rep must be in scope. A lead outside the caller's scope answers `NOT_FOUND` (no existence oracle). Discovery ("Search now"), the radius (through `api.set_employee_base_location`, `core.employee.manage`) and the cost guard (`api.lead_usage`, settings `leads.daily_request_cap` / `leads.monthly_budget_usd`) are owner only. No lead permission is MFA-gated.
 

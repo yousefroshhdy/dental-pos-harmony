@@ -268,6 +268,14 @@ test.describe("sales director", () => {
     await visit(page, "/admin/setup/legacy-import");
     await expectForbidden(page);
   });
+
+  line("SD-09", "tracking shows every rep, also outside the director's team", { as: "sd" }, async ({ page, local }) => {
+    await visit(page, "/tracking");
+    await expect(heading(page, ar("tracking.team.title"))).toBeVisible();
+    await expect(heading(page, arRe("tracking.health.title"))).toBeVisible();
+    // Rep Demo Alex reports to the owner, not to the sales director (demo seed §11).
+    if (local) await expect(txt(page, /Rep Demo Alex|مندوب تجربة الإسكندرية/)).toBeVisible();
+  });
 });
 
 // ============================================================================= area manager
@@ -684,6 +692,34 @@ test.describe("finance officer", () => {
   line("FIN-08", "owner setup is forbidden", { as: "finance" }, async ({ page }) => {
     await visit(page, "/admin/setup");
     await expectForbidden(page);
+  });
+
+  line("FIN-10", "company dashboard", { as: "finance" }, async ({ page }) => {
+    await visit(page, "/dashboard");
+    await expect(heading(page, ar("dashboards.title.all"))).toBeVisible();
+    // The figures loaded (company scope), not only the page guard.
+    await expect(heading(page, ar("dashboards.groups.sales"))).toBeVisible();
+    await expect(heading(page, ar("dashboards.groups.cash"))).toBeVisible();
+  });
+});
+
+// ============================================================================= collection officer
+test.describe("collection officer", () => {
+  line("COL-01", "home: start my day, to do now, field bottom bar", { as: "collector", phone: true }, async ({ page }) => {
+    await visit(page, "/");
+    await expect(heading(page, arRe("home.greeting"))).toBeVisible();
+    await expect(page.getByRole("link", { name: ar("home.rep.startDay") })).toBeVisible();
+    await expect(heading(page, ar("home.todo.title"))).toBeVisible();
+    await expect(heading(page, ar("home.aging.title"))).toBeVisible();
+    const bar = page.getByRole("navigation", { name: ar("shell.bottomNav") });
+    await expect(bar.getByRole("link")).toHaveCount(3);
+    await expect(bar.getByRole("link", { name: ar("nav.bottom.visits") })).toBeVisible();
+  });
+
+  line("COL-02", "visits: the collector's own visits", { as: "collector" }, async ({ page, local }) => {
+    await visit(page, "/visits");
+    await expect(heading(page, ar("field.visits.title"))).toBeVisible();
+    if (local) await expect(txt(page, /Clinic Demo 2/)).toBeVisible();
   });
 });
 

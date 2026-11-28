@@ -115,13 +115,13 @@ select is(array[pg_temp.grants_of('finance.invoice.export'), pg_temp.grants_of('
   'matrix: invoice and payment exports');
 select is(pg_temp.grants_of('finance.aging.export'), array['collection_officer:all','finance_officer:all'],
   'matrix: aging export');
-select is(pg_temp.grants_of('field.visit.export'), array['area_manager:team','sales_director:all','sales_rep:own'],
-  'matrix: visit export');
+select is(pg_temp.grants_of('field.visit.export'), array['area_manager:team','collection_officer:own','sales_director:all','sales_rep:own'],
+  'matrix: visit export (collection officer own, owner decision 2026-11-28)');
 select is(pg_temp.grants_of('inventory.stock.export'),
   array['area_manager:all','inventory_manager:all','quality_manager:all','sales_director:all','sales_rep:own'],
   'matrix: stock export');
-select is(pg_temp.grants_of('field.tracking.export'), array['area_manager:team','sales_director:team'],
-  'matrix: tracking export');
+select is(pg_temp.grants_of('field.tracking.export'), array['area_manager:team','sales_director:all'],
+  'matrix: tracking export (sales director company-wide, owner decision 2026-11-28)');
 select is(pg_temp.grants_of('crm.customer.export') || pg_temp.grants_of('sales.order.export'),
   array['marketing_director:all','sales_director:all','sales_director:all'],
   'matrix: customer and order exports are unchanged');

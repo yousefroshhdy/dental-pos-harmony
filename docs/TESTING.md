@@ -1,11 +1,11 @@
 # Testing Plan — Honest OS
 
-> Status: **In use** · Last updated: 2026-11-26 (Phase P, owner sets an unknown lot cost)
+> Status: **In use** · Last updated: 2026-11-28 (Phase P, owner's role decisions)
 >
-> **Current suite (Phase P, local run, 2026-11-26; unknown lot cost added):**
-> - Database: **3488 assertions in 62 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). DB suites no longer run on staging since it holds real data (DECISIONS 2026-11-25).
-> - Unit: **2040 Vitest tests in 132 files** (`pnpm test`).
-> - Local signed-in stack (§7, §8): **78 verification lines passed** (`pnpm e2e:local:verify`) and **372 screenshots** (93 screens × ar/en × 390/1440, `pnpm e2e:local:shots`). Mock auth: Tested, not Verified.
+> **Current suite (Phase P, local run, 2026-11-28; owner's role decisions added):**
+> - Database: **3545 assertions in 63 pgTAP-format suites, 0 failing files** (`pnpm test:db`; list in §5). DB suites no longer run on staging since it holds real data (DECISIONS 2026-11-25).
+> - Unit: **2045 Vitest tests in 132 files** (`pnpm test`).
+> - Local signed-in stack (§7, §8): **82 verification lines passed** (`pnpm e2e:local:verify`) and **372 screenshots** (93 screens × ar/en × 390/1440, `pnpm e2e:local:shots`; not re-run for the 2026-11-28 role decisions). Mock auth: Tested, not Verified.
 >
 > Earlier totals, kept for history (run by the lead on `0ba1acf`, 2026-10-30):
 > - Database: 2737 assertions in 53 pgTAP-format suites, 0 failing files locally after the per-kind export permissions and the duplicate-index guard (2026-10-31). Before that change, all 52 suites (2687 assertions) also passed on the real Supabase staging project (PostgreSQL 17, pgTAP 1.3.3), run inside a rolled-back transaction (2026-10-31). Suite 27's `savepoint … rollback to savepoint` gap check ran there as an equivalent sub-transaction, because the remote runner executes each suite inside a function. Suite 40's aging plan check accepts either open-invoice index, because PostgreSQL 16 and 17 choose differently.
@@ -180,6 +180,7 @@ Plan counts are the `select plan(N)` lines; all 53 files declare one. Total **27
 | 60_phase_p_leads | Phase P step 4: structure and privileges (RLS, no writes, security_invoker views, service-only job functions, **no coordinates, names, addresses or phones stored**), owner-only settings and defaults, role grants; a base save queues one run, a radius change refreshes it, removing the base cancels it; owner-only "Search now"; claim without a key → `not_configured`; claim budget within the daily cap; finish: de-duplication, place-id and 50 m customer exclusions, another rep's lead kept, outside-radius dropped, cost, outbox without coordinates, rep notified; scope (rep, other rep `NOT_FOUND`, area manager team, sales director, finance none, owner); status moves, notes, plan today / past / daily cap shared with `api.plan_visits`; details allowance and monthly budget; first visit → prospect (owner, place id, phone optional, replay, check-in proposal, timeline, outbox, becomes customer when active); converted clinic excluded on the next run; caps: daily refusal, monthly refusal, partial budget, owner-only setting change, stale run charged; reassignment (rep refused, reason, team scope both ways, converted refused, director, notification); stats per rep; 30-day distance clearing and monthly refresh | 114 |
 | 61_phase_p_ui_crm | Phase P step 2b: `api.v_customer_list` (security_invoker, read-only, no anon); same live rows as `v_customers` per role (rep, area manager, other rep, owner, no-CRM user), archived excluded; phone/location gap flags agree with `v_customer_data_gaps` both ways; overdue flag, amount and days, not-yet-due is false, combined filters, matches `v_customer_map`; masked overdue and balance without `crm.customer_balance.read` (masked never matches "overdue"), gap flags not masked; "add phone" through `update_customer` (E.164, gap closed, duplicate refused, removal refused, other rep refused) | 30 |
 | 63_set_lot_cost | Phase P, owner decision 2026-11-24 (`20261126000400`): `inventory.lot.set_cost` sensitive, MFA-gated, scope all, granted to no role; privileges (anon refused, view security_invoker, RLS, no client writes, audit and append-only triggers); synthetic opening stock with two unknown-cost lots and one known; rep, finance, inventory manager and admin refused (`PERMISSION_DENIED`), a non-owner given the permission refused (`OWNER_ONLY`), owner at aal1 refused with enforcement on (`MFA_REQUIRED`); cost 0 / negative / missing / three decimals / too large, reason missing / short / long, key missing refused (`VALIDATION`), unknown lot `NOT_FOUND`, known-cost lot and a lot with no unknown units `COST_ALREADY_SET`; owner at aal2 sets it (stored with trimmed reason and who, one audit row keyed by the row id with cost and reason, one outbox event without the amount, receipt movement and line not back-filled); replay with the same key and value, same key other value / new key / same value refused, key reused on another lot `CONFLICT`, nothing written by refusals, direct update and delete refused (`APPEND_ONLY`); `v_lot_costs` statuses (owner, inventory manager; rep, finance none; rep reads nothing from the table); data-to-complete list keeps the item while one lot is unknown and drops it once all are set | 57 |
+| 64_role_grants_owner_decisions | Owner's role decisions 2026-11-28 (`20261126000500`): exact grants (finance `perf.kpi.read` all and nothing else widened; collection officer = the rep's `field.*` set at own, no order/lead/KPI/commission; sales director tracking read and export all; area manager and rep unchanged; no role holds the commission-adjustment permissions); finance passes `authz.require('perf.kpi.read')` at company scope and reads `kpi_summary` (today's completed visit counted), `kpi_team`, `kpi_breakdown` (territory, brand), `kpi_overdue_customers`, approvals, but cannot set targets; the collector acknowledges the notice, starts and ends a shift, sends a point, checks in and out, reads only their own visits and day, has no team view and cannot create orders or read KPIs; the sales director reads the day, team day, health row, team-map point and points of a rep outside the reporting line, the area manager and a rep cannot; an owner's own adjustment request gives `SELF_APPROVAL`. Suites 29, 30 and 54 follow the new scopes | 57 |
 
 **Pinned sets:** suites 39 and 48 compare the exact MFA-gated permission set; flagging a permission means updating both.
 
@@ -292,7 +293,8 @@ down), `psql`, `curl`, `openssl` and Node. It then:
    show their "not configured" states.
 
 Sign in as any fixture user (`owner@honest.test` at aal2, `sd@`, `am.cairo@`, `rep.cairo@`,
-`rep.delta@`, `finance@`, `admin@`, `inventory@honest.test`) with `E2E_LOCAL_PASSWORD` from the env
+`rep.delta@`, `finance@`, `admin@`, `inventory@honest.test`; from the demo seed `collector@` and
+`rep.alex@honest.test`) with `E2E_LOCAL_PASSWORD` from the env
 file.
 
 **Screenshots** (`playwright.local.config.ts`, `tests/e2e-local/screens.spec.ts`): every persona
@@ -330,17 +332,17 @@ full-width cards on phones. Sortable headers are 44 px at every width.
 ## 8. Verification walkthrough (Phase P step 8)
 
 `docs/VERIFICATION.md` is the click-through per role (owner, sales director, area manager, sales
-rep, finance officer, inventory manager, admin): 85 lines, each with its URL, clicks (English
-labels with the Arabic in brackets, from `messages/`), expected result and status. 78 lines are
+rep, finance officer, collection officer, inventory manager, admin): 90 lines, each with its URL, clicks (English
+labels with the Arabic in brackets, from `messages/`), expected result and status. 82 lines are
 automated, one Playwright test per line titled with the line id, in
 `tests/e2e-local/verification.spec.ts` (helpers in `tests/e2e-local/verify/`, config
-`playwright.verify.config.ts`); 7 are Planned (Google keys, the phone, the auth admin API, print
+`playwright.verify.config.ts`); 8 are Planned (Google keys, the phone, the auth admin API, print
 and Excel checks). Only the owner sets a line to Verified.
 
 | Mode | Command | Runs |
 |------|---------|------|
-| Local | `pnpm e2e:local:up`, then `PW_CHROMIUM_PATH=… pnpm e2e:local:verify` | All 78 automated lines against the local stack; the writing flows (old-system workbook, the owner's unknown lot cost on a one-line opening stock of its own, decision-B approvals, order → invoice → payment → commission → return, lead → prospect → pin, customer without a phone) run in order and create their own records, so the run repeats on the same database. Passing is **Tested (local)**, never Verified (mock auth). |
-| Preview | `VERIFY_BASE_URL=… VERIFY_EMAIL=… VERIFY_PASSWORD=… VERIFY_ROLE=<owner\|sd\|am\|rep\|finance\|inventory\|admin> pnpm verify:preview` | The 38 read-only lines of that role against a Vercel preview or staging, signed in with a real password (a test account the owner creates). Staging holds real data (decision A): writing lines and lines that need the local demo records are skipped with the reason; no screenshot, trace, video or failure page snapshot is kept; the session and Playwright's output live in a temporary folder deleted at the end. Not run yet (no test account). |
+| Local | `pnpm e2e:local:up`, then `PW_CHROMIUM_PATH=… pnpm e2e:local:verify` | All 82 automated lines against the local stack; the writing flows (old-system workbook, the owner's unknown lot cost on a one-line opening stock of its own, decision-B approvals, order → invoice → payment → commission → return, lead → prospect → pin, customer without a phone) run in order and create their own records, so the run repeats on the same database. Passing is **Tested (local)**, never Verified (mock auth). |
+| Preview | `VERIFY_BASE_URL=… VERIFY_EMAIL=… VERIFY_PASSWORD=… VERIFY_ROLE=<owner\|sd\|am\|rep\|finance\|collector\|inventory\|admin> pnpm verify:preview` | The 42 read-only lines of that role against a Vercel preview or staging, signed in with a real password (a test account the owner creates). Staging holds real data (decision A): writing lines and lines that need the local demo records are skipped with the reason; no screenshot, trace, video or failure page snapshot is kept; the session and Playwright's output live in a temporary folder deleted at the end. Not run yet (no test account). |
 
-Local result on the step-8 commit: 77 passed, 0 failed, 0 skipped. With OWN-20 (unknown lot cost, 2026-11-26): 78 passed, 0 failed. After the H1 UI pass (2026-11-27; OWN-01, SD-01, AM-01, REP-01 and FIN-01 also check **To do now**, ADM-01 checks **Your screens**): 78 passed, 0 failed; the screenshot run's phone checks stay clean (no horizontal scroll, no target under 44 px), and the home permission-code findings are gone (24 → 16 shots, all on admin screens). Preview mode exercised against
+Local result on the step-8 commit: 77 passed, 0 failed, 0 skipped. With OWN-20 (unknown lot cost, 2026-11-26): 78 passed, 0 failed. After the H1 UI pass (2026-11-27; OWN-01, SD-01, AM-01, REP-01 and FIN-01 also check **To do now**, ADM-01 checks **Your screens**): 78 passed, 0 failed; the screenshot run's phone checks stay clean (no horizontal scroll, no target under 44 px), and the home permission-code findings are gone (24 → 16 shots, all on admin screens). With the owner's role decisions (2026-11-28; new lines COL-01, COL-02, FIN-10, SD-09; the demo seed adds a collection officer and a rep outside the sales director's team): 82 passed, 0 failed. Preview mode exercised against
 the local stack for all seven roles: 38 passed, the rest skipped, nothing left on disk.

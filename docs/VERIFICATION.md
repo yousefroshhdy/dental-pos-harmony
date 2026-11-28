@@ -1,6 +1,6 @@
 # Verification walkthrough — Honest OS
 
-> Status: **In use** · Last updated: 2026-11-24 · Phase P step 8
+> Status: **In use** · Last updated: 2026-11-28 · Phase P step 8 (+ owner's role decisions)
 >
 > A click-through per role, about 30 minutes each, that covers the Phase P features end to end:
 > setup → lead → visit → order with an offer → approval → invoice → payment → commission →
@@ -33,10 +33,11 @@ of tests, screenshots and notes):
 | Role | Example account | Needs |
 |------|-----------------|-------|
 | Owner | the owner's own login | owner flag; TOTP enrolled on `/ar/account/security` |
-| Sales director | `sd.test@…` | role `sales_director` |
+| Sales director | `sd.test@…` | role `sales_director`; for SD-09 at least one rep who is **not** in the director's reporting line (`core.employees.manager_id`) |
 | Area manager | `am.test@…` | role `area_manager`, the rep below in the team (`core.employees.manager_id`) |
 | Sales rep | `rep.test@…` | role `sales_rep`, base address and lead radius set on `/ar/admin/setup` |
 | Finance officer | `finance.test@…` | role `finance_officer` |
+| Collection officer | `collector.test@…` | role `collection_officer` (an employee record, for the tracked day) |
 | Inventory manager | `inventory.test@…` | role `inventory_manager` |
 | Admin | `admin.test@…` | role `admin` |
 
@@ -61,14 +62,16 @@ of tests, screenshots and notes):
 **Local stack:** `pnpm e2e:local:up` builds exactly this data from `scripts/e2e-local/demo-seed.sql`
 (synthetic clinics "Clinic Demo 1…26", offer `PKG-DEMO-3`, STD-2026 active, quarantine warehouse
 `WH-QRN`, tiered limits). The fixture users are `owner@`, `sd@`, `am.cairo@`, `rep.cairo@`,
-`finance@`, `inventory@`, `admin@honest.test`, with the per-run password from
+`finance@`, `inventory@`, `admin@honest.test`, plus `collector@honest.test` (collection officer with a
+completed visit at Clinic Demo 2) and `rep.alex@honest.test` (a rep reporting to the owner, so outside
+the sales director's team, on shift), with the per-run password from
 `.cache/e2e-local/env.local`.
 
 ## 0. The owner's 30-minute staging run (do this first)
 
 One pass through the whole business on **https://honest-os-staging.vercel.app**, in the order the
 business will use it. Work in Arabic (`/ar/…`) on a computer, with a phone (390 px or the APK) for
-S-04 to S-06. The detailed lines per role (sections 1–7) say the same thing click by click; each
+S-04 to S-06. The detailed lines per role (sections 1–8) say the same thing click by click; each
 step below names them.
 
 **Before S-01:** you are signed in as the owner with TOTP (`/ar/account/security` says the session
@@ -118,7 +121,7 @@ PW_CHROMIUM_PATH=… pnpm verify:preview
 ```
 
 - The owner creates the test account (password sign-in) and gives it **one** role;
-  `VERIFY_ROLE` names it: `owner`, `sd`, `am`, `rep`, `finance`, `inventory` or `admin`. Run once
+  `VERIFY_ROLE` names it: `owner`, `sd`, `am`, `rep`, `finance`, `collector`, `inventory` or `admin`. Run once
   per role/account. Lines of other roles are skipped with the reason.
 - Skipped in preview: every line that writes data or posts a file, and every line that needs the
   local demo records. Read-only lines check page loads, headings, permissions (forbidden pages)
@@ -130,8 +133,9 @@ PW_CHROMIUM_PATH=… pnpm verify:preview
 - Not run yet: no preview test account exists. The preview mechanics were exercised against the
   local stack (all seven roles, 38 read-only lines passed, 0 failed, nothing left behind).
 
-Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 07, 08 · AM-01, 02,
-04, 05, 08, 09 · REP-01, 02, 03, 06, 15, 16, 17, 18, 19 · FIN-01, 08 · INV-01, 05, 06 · ADM-01–07.
+Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 07, 08, 09 · AM-01, 02,
+04, 05, 08, 09 · REP-01, 02, 03, 06, 15, 16, 17, 18, 19 · FIN-01, 08, 10 · COL-01, 02 · INV-01, 05, 06 ·
+ADM-01–07.
 
 ---
 
@@ -172,6 +176,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 | SD-06 | the return requested in REP-22 | Return page › the **Approval** (الموافقة) link › **Approve** | The return is **Approved** (تمت الموافقة). | Tested (local, verification.spec.ts › SD-06) |
 | SD-07 | `/ar/leads/team` | Read the page | **Leads by rep** (العملاء المحتملون لكل مندوب), per-rep table; without the server key: "Clinic names are not available yet…" (the owner/admin also reads which env var to set). | Tested (local, verification.spec.ts › SD-07) |
 | SD-08 | `/ar/admin/setup/legacy-import` | Open the URL | **Access denied** (غير مسموح بالدخول): the workbook import is owner only. | Tested (local, verification.spec.ts › SD-08) |
+| SD-09 | `/ar/tracking` | Section **Tracking health now** (حالة التتبع الآن) and the day table | Every trackable person of the company, also a rep who is not in your reporting line (owner decision 2026-11-28; locally "Rep Demo Alex"); their name opens the day page. The area manager still sees only the team (AM-02). | Tested (local, verification.spec.ts › SD-09) |
 
 ## 3. Area manager (about 30 minutes)
 
@@ -230,8 +235,20 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 | FIN-07 | the return of REP-22 (after INV-04) | **Issue the credit note** (إصدار الإشعار الدائن) | Return **Credited** (صدر إشعار دائن); the credit note is computed from the invoice lines with VAT. | Tested (local, verification.spec.ts › FIN-07) |
 | FIN-08 | `/ar/admin/setup` | Open the URL | **Access denied**. | Tested (local, verification.spec.ts › FIN-08) |
 | FIN-09 | an invoice › **Print invoice** | Browser print preview, ar and en | A4, right-to-left in Arabic, amount in words, VAT per rate, no cut-off columns. | Planned (visual check by a person) |
+| FIN-10 | `/ar/dashboard` (or the menu **Dashboard**, لوحة المؤشرات) | Read the page | **Company overview** (نظرة عامة على الشركة) with the company figures: **Sales** (المبيعات), **Collections and receivables** (التحصيلات والذمم), the team, territory and brand tables and **Overdue customers** (owner decision 2026-11-28). No stock-alert tile (finance holds no stock permission) and no **Targets** link. | Tested (local, verification.spec.ts › FIN-10) |
 
-## 6. Inventory manager (about 20 minutes)
+## 6. Collection officer (about 10 minutes; phone width for COL-01)
+
+Owner decision 2026-11-28: the collection officer works the field like a rep, for visits (start and
+end the tracked day, check in and out, own visits), with no orders, leads or commissions.
+
+| # | URL | Clicks | Expected result | Status |
+|---|-----|--------|-----------------|--------|
+| COL-01 | `/ar` (phone) | Sign in | The finance home with **Start my day** (ابدأ يومي); **To do now** (المطلوب الآن) starts with **Visits planned today** (زيارات مخططة اليوم), then overdue invoices; **My visits today** (زياراتي اليوم), **Receipts today**, **Receivables aging**. The bottom bar **Field shortcuts** (اختصارات الميدان) has 3 items: Today, Map, Visits. | Tested (local, verification.spec.ts › COL-01) |
+| COL-02 | `/ar/visits` | Read the list | **Visits** (الزيارات): only your own visits (locally Clinic Demo 2, outcome collection). | Tested (local, verification.spec.ts › COL-02) |
+| COL-03 | phone | **Start my day** › the tracking notice the first time › a check-in and check-out at a clinic › **End my day** | Same as the rep's day (REP-02, `docs/TESTING.md` §6.1): **Tracking on** (التتبع يعمل) while the day is open; the owner and the sales director (company-wide tracking) see your day, finance does not. | Planned (real phone, APK) |
+
+## 7. Inventory manager (about 20 minutes)
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
@@ -242,7 +259,7 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 | INV-05 | `/ar/inventory/receipts`, `/ar/inventory/movements` | Read | **Goods receipts** (استلام البضائع) list; **Stock ledger** (سجل حركة المخزون) with the fulfilment and return movements. | Tested (local, verification.spec.ts › INV-05) |
 | INV-06 | `/ar/admin/setup` | Open the URL | **Access denied**. | Tested (local, verification.spec.ts › INV-06) |
 
-## 7. Admin (about 20 minutes)
+## 8. Admin (about 20 minutes)
 
 | # | URL | Clicks | Expected result | Status |
 |---|-----|--------|-----------------|--------|
@@ -260,13 +277,14 @@ Read-only lines (run in preview): OWN-01, 02, 09, 12, 15, 16 · SD-01, 02, 05, 0
 | Role | Lines | Tested (local) | Planned | Read-only (preview) |
 |------|------:|---------------:|--------:|--------------------:|
 | Owner | 20 | 17 | 3 | 6 |
-| Sales director | 8 | 8 | 0 | 5 |
+| Sales director | 9 | 9 | 0 | 6 |
 | Area manager | 10 | 10 | 0 | 6 |
 | Sales rep | 24 | 22 | 2 | 9 |
-| Finance officer | 9 | 8 | 1 | 2 |
+| Finance officer | 10 | 9 | 1 | 3 |
+| Collection officer | 3 | 2 | 1 | 2 |
 | Inventory manager | 6 | 6 | 0 | 3 |
 | Admin | 8 | 7 | 1 | 7 |
-| **Total** | **85** | **78** | **7** | **38** |
+| **Total** | **90** | **82** | **8** | **42** |
 
 The 30-minute staging run (section 0) has 11 steps built from these lines: 4 rely only on lines
 Tested (local) (S-02 with the synthetic workbook, S-07 to S-09); 7 also need something only

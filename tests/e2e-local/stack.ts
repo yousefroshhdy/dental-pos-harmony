@@ -34,6 +34,8 @@ export const PERSONAS = {
   finance: "finance@honest.test",
   inventory: "inventory@honest.test",
   admin: "admin@honest.test",
+  /** A collection officer who also works the field for visits (demo seed §11, owner decision 2026-11-28). */
+  collector: "collector@honest.test",
 } as const;
 export type Persona = keyof typeof PERSONAS;
 

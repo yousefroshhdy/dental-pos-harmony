@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Grant, Scope, UserContext } from "@/lib/authz/can";
-import { displayName, HOME_ROLES, OPEN_STAGES, pipelineByStage, receiptsSummary, selectHome } from "@/modules/home/logic";
+import { displayName, HOME_ROLES, OPEN_STAGES, pipelineByStage, receiptsSummary, selectHome, showsStartDay } from "@/modules/home/logic";
 
 function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}): UserContext {
   const permissions: Record<string, Grant> = Object.fromEntries(Object.entries(perms).map(([p, scope]) => [p, { scope, limit: null }]));
@@ -13,8 +13,15 @@ function ctx(perms: Record<string, Scope> = {}, extra: Partial<UserContext> = {}
 const SALES_REP = { "field.visit.create": "own", "field.visit.read": "own", "perf.kpi.read": "own" } as const;
 const AREA_MANAGER = { "field.visit.create": "own", "field.visit.read": "team", "perf.kpi.read": "team", "wf.approval.read": "team" } as const;
 const SALES_DIRECTOR = { "field.visit.create": "own", "perf.kpi.read": "all", "wf.approval.read": "all" } as const;
-const FINANCE_OFFICER = { "finance.page.aging": "all", "finance.payment.read": "all", "wf.approval.read": "all" } as const;
-const COLLECTION_OFFICER = { "finance.page.aging": "all", "field.visit.create": "own" } as const;
+// Owner decisions 2026-11-28 (20261126000500): finance reads KPIs company-wide; the collection
+// officer starts a tracked day and reads their own visits.
+const FINANCE_OFFICER = { "finance.page.aging": "all", "finance.payment.read": "all", "wf.approval.read": "all", "perf.kpi.read": "all" } as const;
+const COLLECTION_OFFICER = {
+  "finance.page.aging": "all",
+  "field.visit.create": "own",
+  "field.shift.start": "own",
+  "field.visit.read": "own",
+} as const;
 
 const INVENTORY_MANAGER = { "inventory.module.access": "all", "sales.order.fulfil": "all", "wf.approval.read": "all" } as const;
 
@@ -38,6 +45,24 @@ describe("selectHome: owner > finance > manager > rep > inventory", () => {
     ["inactive owner", ctx({}, { is_owner: true, active: false }), "general"],
   ] as const)("%s → %s", (_name, user, expected) => {
     expect(selectHome(user)).toBe(expected);
+  });
+});
+
+describe("showsStartDay: the home's primary field action", () => {
+  it("the rep and the collection officer get Start my day; finance, managers and the owner do not", () => {
+    expect(showsStartDay("rep", ctx(SALES_REP))).toBe(true);
+    expect(showsStartDay("finance", ctx(COLLECTION_OFFICER))).toBe(true);
+    expect(showsStartDay("finance", ctx(FINANCE_OFFICER))).toBe(false);
+    expect(showsStartDay("manager", ctx(AREA_MANAGER))).toBe(false);
+    expect(showsStartDay("owner", ctx({}, { is_owner: true }))).toBe(false);
+  });
+
+  it("a collector who may check in but not track a day is not offered it", () => {
+    expect(showsStartDay("finance", ctx({ "finance.page.aging": "all", "field.visit.create": "own" }))).toBe(false);
+  });
+
+  it("the finance officer with the company dashboard still lands on the finance home", () => {
+    expect(selectHome(ctx(FINANCE_OFFICER))).toBe("finance");
   });
 });
 

@@ -67,7 +67,8 @@ const SPECS: Record<TodoKey, TodoSpec> = {
 export const ROLE_TODOS: Record<HomeRole, readonly TodoKey[]> = {
   rep: ["planToday", "leadsNew", "draftOrders", "tasksToday"],
   manager: ["approvals", "repsNeedingAttention"],
-  finance: ["paymentsToVerify", "ordersToInvoice", "overdueInvoices", "returnsToCredit", "approvals"],
+  // planToday shows only to holders of field.visit.create: the collection officer, who also visits clinics.
+  finance: ["planToday", "paymentsToVerify", "ordersToInvoice", "overdueInvoices", "returnsToCredit", "approvals"],
   inventory: ["ordersToReserve", "ordersToFulfil", "returnsToReceive", "draftReceipts", "lowStock", "approvals"],
   owner: ["approvals", "overdueInvoices", "repsNeedingAttention"],
   general: ["approvals"],

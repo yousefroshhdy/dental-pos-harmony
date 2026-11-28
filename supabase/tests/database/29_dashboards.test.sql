@@ -1,7 +1,8 @@
 -- KPI metric functions and dashboard reads (20261031000200_dashboards_kpis.sql).
 --   users: a1 owner · a2 sales director (perf.kpi.read all, perf.target.manage) · a3 area mgr
 --          Cairo (team: E003, E004, E009) · a4 rep Cairo (E004) · a5 rep Delta (E005, reports
---          to the director) · a6 finance (no perf.kpi.read) · a7 admin
+--          to the director) · a6 finance (perf.kpi.read all since 20261126000500; suite 64)
+--          · a7 admin · a8 inventory manager (no perf.kpi.read)
 -- A deterministic September 2026 fixture (all synthetic): visits, orders, a fulfilment,
 -- invoices, payments, a credit note. Times are Cairo wall-clock (UTC+3 in September).
 begin;
@@ -167,8 +168,8 @@ select is((select string_agg(distinct employee_id::text, ',') from api.kpi_team(
 select is((select count(*)::int from api.v_approval_requests where status = 'pending'), 1,
   'area manager: the pending-approvals panel source shows the team request');
 
-select tests.authenticate_as('00000000-0000-0000-0000-0000000000a6');
-select throws_ok($$select * from api.kpi_summary('2026-09-01', '2026-09-30')$$, '42501', null, 'finance (no perf.kpi.read) is refused');
+select tests.authenticate_as('00000000-0000-0000-0000-0000000000a8');
+select throws_ok($$select * from api.kpi_summary('2026-09-01', '2026-09-30')$$, '42501', null, 'the inventory manager (no perf.kpi.read) is refused');
 select throws_ok($$select * from api.kpi_team('2026-09-01', '2026-09-30')$$, '42501', null, 'also for the team table');
 select throws_ok($$select * from api.kpi_overdue_customers()$$, '42501', null, 'and for overdue customers');
 select tests.authenticate_as('00000000-0000-0000-0000-0000000000a7');

@@ -413,4 +413,49 @@ select tests.authenticate_as_aal2(:owner);
 select api.update_setting('sales.discount.limit_mode', '"tiered"', 'Local stack mirrors staging (decision B)');
 select tests.clear_authentication();
 
+-- -----------------------------------------------------------------------------
+-- 11. Owner's role decisions of 2026-11-28 (20261126000500): two more synthetic users.
+--     · collector@honest.test, a collection officer (manager: the owner) who works the field for
+--       visits: acknowledges the tracking notice, starts the day and completes a visit at Clinic Demo 2.
+--     · rep.alex@honest.test, a rep in Alexandria whose manager is the owner, so outside the sales
+--       director's team: on shift with a recent point (the sales director now sees every rep).
+--     Users, employees and role assignments are setup rows (superuser, as in tests.load_fixture);
+--     the field day goes through api.* as the users.
+-- -----------------------------------------------------------------------------
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000b1', 'collector@honest.test'),
+  ('00000000-0000-0000-0000-0000000000b2', 'rep.alex@honest.test');
+insert into core.employees (id, employee_no, user_id, full_name_en, full_name_ar, job_title, manager_id) values
+  ('20000000-0000-0000-0000-0000000000c1', 'E010', '00000000-0000-0000-0000-0000000000b1', 'Collector Demo', 'محصّل تجربة',
+   'Collection Officer', '20000000-0000-0000-0000-000000000001'),
+  ('20000000-0000-0000-0000-0000000000c2', 'E011', '00000000-0000-0000-0000-0000000000b2', 'Rep Demo Alex', 'مندوب تجربة الإسكندرية',
+   'Sales Representative', '20000000-0000-0000-0000-000000000001');
+insert into core.user_profiles (user_id, employee_id) values
+  ('00000000-0000-0000-0000-0000000000b1', '20000000-0000-0000-0000-0000000000c1'),
+  ('00000000-0000-0000-0000-0000000000b2', '20000000-0000-0000-0000-0000000000c2');
+insert into core.employee_territories (employee_id, territory_id, assignment)
+select '20000000-0000-0000-0000-0000000000c2', id, 'member' from core.territories where code = 'ALEX';
+insert into authz.user_roles (user_id, role_id)
+select v.uid::uuid, r.id from (values ('00000000-0000-0000-0000-0000000000b1', 'collection_officer'),
+                                      ('00000000-0000-0000-0000-0000000000b2', 'sales_rep')) v(uid, code)
+join authz.roles r on r.code = v.code;
+
+select tests.authenticate_as('00000000-0000-0000-0000-0000000000b1');
+select api.acknowledge_tracking_notice('2026-10-30.1');
+select api.start_shift('e2000000-0000-0000-0000-0000000000c1', 31.038000, 31.376000, 12, :'t0'::timestamptz + 1 * :'step'::interval);
+select api.record_location_pings(jsonb_build_array(jsonb_build_object('id', 'e2100000-0000-0000-0000-0000000000c1',
+         'lat', 31.040500, 'lng', 31.378800, 'accuracy_m', 12, 'captured_at', :'t0'::timestamptz + 5 * :'step'::interval)));
+select api.visit_check_in('e5000000-0000-0000-0000-0000000000c1', '40000000-0000-0000-0000-000000000002',
+  31.040900, 31.378500, 10, :'t0'::timestamptz + 5 * :'step'::interval);
+select api.visit_check_out('e5000000-0000-0000-0000-0000000000c1', 'collection', 'Collected a cheque (demo)',
+  31.040900, 31.378500, 10, :'t0'::timestamptz + 6 * :'step'::interval);
+select tests.clear_authentication();
+
+select tests.authenticate_as('00000000-0000-0000-0000-0000000000b2');
+select api.acknowledge_tracking_notice('2026-10-30.1');
+select api.start_shift('e2000000-0000-0000-0000-0000000000c2', 31.200000, 29.918000, 10, :'t0'::timestamptz);
+select api.record_location_pings(jsonb_build_array(jsonb_build_object('id', 'e2100000-0000-0000-0000-0000000000c2',
+         'lat', 31.201500, 'lng', 29.919000, 'accuracy_m', 10, 'captured_at', now() - interval '1 minute')));
+select tests.clear_authentication();
+
 commit;
