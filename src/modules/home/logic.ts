@@ -28,6 +28,18 @@ export function selectHome(ctx: UserContext): HomeRole {
   return "general";
 }
 
+/**
+ * Whether the home header offers "Start my day" (a link to /today, where the shift card and the
+ * check-ins are). The rep always (they check in at clinics). On the finance home, only people who
+ * also work the field: the collection officer starts and ends a tracked day and checks in at clinics
+ * (owner decision 2026-11-28); the finance officer does neither. UX only.
+ */
+export function showsStartDay(role: HomeRole, ctx: UserContext): boolean {
+  if (!can(ctx, "field.visit.create")) return false;
+  if (role === "rep") return true;
+  return role === "finance" && can(ctx, "field.shift.start");
+}
+
 type Num = number | string | null | undefined;
 
 const toNum = (v: Num): number => {

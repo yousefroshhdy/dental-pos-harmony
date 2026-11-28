@@ -8,7 +8,7 @@ import { can, type UserContext } from "@/lib/authz/can";
 import { navIcon, navLabelKey, visibleNavGroups } from "@/lib/nav";
 import { cairoToday, monthRange } from "@/modules/dashboards/logic";
 import type { KpiCode, Period } from "@/modules/dashboards/types";
-import type { HomeRole } from "../logic";
+import { showsStartDay, type HomeRole } from "../logic";
 import { countTodo } from "../queries";
 import { buildTodos, visibleTodos, type TodoCounts } from "../todo";
 import {
@@ -43,9 +43,9 @@ async function loadTodos(role: HomeRole, ctx: UserContext) {
 
 /**
  * The page for one home role (Phase P step 2; H1 UI pass). Each home answers "what do I do
- * now?": the role's one primary action where it has one (the rep's "Start my day", the owner's
- * setup until it is complete), then a short ordered to-do list with live counts, then the
- * role's cards. Cards appear only for data the user can read (the same permission that opens
+ * now?": the role's one primary action where it has one ("Start my day" for the rep and the
+ * collection officer, the owner's setup until it is complete), then a short ordered to-do list
+ * with live counts, then the role's cards. Cards appear only for data the user can read (the same permission that opens
  * the matching screen); each card shows its own empty or error state, so one failed read never
  * blanks the page.
  */
@@ -61,7 +61,7 @@ export async function RoleHome({ role, ctx, name }: { role: HomeRole; ctx: UserC
       title={name ? t("greeting", { name }) : t("greetingNoName")}
       description={t(`subtitle.${role}`)}
       actions={
-        role === "rep" && can(ctx, "field.visit.create") ? (
+        showsStartDay(role, ctx) ? (
           <Link href="/today" className={buttonVariants({ size: "lg", className: "w-full sm:w-auto" })}>
             {t("rep.startDay")}
           </Link>
@@ -102,6 +102,7 @@ export async function RoleHome({ role, ctx, name }: { role: HomeRole; ctx: UserC
           {header}
           <div className="grid gap-4 lg:grid-cols-2">
             <TodoCard items={todos} />
+            {showsStartDay(role, ctx) && can(ctx, "field.visit.read") ? <VisitsTodayCard employeeId={ctx.employee?.id ?? null} /> : null}
             {can(ctx, "finance.payment.read") ? <ReceiptsTodayCard /> : null}
             <AgingCard />
             {approvals ? <ApprovalsCard /> : null}

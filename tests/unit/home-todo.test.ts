@@ -42,6 +42,11 @@ describe("visibleTodos: the role's order, only what the user may open", () => {
     expect(keys(visibleTodos("finance", ctx({ "finance.invoice.read": "all", "finance.page.aging": "all" })))).toEqual(["overdueInvoices"]);
   });
 
+  it("a collection officer who visits clinics starts with today's visits (owner decision 2026-11-28)", () => {
+    const collector = ctx({ "finance.invoice.read": "all", "finance.page.aging": "all", "field.visit.create": "own", "field.shift.start": "own" });
+    expect(keys(visibleTodos("finance", collector))).toEqual(["planToday", "overdueInvoices"]);
+  });
+
   it("inventory: reserve → deliver → receive returns → post receipts → low stock (approvals only for deciders)", () => {
     expect(keys(visibleTodos("inventory", ctx(INVENTORY)))).toEqual(["ordersToReserve", "ordersToFulfil", "returnsToReceive", "draftReceipts", "lowStock"]);
     expect(keys(visibleTodos("inventory", ctx({ ...INVENTORY, "wf.decide.inventory_adjustment": "all" })))).toContain("approvals");

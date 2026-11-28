@@ -48,6 +48,19 @@ describe("field bottom bar", () => {
     expect(hrefs(manager)).toEqual(["/today", "/map", "/leads", "/visits", "/orders"]);
   });
 
+  it("a collection officer gets Today · Map · Visits, no Leads or Orders (owner decision 2026-11-28)", () => {
+    const collector = ctx({
+      "field.visit.create": "own",
+      "field.shift.start": "own",
+      "field.visit.read": "own",
+      "crm.customer.read": "all",
+      "finance.page.aging": "all",
+      "finance.payment.record": "own",
+    });
+    expect(showBottomBar(collector)).toBe(true);
+    expect(hrefs(collector)).toEqual(["/today", "/map", "/visits"]);
+  });
+
   it.each(["ar", "en"])("%s labels exist", (locale) => {
     const messages = JSON.parse(readFileSync(join(__dirname, "../../messages", `${locale}.json`), "utf8"));
     for (const item of BOTTOM_BAR) {

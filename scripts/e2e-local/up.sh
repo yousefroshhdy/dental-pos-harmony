@@ -173,7 +173,7 @@ local stack up (synthetic data only):
   app       http://127.0.0.1:${APP_PORT}
   gateway   http://127.0.0.1:${GATEWAY_PORT}  (/rest/v1 → PostgREST :${POSTGREST_PORT}, /auth/v1 → mock auth)
   database  ${DB} on ${PGHOST}:${PGPORT}
-  sign in   owner@honest.test (aal2), sd@, am.cairo@, rep.cairo@, rep.delta@, finance@, admin@, inventory@honest.test
+  sign in   owner@honest.test (aal2), sd@, am.cairo@, rep.cairo@, rep.delta@, rep.alex@, finance@, collector@, admin@, inventory@honest.test
   password  E2E_LOCAL_PASSWORD in ${ENV_FILE}
   shots     pnpm e2e:local:shots   ·   stop: pnpm e2e:local:down
 EOF

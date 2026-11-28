@@ -20,8 +20,8 @@ select is((select value #>> '{}' from core.system_settings where key = 'tracking
 select is((select value #>> '{}' from core.system_settings where key = 'tracking.retention_days'), '90', 'D-14 default: 90-day retention');
 select is((select count(*)::int from authz.role_permissions rp join authz.roles r on r.id = rp.role_id
            where (r.code, rp.permission_code, rp.scope) in (('sales_rep','field.shift.start','own'),
-                 ('area_manager','field.tracking.read','team'), ('sales_director','field.tracking.read','team'))), 3,
-  'system roles hold the new permissions at the D-14 scopes');
+                 ('area_manager','field.tracking.read','team'), ('sales_director','field.tracking.read','all'))), 3,
+  'system roles hold the new permissions at the D-14 scopes (sales director company-wide, owner decision 2026-11-28)');
 select ok(not exists (select 1 from authz.role_permissions where permission_code = 'field.tracking.read'
                       and role_id = (select id from authz.roles where code = 'sales_rep')),
   'reps do not hold field.tracking.read (they see only themselves)');
